@@ -699,6 +699,18 @@ html.lenis, html.lenis body {
   will-change: opacity, transform;
 }
 
+/* SVG stroke animation for timeline borders */
+.svg-corner-flourish {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+}
+
+/* Timeline dot SVG ring */
+.timeline-dot-ring {
+  will-change: stroke-dashoffset;
+  transition: none;
+}
+
 .lenis.lenis-smooth {
   scroll-behavior: auto !important;
 }

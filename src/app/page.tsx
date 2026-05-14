@@ -415,274 +415,276 @@ function QuoteSection() {
   )
 }
 
-// Timeline Section with sequential handwriting animation + auto-scroll
+// Timeline Section — SVG Stroke Animation + Handwriting Reveal + Scroll Storytelling
+// Scroll drives the story: pin the section, each card animates as you scroll
 function TimelineSection() {
   const sectionRef = useRef<HTMLDivElement>(null)
+  const wrapperRef = useRef<HTMLDivElement>(null)
   const cardsRef = useRef<HTMLDivElement[]>([])
+  const svgBordersRef = useRef<SVGPathElement[]>([])
+  const timelineLineRef = useRef<HTMLDivElement>(null)
   const dotsRef = useRef<HTMLDivElement[]>([])
   const mobileDotsRef = useRef<HTMLDivElement[]>([])
-  const bordersRef = useRef<HTMLDivElement[]>([])
   const titlesRef = useRef<HTMLHeadingElement[]>([])
   const descriptionsRef = useRef<HTMLDivElement[]>([])
-  const hasAnimated = useRef(false)
-  const autoScrollRef = useRef<number | null>(null)
-  const isScrollPausedRef = useRef(false)
-  const userScrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const progressRef = useRef<HTMLDivElement>(null)
 
-  // Detect user manual scroll to pause auto-scroll temporarily
   useEffect(() => {
-    const handleWheel = () => {
-      isScrollPausedRef.current = true
-      if (userScrollTimeoutRef.current) clearTimeout(userScrollTimeoutRef.current)
-      userScrollTimeoutRef.current = setTimeout(() => {
-        isScrollPausedRef.current = false
-      }, 2000)
-    }
+    if (!sectionRef.current || !wrapperRef.current) return
 
-    const handleTouchStart = () => {
-      isScrollPausedRef.current = true
-      if (userScrollTimeoutRef.current) clearTimeout(userScrollTimeoutRef.current)
-      userScrollTimeoutRef.current = setTimeout(() => {
-        isScrollPausedRef.current = false
-      }, 3000)
-    }
-
-    window.addEventListener('wheel', handleWheel, { passive: true })
-    window.addEventListener('touchstart', handleTouchStart, { passive: true })
-
-    return () => {
-      window.removeEventListener('wheel', handleWheel)
-      window.removeEventListener('touchstart', handleTouchStart)
-      if (userScrollTimeoutRef.current) clearTimeout(userScrollTimeoutRef.current)
-    }
-  }, [])
-
-  // Auto-scroll: faster speed, scrolls until timeline section bottom is visible
-  const startAutoScroll = useCallback(() => {
-    if (autoScrollRef.current) return
-
-    const scrollSpeed = 1.2 // pixels per frame — faster than before
-
-    const scrollStep = () => {
-      if (isScrollPausedRef.current) {
-        autoScrollRef.current = requestAnimationFrame(scrollStep)
-        return
-      }
-
-      if (!sectionRef.current) {
-        if (autoScrollRef.current) {
-          cancelAnimationFrame(autoScrollRef.current)
-          autoScrollRef.current = null
-        }
-        return
-      }
-
-      const rect = sectionRef.current.getBoundingClientRect()
-      const sectionBottom = rect.bottom
-      const viewHeight = window.innerHeight
-
-      // Stop if the section bottom is fully visible in the viewport
-      if (sectionBottom <= viewHeight) {
-        if (autoScrollRef.current) {
-          cancelAnimationFrame(autoScrollRef.current)
-          autoScrollRef.current = null
-        }
-        return
-      }
-
-      window.scrollBy(0, scrollSpeed)
-      autoScrollRef.current = requestAnimationFrame(scrollStep)
-    }
-
-    autoScrollRef.current = requestAnimationFrame(scrollStep)
-  }, [])
-
-  const stopAutoScroll = useCallback(() => {
-    if (autoScrollRef.current) {
-      cancelAnimationFrame(autoScrollRef.current)
-      autoScrollRef.current = null
-    }
-  }, [])
-
-  // Main animation: triggered once when section enters viewport
-  useEffect(() => {
     const ctx = gsap.context(() => {
-      // Fade in section
-      fadeIn(sectionRef.current!, { y: 30 })
-    })
+      const cards = cardsRef.current
+      const svgBorders = svgBordersRef.current
+      const dots = dotsRef.current
+      const mobileDots = mobileDotsRef.current
+      const titles = titlesRef.current
+      const descriptions = descriptionsRef.current
+      const timelineLine = timelineLineRef.current
+      const progressBar = progressRef.current
+      const section = sectionRef.current!
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && !hasAnimated.current) {
-            hasAnimated.current = true
-            runHandwritingAnimation()
+      // === STEP 1: Prepare all character spans ===
+      const allTitleChars: HTMLSpanElement[][] = []
+      const allDescChars: HTMLSpanElement[][] = []
+
+      WEDDING.timeline.forEach((item, i) => {
+        // Title chars
+        const title = titles[i]
+        if (title) {
+          const text = title.textContent || ''
+          title.innerHTML = ''
+          const chars: HTMLSpanElement[] = []
+          for (const char of text) {
+            const span = document.createElement('span')
+            span.style.cssText = 'display:inline-block;will-change:opacity,transform;opacity:0;transform:translateY(6px) rotate(-3deg);'
+            span.textContent = char === ' ' ? '\u00A0' : char
+            title.appendChild(span)
+            chars.push(span)
           }
+          allTitleChars.push(chars)
+        }
+
+        // Description chars
+        const desc = descriptions[i]
+        if (desc) {
+          desc.innerHTML = ''
+          const allC: HTMLSpanElement[] = []
+          const words = item.description.split(' ')
+          words.forEach((word, wi) => {
+            const ws = document.createElement('span')
+            ws.style.cssText = 'white-space:nowrap;display:inline;'
+            for (let j = 0; j < word.length; j++) {
+              const cs = document.createElement('span')
+              cs.className = 'hw-char'
+              cs.style.cssText = 'display:inline-block;will-change:opacity,transform;opacity:0;transform:translateY(3px) rotate(-2deg);min-width:0.08em;'
+              cs.textContent = word[j]
+              ws.appendChild(cs)
+              allC.push(cs)
+            }
+            desc.appendChild(ws)
+            if (wi < words.length - 1) {
+              const sp = document.createElement('span')
+              sp.innerHTML = '\u00A0'
+              sp.style.display = 'inline'
+              desc.appendChild(sp)
+            }
+          })
+          allDescChars.push(allC)
+        }
+      })
+
+      // === STEP 2: Initialize SVG stroke-dashoffset for borders ===
+      svgBorders.forEach((path) => {
+        if (path) {
+          try {
+            const len = path.getTotalLength()
+            path.style.strokeDasharray = String(len)
+            path.style.strokeDashoffset = String(len)
+          } catch (e) {
+            // Fallback if getTotalLength fails
+            path.style.strokeDasharray = '2000'
+            path.style.strokeDashoffset = '2000'
+          }
+        }
+      })
+
+      // === STEP 3: Set initial states ===
+      cards.forEach((card) => {
+        if (card) gsap.set(card, { opacity: 0, y: 30 })
+      })
+      dots.forEach((dot) => {
+        if (dot) gsap.set(dot, { scale: 0, opacity: 0 })
+      })
+      mobileDots.forEach((dot) => {
+        if (dot) gsap.set(dot, { scale: 0, opacity: 0 })
+      })
+      if (timelineLine) {
+        gsap.set(timelineLine, { scaleY: 0, transformOrigin: 'top center' })
+      }
+      if (progressBar) {
+        gsap.set(progressBar, { scaleX: 0, transformOrigin: 'left center' })
+      }
+
+      // === STEP 4: Build master timeline with scroll scrub ===
+      const masterTl = gsap.timeline({
+        scrollTrigger: {
+          trigger: section,
+          start: 'top 10%',
+          end: `+=${WEDDING.timeline.length * 120}%`,
+          pin: true,
+          scrub: 1,
+          anticipatePin: 1,
+          onUpdate: (self) => {
+            // Update progress bar
+            if (progressBar) {
+              gsap.set(progressBar, { scaleX: self.progress })
+            }
+          },
+        },
+      })
+
+      // Section header reveal
+      masterTl.to(section, { opacity: 1, duration: 0.3 })
+
+      // Timeline center line grows
+      if (timelineLine) {
+        masterTl.to(timelineLine, {
+          scaleY: 1,
+          duration: 0.4,
+          ease: 'power2.inOut',
         })
-      },
-      { threshold: 0.15 }
-    )
-
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current)
-    }
-
-    return () => {
-      ctx.revert()
-      observer.disconnect()
-      stopAutoScroll()
-    }
-  }, [])
-
-  // Split text into individual character spans for handwriting animation
-  const splitTextToChars = (container: HTMLDivElement, text: string) => {
-    container.innerHTML = ''
-    const allChars: HTMLSpanElement[] = []
-
-    const words = text.split(' ')
-    words.forEach((word, wordIdx) => {
-      const wordSpan = document.createElement('span')
-      wordSpan.style.whiteSpace = 'nowrap'
-      wordSpan.style.display = 'inline'
-
-      for (let i = 0; i < word.length; i++) {
-        const charSpan = document.createElement('span')
-        charSpan.className = 'hw-char'
-        charSpan.style.display = 'inline-block'
-        charSpan.style.willChange = 'opacity, transform'
-        charSpan.style.opacity = '0'
-        charSpan.style.transform = 'translateY(3px) rotate(-2deg)'
-        charSpan.style.minWidth = '0.08em'
-        charSpan.style.transition = 'none'
-        charSpan.textContent = word[i]
-        wordSpan.appendChild(charSpan)
-        allChars.push(charSpan)
       }
 
-      container.appendChild(wordSpan)
+      // Animate each card sequentially
+      WEDDING.timeline.forEach((_, index) => {
+        const card = cards[index]
+        const svgPath = svgBorders[index]
+        const dot = dots[index]
+        const mobileDot = mobileDots[index]
+        const titleChars = allTitleChars[index]
+        const descChars = allDescChars[index]
 
-      // Add space between words
-      if (wordIdx < words.length - 1) {
-        const space = document.createElement('span')
-        space.innerHTML = '\u00A0'
-        space.style.display = 'inline'
-        container.appendChild(space)
-      }
-    })
+        if (!card) return
 
-    return allChars
-  }
-
-  // Split title into character spans
-  const splitTitleToChars = (heading: HTMLHeadingElement) => {
-    const text = heading.textContent || ''
-    heading.innerHTML = ''
-    const chars: HTMLSpanElement[] = []
-
-    for (const char of text) {
-      const span = document.createElement('span')
-      span.style.display = 'inline-block'
-      span.style.willChange = 'opacity, transform'
-      span.style.opacity = '0'
-      span.style.transform = 'translateY(6px) rotate(-3deg)'
-      span.textContent = char === ' ' ? '\u00A0' : char
-      heading.appendChild(span)
-      chars.push(span)
-    }
-
-    return chars
-  }
-
-  const runHandwritingAnimation = () => {
-    const masterTl = gsap.timeline({
-      onStart: () => {
-        startAutoScroll()
-      },
-      onComplete: () => {
-        stopAutoScroll()
-      },
-    })
-
-    WEDDING.timeline.forEach((item, index) => {
-      const card = cardsRef.current[index]
-      const dot = dotsRef.current[index]
-      const mobileDot = mobileDotsRef.current[index]
-      const border = bordersRef.current[index]
-      const title = titlesRef.current[index]
-      const description = descriptionsRef.current[index]
-
-      if (!card || !title || !description) return
-
-      // Prepare character spans
-      const titleChars = splitTitleToChars(title)
-      const descChars = splitTextToChars(description, item.description)
-
-      // Card container: fade in
-      masterTl.fromTo(card,
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' },
-        index === 0 ? 0 : '-=0.1'
-      )
-
-      // Border draw
-      if (border) {
-        masterTl.fromTo(border,
-          { clipPath: 'inset(0 100% 100% 0)' },
-          { clipPath: 'inset(0 0% 0% 0%)', duration: 0.6, ease: 'power2.inOut' },
-          '-=0.4'
-        )
-      }
-
-      // Timeline dot pops in
-      if (dot) {
-        masterTl.fromTo(dot,
-          { scale: 0, opacity: 0 },
-          { scale: 1, opacity: 1, duration: 0.4, ease: 'back.out(2)' },
-          '-=0.3'
-        )
-      }
-      if (mobileDot) {
-        masterTl.fromTo(mobileDot,
-          { scale: 0, opacity: 0 },
-          { scale: 1, opacity: 1, duration: 0.4, ease: 'back.out(2)' },
-          '-=0.4'
-        )
-      }
-
-      // Title: characters appear one by one (handwriting feel)
-      if (titleChars.length > 0) {
-        masterTl.to(titleChars, {
+        // Card fades in and slides up
+        masterTl.to(card, {
           opacity: 1,
           y: 0,
-          rotation: 0,
-          duration: 0.12,
-          stagger: 0.04,
+          duration: 0.5,
           ease: 'power2.out',
-        }, '-=0.2')
-      }
+        })
 
-      // Description: characters appear one by one (handwriting feel)
-      if (descChars.length > 0) {
-        masterTl.to(descChars, {
-          opacity: 1,
-          y: 0,
-          rotation: 0,
-          duration: 0.06,
-          stagger: 0.018,
-          ease: 'power1.out',
-        }, '-=0.1')
-      }
+        // SVG border stroke draws in
+        if (svgPath) {
+          masterTl.to(svgPath, {
+            strokeDashoffset: 0,
+            duration: 1,
+            ease: 'power2.inOut',
+          }, '-=0.3')
+        }
 
-      // Small gap between cards (0.3s pause)
-      if (index < WEDDING.timeline.length - 1) {
-        masterTl.to({}, { duration: 0.3 })
-      }
+        // SVG corner flourishes draw in
+        const cardEl = card.querySelector('.relative') as HTMLDivElement | null
+        if (cardEl) {
+          const cornerPaths = cardEl.querySelectorAll('.svg-corner-flourish')
+          cornerPaths.forEach((cp) => {
+            const pathEl = cp as SVGPathElement
+            try {
+              const cLen = pathEl.getTotalLength()
+              pathEl.style.strokeDasharray = String(cLen)
+              pathEl.style.strokeDashoffset = String(cLen)
+            } catch (e) {
+              pathEl.style.strokeDasharray = '100'
+              pathEl.style.strokeDashoffset = '100'
+            }
+          })
+          if (cornerPaths.length > 0) {
+            masterTl.to(cornerPaths, {
+              strokeDashoffset: 0,
+              duration: 0.5,
+              stagger: 0.1,
+              ease: 'power2.inOut',
+            }, '-=0.5')
+          }
+        }
+
+        // Timeline dot pops in with SVG ring stroke
+        if (dot) {
+          const dotRing = dot.querySelector('.timeline-dot-ring') as SVGPathElement | null
+          masterTl.to(dot, {
+            scale: 1,
+            opacity: 1,
+            duration: 0.4,
+            ease: 'back.out(2.5)',
+          }, '-=0.7')
+          // SVG ring stroke draws in
+          if (dotRing) {
+            const ringLen = dotRing.getTotalLength ? dotRing.getTotalLength() : 163.36
+            dotRing.style.strokeDasharray = String(ringLen)
+            dotRing.style.strokeDashoffset = String(ringLen)
+            masterTl.to(dotRing, {
+              strokeDashoffset: 0,
+              duration: 0.6,
+              ease: 'power2.inOut',
+            }, '-=0.3')
+          }
+        }
+        if (mobileDot) {
+          masterTl.to(mobileDot, {
+            scale: 1,
+            opacity: 1,
+            duration: 0.4,
+            ease: 'back.out(2.5)',
+          }, '<')
+        }
+
+        // Title handwriting reveal
+        if (titleChars && titleChars.length > 0) {
+          masterTl.to(titleChars, {
+            opacity: 1,
+            y: 0,
+            rotation: 0,
+            duration: 0.2,
+            stagger: 0.06,
+            ease: 'power2.out',
+          }, '-=0.5')
+        }
+
+        // Description handwriting reveal
+        if (descChars && descChars.length > 0) {
+          masterTl.to(descChars, {
+            opacity: 1,
+            y: 0,
+            rotation: 0,
+            duration: 0.08,
+            stagger: 0.025,
+            ease: 'power1.out',
+          }, '-=0.2')
+        }
+
+        // Pause between cards
+        if (index < WEDDING.timeline.length - 1) {
+          masterTl.to({}, { duration: 0.5 })
+        }
+      })
+
+      // Final: slight fade to close the chapter
+      masterTl.to({}, { duration: 0.3 })
     })
-  }
+
+    return () => ctx.revert()
+  }, [])
 
   return (
-    <section ref={sectionRef} className="py-20 px-6" style={{ background: 'var(--cream)', opacity: 0 }}>
-      <div className="max-w-4xl mx-auto text-center">
+    <section ref={sectionRef} className="py-20 px-6 relative" style={{ background: 'var(--cream)', opacity: 0 }}>
+      {/* Progress bar */}
+      <div
+        ref={progressRef}
+        className="absolute top-0 left-0 right-0 h-[2px] z-20"
+        style={{ background: 'linear-gradient(90deg, var(--gold-dark), var(--gold), var(--gold-dark))', transform: 'scaleX(0)', transformOrigin: 'left center' }}
+      />
+
+      <div ref={wrapperRef} className="max-w-4xl mx-auto text-center">
         <h2 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
           Cerita Kami
         </h2>
@@ -691,8 +693,8 @@ function TimelineSection() {
         </div>
 
         <div className="relative">
-          {/* Center line */}
-          <div className="timeline-line hidden sm:block" />
+          {/* Center line (desktop) — SVG for stroke animation */}
+          <div ref={timelineLineRef} className="hidden sm:block absolute left-1/2 top-0 bottom-0 w-[2px] -translate-x-1/2" style={{ background: 'linear-gradient(to bottom, transparent, var(--gold), transparent)', transformOrigin: 'top center', transform: 'scaleY(0)' }} />
 
           {WEDDING.timeline.map((item, index) => (
             <div
@@ -701,38 +703,71 @@ function TimelineSection() {
               className={`relative flex flex-col sm:flex-row items-center mb-16 last:mb-0 ${
                 index % 2 === 0 ? 'sm:flex-row' : 'sm:flex-row-reverse'
               }`}
-              style={{ opacity: 0 }}
             >
-              {/* Timeline dot */}
+              {/* Timeline dot (desktop) */}
               <div
                 ref={(el) => { if (el) dotsRef.current[index] = el }}
-                className="hidden sm:flex absolute left-1/2 -translate-x-1/2 w-12 h-12 rounded-full border-2 border-[var(--gold)] items-center justify-center z-10"
-                style={{ background: 'var(--cream)', opacity: 0 }}
+                className="hidden sm:flex absolute left-1/2 -translate-x-1/2 w-14 h-14 rounded-full items-center justify-center z-10"
+                style={{ opacity: 0 }}
               >
-                <span className="text-xs font-bold" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold-dark)' }}>
+                <svg width="56" height="56" viewBox="0 0 56 56" className="absolute inset-0">
+                  <circle
+                    cx="28" cy="28" r="26"
+                    fill="none"
+                    stroke="var(--gold)"
+                    strokeWidth="2"
+                    className="timeline-dot-ring"
+                    style={{ strokeDasharray: 163.36, strokeDashoffset: 163.36 }}
+                  />
+                </svg>
+                <span className="text-xs font-bold relative z-10" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold-dark)' }}>
                   {item.year}
                 </span>
               </div>
 
               {/* Content */}
               <div className={`w-full sm:w-[calc(50%-40px)] ${index % 2 === 0 ? 'sm:pr-12 sm:text-right' : 'sm:pl-12 sm:text-left'}`}>
-                <div className="bg-white/80 backdrop-blur-sm rounded-lg p-6 shadow-md border border-[var(--gold)]/20 relative overflow-hidden">
-                  {/* Animated border draw */}
-                  <div
-                    ref={(el) => { if (el) bordersRef.current[index] = el }}
-                    className="absolute inset-0 rounded-lg pointer-events-none"
-                    style={{
-                      clipPath: 'inset(0 100% 100% 0%)',
-                      border: '2px solid var(--gold)',
-                      opacity: 0.4,
-                    }}
-                  />
+                <div className="relative p-6 rounded-lg bg-white/80 backdrop-blur-sm shadow-md overflow-hidden" style={{ minHeight: '180px' }}>
+                  {/* SVG Border — drawn via stroke-dashoffset, scales to container */}
+                  <svg
+                    className="absolute inset-0 w-full h-full pointer-events-none"
+                    viewBox="0 0 400 180"
+                    preserveAspectRatio="none"
+                  >
+                    <path
+                      ref={(el) => { if (el) svgBordersRef.current[index] = el }}
+                      d="M 9 1 L 391 1 Q 399 1 399 9 L 399 171 Q 399 179 391 179 L 9 179 Q 1 179 1 171 L 1 9 Q 1 1 9 1 Z"
+                      fill="none"
+                      stroke="var(--gold)"
+                      strokeWidth="1.5"
+                      opacity="0.6"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                  </svg>
 
-                  {/* Decorative corner accent */}
-                  <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 opacity-30" style={{ borderColor: 'var(--gold)' }} />
-                  <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 opacity-30" style={{ borderColor: 'var(--gold)' }} />
+                  {/* Decorative SVG corner flourishes */}
+                  <svg className="absolute top-0 left-0 w-10 h-10 pointer-events-none" viewBox="0 0 40 40">
+                    <path
+                      d="M 2 38 L 2 8 Q 2 2 8 2 L 38 2"
+                      fill="none"
+                      stroke="var(--gold)"
+                      strokeWidth="1.5"
+                      opacity="0.35"
+                      className="svg-corner-flourish"
+                    />
+                  </svg>
+                  <svg className="absolute bottom-0 right-0 w-10 h-10 pointer-events-none" viewBox="0 0 40 40">
+                    <path
+                      d="M 38 2 L 38 32 Q 38 38 32 38 L 2 38"
+                      fill="none"
+                      stroke="var(--gold)"
+                      strokeWidth="1.5"
+                      opacity="0.35"
+                      className="svg-corner-flourish"
+                    />
+                  </svg>
 
-                  {/* Mobile year */}
+                  {/* Mobile year dot */}
                   <div className="sm:hidden flex items-center justify-center mb-3">
                     <div
                       ref={(el) => { if (el) mobileDotsRef.current[index] = el }}
@@ -747,16 +782,15 @@ function TimelineSection() {
 
                   <h3
                     ref={(el) => { if (el) titlesRef.current[index] = el }}
-                    className="text-xl sm:text-2xl mb-3"
+                    className="text-xl sm:text-2xl mb-3 relative z-10"
                     style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}
                   >
                     {item.title}
                   </h3>
 
-                  {/* Handwriting text area */}
                   <div
                     ref={(el) => { if (el) descriptionsRef.current[index] = el }}
-                    className="text-sm leading-relaxed min-h-[3em]"
+                    className="text-sm leading-relaxed min-h-[3em] relative z-10"
                     style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}
                   />
                 </div>
