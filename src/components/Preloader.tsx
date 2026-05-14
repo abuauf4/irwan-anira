@@ -203,7 +203,7 @@ export default function Preloader({ onComplete, groomName, brideName }: Preloade
 
       {/* Progress bar */}
       <div className="w-48 sm:w-64 relative">
-        <div className="h-[2px] w-full rounded-full" style={{ background: 'var(--gold)]' }} />
+        <div className="h-[2px] w-full rounded-full" style={{ background: 'var(--gold)' }} />
         <div
           ref={progressRef}
           className="h-[2px] absolute top-0 left-0 rounded-full"

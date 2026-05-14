@@ -687,6 +687,12 @@ html.lenis, html.lenis body {
   height: auto;
 }
 
+/* Typewriter cursor blinking animation */
+@keyframes typewriterBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
 .lenis.lenis-smooth {
   scroll-behavior: auto !important;
 }

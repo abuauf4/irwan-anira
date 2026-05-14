@@ -150,7 +150,7 @@ function CursorFollower() {
 // Cover / Hero Section - using enhanced CoverSection component
 // The CoverSectionComponent is imported and used directly in the Home component
 
-// Bismillah Section with text reveal
+// Bismillah Section with elegant reveal (Arabic kept intact to preserve cursive connections)
 function BismillahSection() {
   const sectionRef = useRef<HTMLDivElement>(null)
   const arabicRef = useRef<HTMLDivElement>(null)
@@ -162,34 +162,24 @@ function BismillahSection() {
       // Fade in the section
       fadeIn(sectionRef.current!, { y: 30 })
 
-      // Text reveal for Arabic
-      if (arabicRef.current && !prefersReducedMotion()) {
-        const text = arabicRef.current.textContent || ''
-        arabicRef.current.innerHTML = ''
-        const chars: HTMLSpanElement[] = []
-        for (const char of text) {
-          const span = document.createElement('span')
-          span.className = 'char'
-          span.style.display = 'inline-block'
-          span.style.willChange = 'transform, opacity'
-          span.style.opacity = '0'
-          span.style.transform = 'translateY(20px)'
-          span.textContent = char === ' ' ? '\u00A0' : char
-          arabicRef.current.appendChild(span)
-          chars.push(span)
-        }
-        gsap.to(chars, {
-          opacity: 1,
-          y: 0,
-          duration: 0.04,
-          stagger: 0.02,
-          ease: 'power2.out',
-          scrollTrigger: {
-            trigger: sectionRef.current!,
-            start: 'top 80%',
-            toggleActions: 'play none none none',
-          },
-        })
+      // Arabic text: animate as whole block to preserve cursive letter connections
+      // Splitting Arabic chars with inline-block breaks the connected script
+      if (arabicRef.current) {
+        gsap.fromTo(arabicRef.current,
+          { opacity: 0, scale: 0.85, filter: 'blur(8px)' },
+          {
+            opacity: 1,
+            scale: 1,
+            filter: 'blur(0px)',
+            duration: 1.5,
+            ease: 'power3.out',
+            scrollTrigger: {
+              trigger: sectionRef.current!,
+              start: 'top 80%',
+              toggleActions: 'play none none none',
+            },
+          }
+        )
       }
 
       fadeIn(quoteRef.current!, { delay: 0.5, y: 20 })
@@ -202,7 +192,7 @@ function BismillahSection() {
   return (
     <section ref={sectionRef} className="py-20 px-6 text-center" style={{ background: 'var(--cream)', opacity: 0 }}>
       <div className="max-w-2xl mx-auto">
-        <p ref={arabicRef} className="text-3xl sm:text-4xl mb-4" style={{ fontFamily: 'var(--font-arabic)', color: 'var(--brown)' }}>
+        <p ref={arabicRef} className="text-3xl sm:text-4xl md:text-5xl mb-6 leading-relaxed" style={{ fontFamily: 'var(--font-arabic)', color: 'var(--brown)', opacity: 0 }}>
           بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
         </p>
         <p ref={quoteRef} className="text-base sm:text-lg italic leading-relaxed" style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}>
@@ -342,32 +332,233 @@ function QuoteSection() {
   )
 }
 
-// Timeline Section with stagger from alternating sides
+// Typewriter effect hook - types text character by character
+function useTypewriter(text: string, speed: number = 30, startDelay: number = 0) {
+  const [displayText, setDisplayText] = useState('')
+  const [isTyping, setIsTyping] = useState(false)
+  const [isComplete, setIsComplete] = useState(false)
+  const startTypingRef = useRef<(() => void) | null>(null)
+
+  const startTyping = useCallback(() => {
+    if (isTyping || isComplete) return
+    setIsTyping(true)
+    setDisplayText('')
+    let i = 0
+    const interval = setInterval(() => {
+      if (i < text.length) {
+        setDisplayText(text.slice(0, i + 1))
+        i++
+      } else {
+        clearInterval(interval)
+        setIsTyping(false)
+        setIsComplete(true)
+      }
+    }, speed)
+  }, [text, speed, isTyping, isComplete])
+
+  startTypingRef.current = startTyping
+
+  return { displayText, isTyping, isComplete, startTyping: () => startTypingRef.current?.() }
+}
+
+// Individual Timeline Story Card with typewriter effect
+function TimelineStoryCard({ item, index, isVisible }: {
+  item: { year: string; title: string; description: string }
+  index: number
+  isVisible: boolean
+}) {
+  const { displayText, isComplete, startTyping } = useTypewriter(item.description, 25, 0)
+  const hasStarted = useRef(false)
+  const cardRef = useRef<HTMLDivElement>(null)
+  const titleRef = useRef<HTMLHeadingElement>(null)
+  const dotRef = useRef<HTMLDivElement>(null)
+
+  // Start typing when card becomes visible
+  useEffect(() => {
+    if (isVisible && !hasStarted.current) {
+      hasStarted.current = true
+
+      // Animate the dot appearing first
+      if (dotRef.current) {
+        gsap.fromTo(dotRef.current,
+          { scale: 0, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.5, ease: 'back.out(2)' }
+        )
+      }
+
+      // Then the title fades in
+      if (titleRef.current) {
+        gsap.fromTo(titleRef.current,
+          { opacity: 0, y: 15 },
+          { opacity: 1, y: 0, duration: 0.6, delay: 0.3, ease: 'power2.out' }
+        )
+      }
+
+      // Then start the typewriter after a short delay
+      setTimeout(() => {
+        startTyping()
+      }, 800)
+    }
+  }, [isVisible, startTyping])
+
+  // Blinking cursor effect while typing
+  const showCursor = isVisible && !isComplete && hasStarted.current
+
+  return (
+    <div
+      ref={cardRef}
+      className={`relative flex flex-col sm:flex-row items-center mb-16 last:mb-0 ${
+        index % 2 === 0 ? 'sm:flex-row' : 'sm:flex-row-reverse'
+      }`}
+    >
+      {/* Timeline dot */}
+      <div
+        ref={dotRef}
+        className="hidden sm:flex absolute left-1/2 -translate-x-1/2 w-12 h-12 rounded-full border-2 border-[var(--gold)] items-center justify-center z-10"
+        style={{ background: 'var(--cream)', opacity: 0 }}
+      >
+        <span className="text-xs font-bold" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold-dark)' }}>
+          {item.year}
+        </span>
+      </div>
+
+      {/* Content */}
+      <div className={`w-full sm:w-[calc(50%-40px)] ${index % 2 === 0 ? 'sm:pr-12 sm:text-right' : 'sm:pl-12 sm:text-left'}`}>
+        <div className="bg-white/80 backdrop-blur-sm rounded-lg p-6 shadow-md border border-[var(--gold)]/20 relative overflow-hidden">
+          {/* Decorative corner accent */}
+          <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 opacity-30" style={{ borderColor: 'var(--gold)' }} />
+          <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 opacity-30" style={{ borderColor: 'var(--gold)' }} />
+
+          {/* Mobile year */}
+          <div className="sm:hidden flex items-center justify-center mb-3">
+            <div className="w-12 h-12 rounded-full border-2 border-[var(--gold)] flex items-center justify-center" style={{ background: 'var(--cream)' }}>
+              <span className="text-xs font-bold" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold-dark)' }}>
+                {item.year}
+              </span>
+            </div>
+          </div>
+
+          <h3
+            ref={titleRef}
+            className="text-xl sm:text-2xl mb-3"
+            style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)', opacity: 0 }}
+          >
+            {item.title}
+          </h3>
+
+          {/* Typewriter text area */}
+          <div className="text-sm leading-relaxed min-h-[3em]" style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}>
+            <span>{displayText}</span>
+            {showCursor && (
+              <span
+                className="inline-block w-[2px] h-[1em] ml-[1px] align-middle"
+                style={{
+                  background: 'var(--gold)',
+                  animation: 'typewriterBlink 0.8s step-end infinite',
+                }}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Empty space for layout */}
+      <div className="hidden sm:block w-[calc(50%-40px)]" />
+    </div>
+  )
+}
+
+// Timeline Section with sequential typewriter storytelling
 function TimelineSection() {
   const sectionRef = useRef<HTMLDivElement>(null)
-  const itemsRef = useRef<HTMLDivElement[]>([])
+  const [visibleItems, setVisibleItems] = useState<Set<number>>(new Set())
 
   useEffect(() => {
     const ctx = gsap.context(() => {
+      // Fade in section title
       fadeIn(sectionRef.current!, { y: 30 })
-
-      itemsRef.current.forEach((item, index) => {
-        if (!item) return
-        const direction = index % 2 === 0 ? 'left' : 'right'
-        slideIn(item, direction, {
-          distance: 60,
-          delay: index * 0.1,
-          scrollTrigger: {
-            trigger: item,
-            start: 'top 85%',
-            toggleActions: 'play none none none',
-          },
-        })
-      })
     })
 
-    return () => ctx.revert()
+    // Set up IntersectionObserver for sequential reveal
+    // Each item triggers when scrolled into view, then types sequentially
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const index = Number(entry.target.getAttribute('data-index'))
+            if (!isNaN(index) && !visibleItems.has(index)) {
+              // Check if all previous items are already visible (sequential reveal)
+              setVisibleItems((prev) => {
+                const newSet = new Set(prev)
+                // Allow this item to be visible only if all previous are done
+                // or if it's the first item
+                let canShow = true
+                for (let i = 0; i < index; i++) {
+                  if (!prev.has(i)) {
+                    canShow = false
+                    break
+                  }
+                }
+                if (canShow) {
+                  newSet.add(index)
+                }
+                return newSet
+              })
+            }
+          }
+        })
+      },
+      { threshold: 0.3, rootMargin: '0px 0px -10% 0px' }
+    )
+
+    // Observe all timeline item containers
+    const items = sectionRef.current?.querySelectorAll('[data-timeline-item]')
+    items?.forEach((item) => observer.observe(item))
+
+    return () => {
+      ctx.revert()
+      observer.disconnect()
+    }
   }, [])
+
+  // Auto-reveal next items when previous ones complete typing
+  useEffect(() => {
+    // Check sequentially - if item N is visible, check if item N+1 is in viewport
+    const checkNextItems = () => {
+      if (!sectionRef.current) return
+
+      WEDDING.timeline.forEach((_, index) => {
+        if (visibleItems.has(index) && !visibleItems.has(index + 1) && index + 1 < WEDDING.timeline.length) {
+          const nextEl = sectionRef.current?.querySelector(`[data-index="${index + 1}"]`)
+          if (nextEl) {
+            const rect = nextEl.getBoundingClientRect()
+            const inView = rect.top < window.innerHeight * 0.85 && rect.bottom > 0
+            if (inView) {
+              // Add a delay before showing next card (feels like sequential storytelling)
+              setTimeout(() => {
+                setVisibleItems((prev) => {
+                  const newSet = new Set(prev)
+                  // Only add if all previous are visible
+                  let canShow = true
+                  for (let i = 0; i <= index; i++) {
+                    if (!prev.has(i)) {
+                      canShow = false
+                      break
+                    }
+                  }
+                  if (canShow) newSet.add(index + 1)
+                  return newSet
+                })
+              }, 2000) // 2 second pause between stories to feel like storytelling
+            }
+          }
+        }
+      })
+    }
+
+    const interval = setInterval(checkNextItems, 500)
+    return () => clearInterval(interval)
+  }, [visibleItems])
 
   return (
     <section ref={sectionRef} className="py-20 px-6" style={{ background: 'var(--cream)', opacity: 0 }}>
@@ -384,44 +575,12 @@ function TimelineSection() {
           <div className="timeline-line hidden sm:block" />
 
           {WEDDING.timeline.map((item, index) => (
-            <div
-              key={item.year}
-              ref={(el) => { if (el) itemsRef.current[index] = el }}
-              className={`relative flex flex-col sm:flex-row items-center mb-16 last:mb-0 ${
-                index % 2 === 0 ? 'sm:flex-row' : 'sm:flex-row-reverse'
-              }`}
-              style={{ opacity: 0 }}
-            >
-              {/* Timeline dot */}
-              <div className="hidden sm:flex absolute left-1/2 -translate-x-1/2 w-12 h-12 rounded-full border-2 border-[var(--gold)] items-center justify-center z-10"
-                style={{ background: 'var(--cream)' }}>
-                <span className="text-xs font-bold" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold-dark)' }}>
-                  {item.year}
-                </span>
-              </div>
-
-              {/* Content */}
-              <div className={`w-full sm:w-[calc(50%-40px)] ${index % 2 === 0 ? 'sm:pr-12 sm:text-right' : 'sm:pl-12 sm:text-left'}`}>
-                <div className="bg-white/80 backdrop-blur-sm rounded-lg p-6 shadow-md border border-[var(--gold)]/20">
-                  {/* Mobile year */}
-                  <div className="sm:hidden flex items-center justify-center mb-3">
-                    <div className="w-12 h-12 rounded-full border-2 border-[var(--gold)] flex items-center justify-center" style={{ background: 'var(--cream)' }}>
-                      <span className="text-xs font-bold" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold-dark)' }}>
-                        {item.year}
-                      </span>
-                    </div>
-                  </div>
-                  <h3 className="text-xl sm:text-2xl mb-3" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
-                    {item.title}
-                  </h3>
-                  <p className="text-sm leading-relaxed" style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}>
-                    {item.description}
-                  </p>
-                </div>
-              </div>
-
-              {/* Empty space for layout */}
-              <div className="hidden sm:block w-[calc(50%-40px)]" />
+            <div key={item.year} data-timeline-item data-index={index}>
+              <TimelineStoryCard
+                item={item}
+                index={index}
+                isVisible={visibleItems.has(index)}
+              />
             </div>
           ))}
         </div>
