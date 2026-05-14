@@ -44,12 +44,6 @@ const WEDDING = {
   lamaranDate: '31 Agustus 2025',
   timeline: [
     {
-      year: '2020',
-      title: 'Pertama Bertemu',
-      description:
-        'Tidak ada yang kebetulan di dunia ini, semua sudah tersusun rapih oleh sang maha kuasa, kita tidak bisa memilih kepada siapa kita akan jatuh cinta, awal kami bertemu pada tahun 2020. Tidak ada yang pernah meyangka bahwa pertemuan itu membawa kami pada suatu ikatan yang suci.',
-    },
-    {
       year: '2022',
       title: 'Mulai Dekat',
       description:
@@ -65,7 +59,7 @@ const WEDDING = {
       year: '2026',
       title: 'Menikah',
       description:
-        'Percayalah, bukan karena bertemu lalu berjodoh, tapi karna berjodoh lah kami dipertemukan. Atas izin Allah kami memutuskan untuk mengikrarkan janji suci pernikahan pada 05 Juli 2026.',
+        'Percayalah, bukan karena bertemu lalu berjodoh, tapi karena berjodohlah kami dipertemukan. Atas izin Allah kami memutuskan untuk mengikrarkan janji suci pernikahan pada 05 Juli 2026.',
     },
   ],
   galleryImages: [
@@ -126,8 +120,6 @@ function CursorFollower() {
     isTouchDevice.current = 'ontouchstart' in window || navigator.maxTouchPoints > 0
   }, [])
 
-  // Will be true on first render (SSR-safe), then update
-  // Since we use hidden sm:block, touch devices won't see it anyway
   if (typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0)) return null
 
   return (
@@ -147,9 +139,6 @@ function CursorFollower() {
 
 /* ===================== COMPONENTS ===================== */
 
-// Cover / Hero Section - using enhanced CoverSection component
-// The CoverSectionComponent is imported and used directly in the Home component
-
 // Bismillah Section with typewriter animation on the quote text
 function BismillahSection() {
   const sectionRef = useRef<HTMLDivElement>(null)
@@ -158,12 +147,71 @@ function BismillahSection() {
   const sourceRef = useRef<HTMLDivElement>(null)
   const hasAnimated = useRef(false)
 
+  // Typewriter effect: characters appear one by one with blinking cursor
+  function typewriterReveal(quoteEl: HTMLParagraphElement, sourceEl: HTMLParagraphElement) {
+    if (!quoteEl) return
+
+    const fullText = quoteEl.textContent || ''
+    quoteEl.innerHTML = ''
+
+    const cursor = document.createElement('span')
+    cursor.className = 'typewriter-cursor'
+    cursor.textContent = '|'
+    cursor.style.cssText = `
+      display: inline-block;
+      animation: typewriterBlink 0.7s step-end infinite;
+      color: var(--gold);
+      font-weight: 300;
+      margin-left: 1px;
+    `
+
+    const charSpans: HTMLSpanElement[] = []
+    for (let i = 0; i < fullText.length; i++) {
+      const span = document.createElement('span')
+      span.textContent = fullText[i]
+      span.style.opacity = '0'
+      span.style.display = 'inline'
+      quoteEl.appendChild(span)
+      charSpans.push(span)
+    }
+    quoteEl.appendChild(cursor)
+
+    const tl = gsap.timeline()
+
+    tl.to(charSpans, {
+      opacity: 1,
+      duration: 0.01,
+      stagger: 0.035,
+      ease: 'none',
+      onStart: () => {
+        if (sourceEl) {
+          gsap.set(sourceEl, { opacity: 0, y: 10 })
+        }
+      },
+    })
+
+    tl.to(cursor, {
+      opacity: 0,
+      duration: 0.3,
+      onComplete: () => {
+        cursor.remove()
+      },
+    }, '+=0.2')
+
+    if (sourceEl) {
+      tl.to(sourceEl, {
+        opacity: 1,
+        y: 0,
+        duration: 0.6,
+        ease: 'power2.out',
+      }, '-=0.1')
+    }
+  }
+
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // Fade in the section
       fadeIn(sectionRef.current!, { y: 30 })
 
-      // Arabic text: animate as whole block to preserve cursive letter connections
       if (arabicRef.current) {
         gsap.fromTo(arabicRef.current,
           { opacity: 0, scale: 0.85, filter: 'blur(8px)' },
@@ -182,7 +230,6 @@ function BismillahSection() {
         )
       }
 
-      // Typewriter animation on the quote text (Surah Ar-Rum: 21)
       const observer = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
@@ -204,73 +251,6 @@ function BismillahSection() {
 
     return () => ctx.revert()
   }, [])
-
-  // Typewriter effect: characters appear one by one with blinking cursor
-  const typewriterReveal = (quoteEl: HTMLParagraphElement, sourceEl: HTMLParagraphElement) => {
-    if (!quoteEl) return
-
-    const fullText = quoteEl.textContent || ''
-    quoteEl.innerHTML = ''
-
-    // Create cursor element
-    const cursor = document.createElement('span')
-    cursor.className = 'typewriter-cursor'
-    cursor.textContent = '|'
-    cursor.style.cssText = `
-      display: inline-block;
-      animation: typewriterBlink 0.7s step-end infinite;
-      color: var(--gold);
-      font-weight: 300;
-      margin-left: 1px;
-    `
-
-    // Create a span for each character
-    const charSpans: HTMLSpanElement[] = []
-    for (let i = 0; i < fullText.length; i++) {
-      const span = document.createElement('span')
-      span.textContent = fullText[i]
-      span.style.opacity = '0'
-      span.style.display = 'inline'
-      quoteEl.appendChild(span)
-      charSpans.push(span)
-    }
-    quoteEl.appendChild(cursor)
-
-    // Animate each character appearing
-    const tl = gsap.timeline()
-
-    tl.to(charSpans, {
-      opacity: 1,
-      duration: 0.01,
-      stagger: 0.035,
-      ease: 'none',
-      onStart: () => {
-        // Make source visible but keep it hidden until quote is done
-        if (sourceEl) {
-          gsap.set(sourceEl, { opacity: 0, y: 10 })
-        }
-      },
-    })
-
-    // Remove cursor and reveal source
-    tl.to(cursor, {
-      opacity: 0,
-      duration: 0.3,
-      onComplete: () => {
-        cursor.remove()
-      },
-    }, '+=0.2')
-
-    // Reveal the source line
-    if (sourceEl) {
-      tl.to(sourceEl, {
-        opacity: 1,
-        y: 0,
-        duration: 0.6,
-        ease: 'power2.out',
-      }, '-=0.1')
-    }
-  }
 
   return (
     <section ref={sectionRef} className="py-20 px-6 text-center" style={{ background: 'var(--cream)', opacity: 0 }}>
@@ -300,15 +280,12 @@ function CoupleSection() {
     const ctx = gsap.context(() => {
       fadeIn(sectionRef.current!, { y: 30 })
 
-      // Groom slides in from left with scale
       if (groomRef.current) {
         slideIn(groomRef.current, 'left', { distance: 100, delay: 0.3 })
       }
 
-      // Heart beats in
       scaleIn(heartRef.current!, { delay: 0.6, fromScale: 0 })
 
-      // Bride slides in from right with scale
       if (brideRef.current) {
         slideIn(brideRef.current, 'right', { distance: 100, delay: 0.3 })
       }
@@ -372,51 +349,140 @@ function CoupleSection() {
   )
 }
 
-// Quote Section with parallax
-function QuoteSection() {
+// Diary Intro Section — Paper texture background, handwriting reveal, scroll storytelling
+function DiaryIntroSection() {
   const sectionRef = useRef<HTMLDivElement>(null)
-  const bgRef = useRef<HTMLDivElement>(null)
-  const contentRef = useRef<HTMLDivElement>(null)
+  const textRef = useRef<HTMLDivElement>(null)
+  const strokeRef = useRef<HTMLDivElement>(null)
+  const hasAnimated = useRef(false)
+
+  function handwritingReveal(el: HTMLDivElement) {
+    if (!el) return
+    const fullText = el.textContent || ''
+    el.innerHTML = ''
+
+    const allChars: HTMLSpanElement[] = []
+    const words = fullText.split(' ')
+    words.forEach((word, wi) => {
+      const ws = document.createElement('span')
+      ws.style.cssText = 'white-space:nowrap;display:inline;'
+      for (let j = 0; j < word.length; j++) {
+        const cs = document.createElement('span')
+        cs.className = 'hw-char'
+        cs.style.cssText = 'display:inline-block;will-change:opacity,transform;opacity:0;transform:translateY(3px) rotate(-2deg);min-width:0.08em;'
+        cs.textContent = word[j]
+        ws.appendChild(cs)
+        allChars.push(cs)
+      }
+      el.appendChild(ws)
+      if (wi < words.length - 1) {
+        const sp = document.createElement('span')
+        sp.innerHTML = '\u00A0'
+        sp.style.display = 'inline'
+        el.appendChild(sp)
+      }
+    })
+
+    gsap.to(allChars, {
+      opacity: 1,
+      y: 0,
+      rotation: 0,
+      duration: 0.08,
+      stagger: 0.03,
+      ease: 'power1.out',
+    })
+  }
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // Parallax on background
-      if (bgRef.current) {
-        parallaxScroll(bgRef.current, { speed: 0.2 })
+      fadeIn(sectionRef.current!, { y: 30 })
+
+      // Ink stroke decoration draw-in
+      if (strokeRef.current) {
+        const svgPath = strokeRef.current.querySelector('path') as SVGPathElement | null
+        if (svgPath) {
+          try {
+            const len = svgPath.getTotalLength()
+            svgPath.style.strokeDasharray = String(len)
+            svgPath.style.strokeDashoffset = String(len)
+            gsap.to(svgPath, {
+              strokeDashoffset: 0,
+              duration: 2,
+              ease: 'power2.inOut',
+              scrollTrigger: {
+                trigger: sectionRef.current!,
+                start: 'top 75%',
+                toggleActions: 'play none none none',
+              },
+            })
+          } catch (e) {
+            // Fallback
+          }
+        }
       }
 
-      // Fade in content
-      fadeIn(contentRef.current!, { y: 40 })
+      // Handwriting reveal on scroll for the diary text
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting && !hasAnimated.current) {
+              hasAnimated.current = true
+              handwritingReveal(textRef.current!)
+            }
+          })
+        },
+        { threshold: 0.3 }
+      )
+
+      if (sectionRef.current) {
+        observer.observe(sectionRef.current)
+      }
+
+      return () => observer.disconnect()
     })
 
     return () => ctx.revert()
   }, [])
 
   return (
-    <section
-      ref={sectionRef}
-      className="relative py-24 px-6 text-center bg-cover bg-center overflow-hidden"
-    >
-      <div
-        ref={bgRef}
-        className="absolute inset-[-20%] bg-cover bg-center"
-        style={{ backgroundImage: "url('/images/quote-bg.jpg')" }}
-      />
-      <div className="absolute inset-0 bg-[var(--brown)]/70" />
-      <div ref={contentRef} className="relative z-10 max-w-2xl mx-auto" style={{ opacity: 0 }}>
-        <p className="text-2xl sm:text-3xl md:text-4xl italic leading-relaxed mb-6" style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold-light)' }}>
-          &ldquo;Apa yang menjadi takdirmu akan menemukan jalannya untuk menemukanmu.&rdquo;
+    <section ref={sectionRef} className="diary-paper-bg py-24 px-6 text-center relative overflow-hidden" style={{ opacity: 0 }}>
+      {/* Ink stroke decoration */}
+      <div ref={strokeRef} className="ink-stroke-line mb-8 max-w-xs mx-auto">
+        <svg viewBox="0 0 300 20" className="w-full h-5" fill="none">
+          <path
+            d="M 5 15 Q 50 2 100 12 Q 150 22 200 8 Q 250 -2 295 15"
+            stroke="var(--gold)"
+            strokeWidth="1.5"
+            fill="none"
+            opacity="0.5"
+          />
+        </svg>
+      </div>
+
+      <div className="max-w-xl mx-auto">
+        <p ref={textRef} className="text-lg sm:text-xl italic leading-relaxed min-h-[4em]" style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown)' }}>
+          Kehendak-Nya menuntun kami pada pertemuan yang tak pernah disangka...
         </p>
-        <p className="text-sm tracking-widest uppercase" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold-light)' }}>
-          — Sayidina Ali bin Abi Thalib
-        </p>
+      </div>
+
+      {/* Bottom ink stroke decoration */}
+      <div className="ink-stroke-line mt-8 max-w-xs mx-auto">
+        <svg viewBox="0 0 300 20" className="w-full h-5" fill="none">
+          <path
+            d="M 295 5 Q 250 18 200 8 Q 150 -2 100 12 Q 50 22 5 5"
+            stroke="var(--gold)"
+            strokeWidth="1.5"
+            fill="none"
+            opacity="0.5"
+          />
+        </svg>
       </div>
     </section>
   )
 }
 
 // Timeline Section — SVG Stroke Animation + Handwriting Reveal + Scroll Storytelling
-// Scroll drives the story: pin the section, each card animates as you scroll
+// Renamed to "Love Journey", 3 items, diary-note-card effect
 function TimelineSection() {
   const sectionRef = useRef<HTMLDivElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -448,7 +514,6 @@ function TimelineSection() {
       const allDescChars: HTMLSpanElement[][] = []
 
       WEDDING.timeline.forEach((item, i) => {
-        // Title chars
         const title = titles[i]
         if (title) {
           const text = title.textContent || ''
@@ -464,7 +529,6 @@ function TimelineSection() {
           allTitleChars.push(chars)
         }
 
-        // Description chars
         const desc = descriptions[i]
         if (desc) {
           desc.innerHTML = ''
@@ -501,7 +565,6 @@ function TimelineSection() {
             path.style.strokeDasharray = String(len)
             path.style.strokeDashoffset = String(len)
           } catch (e) {
-            // Fallback if getTotalLength fails
             path.style.strokeDasharray = '2000'
             path.style.strokeDashoffset = '2000'
           }
@@ -535,7 +598,6 @@ function TimelineSection() {
           scrub: 1,
           anticipatePin: 1,
           onUpdate: (self) => {
-            // Update progress bar
             if (progressBar) {
               gsap.set(progressBar, { scaleX: self.progress })
             }
@@ -543,10 +605,8 @@ function TimelineSection() {
         },
       })
 
-      // Section header reveal
       masterTl.to(section, { opacity: 1, duration: 0.3 })
 
-      // Timeline center line grows
       if (timelineLine) {
         masterTl.to(timelineLine, {
           scaleY: 1,
@@ -555,7 +615,6 @@ function TimelineSection() {
         })
       }
 
-      // Animate each card sequentially
       WEDDING.timeline.forEach((_, index) => {
         const card = cards[index]
         const svgPath = svgBorders[index]
@@ -566,7 +625,6 @@ function TimelineSection() {
 
         if (!card) return
 
-        // Card fades in and slides up
         masterTl.to(card, {
           opacity: 1,
           y: 0,
@@ -574,7 +632,6 @@ function TimelineSection() {
           ease: 'power2.out',
         })
 
-        // SVG border stroke draws in
         if (svgPath) {
           masterTl.to(svgPath, {
             strokeDashoffset: 0,
@@ -583,7 +640,6 @@ function TimelineSection() {
           }, '-=0.3')
         }
 
-        // SVG corner flourishes draw in
         const cardEl = card.querySelector('.relative') as HTMLDivElement | null
         if (cardEl) {
           const cornerPaths = cardEl.querySelectorAll('.svg-corner-flourish')
@@ -608,7 +664,6 @@ function TimelineSection() {
           }
         }
 
-        // Timeline dot pops in with SVG ring stroke
         if (dot) {
           const dotRing = dot.querySelector('.timeline-dot-ring') as SVGPathElement | null
           masterTl.to(dot, {
@@ -617,7 +672,6 @@ function TimelineSection() {
             duration: 0.4,
             ease: 'back.out(2.5)',
           }, '-=0.7')
-          // SVG ring stroke draws in
           if (dotRing) {
             const ringLen = dotRing.getTotalLength ? dotRing.getTotalLength() : 163.36
             dotRing.style.strokeDasharray = String(ringLen)
@@ -638,7 +692,6 @@ function TimelineSection() {
           }, '<')
         }
 
-        // Title handwriting reveal
         if (titleChars && titleChars.length > 0) {
           masterTl.to(titleChars, {
             opacity: 1,
@@ -650,7 +703,6 @@ function TimelineSection() {
           }, '-=0.5')
         }
 
-        // Description handwriting reveal
         if (descChars && descChars.length > 0) {
           masterTl.to(descChars, {
             opacity: 1,
@@ -662,13 +714,11 @@ function TimelineSection() {
           }, '-=0.2')
         }
 
-        // Pause between cards
         if (index < WEDDING.timeline.length - 1) {
           masterTl.to({}, { duration: 0.5 })
         }
       })
 
-      // Final: slight fade to close the chapter
       masterTl.to({}, { duration: 0.3 })
     })
 
@@ -686,14 +736,14 @@ function TimelineSection() {
 
       <div ref={wrapperRef} className="max-w-4xl mx-auto text-center">
         <h2 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
-          Cerita Kami
+          Love Journey
         </h2>
         <div className="ornament-divider max-w-xs mx-auto mb-16">
           <span className="text-[var(--gold)] text-lg">&#10047;</span>
         </div>
 
         <div className="relative">
-          {/* Center line (desktop) — SVG for stroke animation */}
+          {/* Center line (desktop) */}
           <div ref={timelineLineRef} className="hidden sm:block absolute left-1/2 top-0 bottom-0 w-[2px] -translate-x-1/2" style={{ background: 'linear-gradient(to bottom, transparent, var(--gold), transparent)', transformOrigin: 'top center', transform: 'scaleY(0)' }} />
 
           {WEDDING.timeline.map((item, index) => (
@@ -727,8 +777,8 @@ function TimelineSection() {
 
               {/* Content */}
               <div className={`w-full sm:w-[calc(50%-40px)] ${index % 2 === 0 ? 'sm:pr-12 sm:text-right' : 'sm:pl-12 sm:text-left'}`}>
-                <div className="relative p-6 rounded-lg bg-white/80 backdrop-blur-sm shadow-md overflow-hidden" style={{ minHeight: '180px' }}>
-                  {/* SVG Border — drawn via stroke-dashoffset, scales to container */}
+                <div className="diary-note-card relative p-6 rounded-lg bg-white/80 backdrop-blur-sm shadow-md overflow-hidden" style={{ minHeight: '180px' }}>
+                  {/* SVG Border */}
                   <svg
                     className="absolute inset-0 w-full h-full pointer-events-none"
                     viewBox="0 0 400 180"
@@ -806,6 +856,301 @@ function TimelineSection() {
   )
 }
 
+// Lamaran Section — Handwriting reveal, soft zoom photo, petal floating
+function LamaranSection() {
+  const sectionRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
+  const textRef = useRef<HTMLDivElement>(null)
+  const titleRef = useRef<HTMLHeadingElement>(null)
+  const photoRef = useRef<HTMLDivElement>(null)
+  const hasAnimated = useRef(false)
+
+  function handwritingReveal(el: HTMLDivElement) {
+    if (!el) return
+    const fullText = el.textContent || ''
+    el.innerHTML = ''
+
+    const allChars: HTMLSpanElement[] = []
+    const words = fullText.split(' ')
+    words.forEach((word, wi) => {
+      const ws = document.createElement('span')
+      ws.style.cssText = 'white-space:nowrap;display:inline;'
+      for (let j = 0; j < word.length; j++) {
+        const cs = document.createElement('span')
+        cs.className = 'hw-char'
+        cs.style.cssText = 'display:inline-block;will-change:opacity,transform;opacity:0;transform:translateY(3px) rotate(-2deg);min-width:0.08em;'
+        cs.textContent = word[j]
+        ws.appendChild(cs)
+        allChars.push(cs)
+      }
+      el.appendChild(ws)
+      if (wi < words.length - 1) {
+        const sp = document.createElement('span')
+        sp.innerHTML = '\u00A0'
+        sp.style.display = 'inline'
+        el.appendChild(sp)
+      }
+    })
+
+    gsap.to(allChars, {
+      opacity: 1,
+      y: 0,
+      rotation: 0,
+      duration: 0.08,
+      stagger: 0.025,
+      ease: 'power1.out',
+      delay: 0.3,
+    })
+  }
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      fadeIn(sectionRef.current!, { y: 30 })
+
+      // Soft zoom on photo
+      if (photoRef.current) {
+        gsap.fromTo(photoRef.current,
+          { scale: 1.15, opacity: 0 },
+          {
+            scale: 1.05,
+            opacity: 1,
+            duration: 2,
+            ease: 'power2.out',
+            scrollTrigger: {
+              trigger: sectionRef.current!,
+              start: 'top 70%',
+              toggleActions: 'play none none none',
+            },
+          }
+        )
+      }
+
+      // Title fade in
+      if (titleRef.current) {
+        gsap.fromTo(titleRef.current,
+          { opacity: 0, y: 20, letterSpacing: '0.5em' },
+          {
+            opacity: 1,
+            y: 0,
+            letterSpacing: '0.3em',
+            duration: 1.2,
+            ease: 'power2.out',
+            scrollTrigger: {
+              trigger: sectionRef.current!,
+              start: 'top 75%',
+              toggleActions: 'play none none none',
+            },
+          }
+        )
+      }
+
+      // Handwriting reveal for text
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting && !hasAnimated.current) {
+              hasAnimated.current = true
+              handwritingReveal(textRef.current!)
+            }
+          })
+        },
+        { threshold: 0.3 }
+      )
+
+      if (sectionRef.current) {
+        observer.observe(sectionRef.current)
+      }
+
+      return () => observer.disconnect()
+    })
+
+    return () => ctx.revert()
+  }, [])
+
+  return (
+    <section ref={sectionRef} className="relative py-24 px-6 text-center overflow-hidden" style={{ opacity: 0 }}>
+      {/* Background with soft zoom */}
+      <div
+        ref={photoRef}
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: "url('/images/quote-bg.jpg')", opacity: 0 }}
+      />
+      <div className="absolute inset-0 bg-[var(--cream-dark)]/85" />
+
+      {/* Subtle petal overlay */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[10%] left-[15%] w-3 h-3 rounded-full opacity-20 animate-float" style={{ background: 'var(--gold-light)', animationDelay: '0s' }} />
+        <div className="absolute top-[30%] right-[20%] w-2 h-2 rounded-full opacity-15 animate-float" style={{ background: 'var(--gold)', animationDelay: '1.5s' }} />
+        <div className="absolute bottom-[25%] left-[25%] w-2 h-2 rounded-full opacity-15 animate-float" style={{ background: 'var(--gold-light)', animationDelay: '3s' }} />
+      </div>
+
+      <div ref={contentRef} className="relative z-10 max-w-2xl mx-auto">
+        <h3
+          ref={titleRef}
+          className="text-2xl sm:text-3xl tracking-[0.3em] uppercase mb-8"
+          style={{ fontFamily: 'var(--font-body)', color: 'var(--gold-dark)', opacity: 0 }}
+        >
+          LAMARAN
+        </h3>
+
+        <div className="ornament-divider max-w-xs mx-auto mb-8">
+          <span className="text-[var(--gold)] text-lg">&#10047;</span>
+        </div>
+
+        <p ref={textRef} className="text-base sm:text-lg italic leading-relaxed min-h-[6em]" style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown)' }}>
+          Kehendak-Nya menuntun kami pada pertemuan yang tak pernah disangka hingga akhirnya membawa kami pada sebuah ikatan suci yang dicintai-Nya, kami melangsungkan acara lamaran pada 31 Agustus 2025.
+        </p>
+      </div>
+    </section>
+  )
+}
+
+// Menikah Section — Cinematic fade with slow zoom background, gold light leak
+function MenikahSection() {
+  const sectionRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
+  const textRef = useRef<HTMLDivElement>(null)
+  const titleRef = useRef<HTMLHeadingElement>(null)
+  const bgRef = useRef<HTMLDivElement>(null)
+  const hasAnimated = useRef(false)
+
+  function handwritingReveal(el: HTMLDivElement) {
+    if (!el) return
+    const fullText = el.textContent || ''
+    el.innerHTML = ''
+
+    const allChars: HTMLSpanElement[] = []
+    const words = fullText.split(' ')
+    words.forEach((word, wi) => {
+      const ws = document.createElement('span')
+      ws.style.cssText = 'white-space:nowrap;display:inline;'
+      for (let j = 0; j < word.length; j++) {
+        const cs = document.createElement('span')
+        cs.className = 'hw-char'
+        cs.style.cssText = 'display:inline-block;will-change:opacity,transform;opacity:0;transform:translateY(3px) rotate(-2deg);min-width:0.08em;'
+        cs.textContent = word[j]
+        ws.appendChild(cs)
+        allChars.push(cs)
+      }
+      el.appendChild(ws)
+      if (wi < words.length - 1) {
+        const sp = document.createElement('span')
+        sp.innerHTML = '\u00A0'
+        sp.style.display = 'inline'
+        el.appendChild(sp)
+      }
+    })
+
+    gsap.to(allChars, {
+      opacity: 1,
+      y: 0,
+      rotation: 0,
+      duration: 0.08,
+      stagger: 0.02,
+      ease: 'power1.out',
+      delay: 0.5,
+    })
+  }
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      fadeIn(sectionRef.current!, { y: 30 })
+
+      // Cinematic slow zoom on background
+      if (bgRef.current) {
+        gsap.fromTo(bgRef.current,
+          { scale: 1 },
+          {
+            scale: 1.15,
+            duration: 20,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: sectionRef.current!,
+              start: 'top bottom',
+              end: 'bottom top',
+              scrub: true,
+            },
+          }
+        )
+      }
+
+      // Title cinematic fade
+      if (titleRef.current) {
+        gsap.fromTo(titleRef.current,
+          { opacity: 0, y: 30, scale: 0.9, filter: 'blur(8px)' },
+          {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            filter: 'blur(0px)',
+            duration: 1.5,
+            ease: 'power3.out',
+            scrollTrigger: {
+              trigger: sectionRef.current!,
+              start: 'top 70%',
+              toggleActions: 'play none none none',
+            },
+          }
+        )
+      }
+
+      // Handwriting reveal for text
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting && !hasAnimated.current) {
+              hasAnimated.current = true
+              handwritingReveal(textRef.current!)
+            }
+          })
+        },
+        { threshold: 0.3 }
+      )
+
+      if (sectionRef.current) {
+        observer.observe(sectionRef.current)
+      }
+
+      return () => observer.disconnect()
+    })
+
+    return () => ctx.revert()
+  }, [])
+
+  return (
+    <section ref={sectionRef} className="relative py-28 px-6 text-center overflow-hidden" style={{ opacity: 0 }}>
+      {/* Background with slow zoom */}
+      <div
+        ref={bgRef}
+        className="absolute inset-[-5%] bg-cover bg-center"
+        style={{ backgroundImage: "url('/images/countdown-bg.jpg')" }}
+      />
+      <div className="absolute inset-0 bg-[var(--brown)]/80" />
+
+      {/* Gold light leak overlay */}
+      <div className="gold-light-leak absolute inset-0 pointer-events-none" />
+
+      <div ref={contentRef} className="relative z-10 max-w-2xl mx-auto">
+        <h3
+          ref={titleRef}
+          className="text-3xl sm:text-4xl tracking-[0.3em] uppercase mb-8"
+          style={{ fontFamily: 'var(--font-body)', color: 'var(--gold-light)', opacity: 0 }}
+        >
+          MENIKAH
+        </h3>
+
+        <div className="ornament-divider max-w-xs mx-auto mb-8">
+          <span className="text-[var(--gold)] text-lg">&#10047;</span>
+        </div>
+
+        <p ref={textRef} className="text-base sm:text-lg italic leading-relaxed min-h-[8em]" style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold-light)' }}>
+          Percayalah, bukan karena bertemu lalu berjodoh, tapi karena berjodohlah kami dipertemukan. Atas izin Allah kami memutuskan untuk mengikrarkan janji suci pernikahan pada 05 Juli 2026. Sebagaimana yang pernah dikatakan oleh Sayyidina Ali bin Abi Thalib: &ldquo;Apa yang menjadi takdirmu akan menemukan jalannya untuk menemukanmu.&rdquo;
+        </p>
+      </div>
+    </section>
+  )
+}
+
 // Countdown Section with animated numbers
 function CountdownSection() {
   const { days, hours, minutes, seconds } = useCountdown(WEDDING.akadDate)
@@ -818,12 +1163,10 @@ function CountdownSection() {
     const ctx = gsap.context(() => {
       fadeIn(sectionRef.current!, { y: 30 })
 
-      // Parallax on background
       if (bgRef.current) {
         parallaxScroll(bgRef.current, { speed: 0.15 })
       }
 
-      // Animate each countdown number with a scale + counter effect on first view
       numbersRef.current.forEach((el, i) => {
         if (!el) return
         scaleIn(el, {
@@ -841,7 +1184,6 @@ function CountdownSection() {
     return () => ctx.revert()
   }, [])
 
-  // GSAP animation on number changes
   useEffect(() => {
     if (!hasAnimated.current && days > 0) {
       hasAnimated.current = true
@@ -1046,7 +1388,7 @@ function EventSection() {
   )
 }
 
-// Gallery Section with cascade stagger and enhanced lightbox
+// Gallery Section — Polaroid Memory Gallery with rotation, paper frame, hover zoom
 function GallerySection() {
   const [lightbox, setLightbox] = useState<number | null>(null)
   const [slideshow, setSlideshow] = useState(false)
@@ -1060,7 +1402,6 @@ function GallerySection() {
     const ctx = gsap.context(() => {
       fadeIn(sectionRef.current!, { y: 30 })
 
-      // Stagger reveal for gallery images
       const validImages = imagesRef.current.filter(Boolean)
       staggerReveal(validImages, {
         y: 40,
@@ -1145,6 +1486,11 @@ function GallerySection() {
     setImageKey(k => k + 1)
   }
 
+  // Alternating rotation for polaroid effect
+  const rotations = WEDDING.galleryImages.map((_, i) =>
+    i % 2 === 0 ? -2 : 1.5
+  )
+
   return (
     <section ref={sectionRef} className="py-20 px-6" style={{ background: 'var(--cream)', opacity: 0 }}>
       <div className="max-w-4xl mx-auto text-center">
@@ -1160,14 +1506,14 @@ function GallerySection() {
             <div
               key={index}
               ref={(el) => { if (el) imagesRef.current[index] = el }}
-              className="relative aspect-square overflow-hidden rounded-lg cursor-pointer group border border-[var(--gold)]/20"
+              className="polaroid-frame relative aspect-square overflow-hidden cursor-pointer group"
               onClick={() => openLightbox(index)}
-              style={{ opacity: 0 }}
+              style={{ opacity: 0, transform: `rotate(${rotations[index]}deg)` }}
             >
               <img
                 src={src}
                 alt={`Gallery ${index + 1}`}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               />
               <div className="absolute inset-0 bg-[var(--brown)]/0 group-hover:bg-[var(--brown)]/30 transition-all duration-300 flex items-center justify-center">
                 <svg className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1249,7 +1595,6 @@ function GallerySection() {
                 ← Prev
               </button>
 
-              {/* Slideshow toggle */}
               <button
                 onClick={(e) => { e.stopPropagation(); setSlideshow(!slideshow) }}
                 className={`px-4 py-2 rounded-lg text-sm cursor-pointer transition-all duration-300 ${
@@ -1279,203 +1624,180 @@ function GallerySection() {
   )
 }
 
-// RSVP Section
-function RSVPSection() {
+// Closing Section — Diary page closing animation, jasmine petals, gold shimmer names
+function ClosingSection() {
   const sectionRef = useRef<HTMLDivElement>(null)
-  const formRef = useRef<HTMLFormElement>(null)
-  const [formData, setFormData] = useState({ name: '', attendance: '', guests: '1', message: '' })
-  const [submitted, setSubmitted] = useState(false)
+  const text1Ref = useRef<HTMLDivElement>(null)
+  const text2Ref = useRef<HTMLDivElement>(null)
+  const doaRef = useRef<HTMLDivElement>(null)
+  const namesRef = useRef<HTMLDivElement>(null)
+  const hasAnimated = useRef(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setSubmitted(true)
+  function createHandwritingChars(el: HTMLDivElement): HTMLSpanElement[] {
+    const fullText = el.textContent || ''
+    el.innerHTML = ''
+
+    const allChars: HTMLSpanElement[] = []
+    const words = fullText.split(' ')
+    words.forEach((word, wi) => {
+      const ws = document.createElement('span')
+      ws.style.cssText = 'white-space:nowrap;display:inline;'
+      for (let j = 0; j < word.length; j++) {
+        const cs = document.createElement('span')
+        cs.className = 'hw-char'
+        cs.style.cssText = 'display:inline-block;will-change:opacity,transform;opacity:0;transform:translateY(3px) rotate(-2deg);min-width:0.08em;'
+        cs.textContent = word[j]
+        ws.appendChild(cs)
+        allChars.push(cs)
+      }
+      el.appendChild(ws)
+      if (wi < words.length - 1) {
+        const sp = document.createElement('span')
+        sp.innerHTML = '\u00A0'
+        sp.style.display = 'inline'
+        el.appendChild(sp)
+      }
+    })
+    return allChars
+  }
+
+  function runClosingAnimation() {
+    const tl = gsap.timeline()
+
+    // Text 1 handwriting reveal
+    if (text1Ref.current) {
+      const chars = createHandwritingChars(text1Ref.current)
+      tl.to(chars, {
+        opacity: 1,
+        y: 0,
+        rotation: 0,
+        duration: 0.06,
+        stagger: 0.02,
+        ease: 'power1.out',
+      })
+    }
+
+    // Text 2 handwriting reveal
+    if (text2Ref.current) {
+      const chars = createHandwritingChars(text2Ref.current)
+      tl.to(chars, {
+        opacity: 1,
+        y: 0,
+        rotation: 0,
+        duration: 0.06,
+        stagger: 0.02,
+        ease: 'power1.out',
+      }, '-=0.3')
+    }
+
+    // Doa fades in
+    if (doaRef.current) {
+      tl.to(doaRef.current, {
+        opacity: 1,
+        y: 0,
+        duration: 0.8,
+        ease: 'power2.out',
+      }, '-=0.2')
+    }
+
+    // Names with gold shimmer
+    if (namesRef.current) {
+      tl.fromTo(namesRef.current,
+        { opacity: 0, scale: 0.8, filter: 'blur(6px)' },
+        {
+          opacity: 1,
+          scale: 1,
+          filter: 'blur(0px)',
+          duration: 1,
+          ease: 'power3.out',
+        },
+        '-=0.4'
+      )
+    }
   }
 
   useEffect(() => {
     const ctx = gsap.context(() => {
       fadeIn(sectionRef.current!, { y: 30 })
-      fadeIn(formRef.current!, { delay: 0.3, y: 20 })
+
+      // Diary page closing animation triggered on scroll
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting && !hasAnimated.current) {
+              hasAnimated.current = true
+              runClosingAnimation()
+            }
+          })
+        },
+        { threshold: 0.2 }
+      )
+
+      if (sectionRef.current) {
+        observer.observe(sectionRef.current)
+      }
+
+      return () => observer.disconnect()
     })
 
     return () => ctx.revert()
   }, [])
 
   return (
-    <section ref={sectionRef} className="py-20 px-6" style={{ background: 'var(--cream-dark)', opacity: 0 }}>
-      <div className="max-w-lg mx-auto text-center">
-        <h2 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
-          Konfirmasi Kehadiran
-        </h2>
-        <div className="ornament-divider max-w-xs mx-auto mb-4">
-          <span className="text-[var(--gold)] text-lg">&#10047;</span>
+    <section ref={sectionRef} className="diary-page-close relative py-28 px-6 text-center overflow-hidden" style={{ background: 'var(--cream-dark)', opacity: 0 }}>
+      {/* Jasmine petals floating */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[5%] left-[10%] w-3 h-3 rounded-full opacity-25 animate-float" style={{ background: 'var(--gold-light)', animationDelay: '0s' }} />
+        <div className="absolute top-[15%] right-[12%] w-2 h-2 rounded-full opacity-20 animate-float" style={{ background: 'var(--gold)', animationDelay: '2s' }} />
+        <div className="absolute top-[40%] left-[8%] w-2 h-2 rounded-full opacity-20 animate-float" style={{ background: 'var(--gold-light)', animationDelay: '4s' }} />
+        <div className="absolute top-[55%] right-[15%] w-3 h-3 rounded-full opacity-15 animate-float" style={{ background: 'var(--gold)', animationDelay: '1s' }} />
+        <div className="absolute bottom-[20%] left-[20%] w-2 h-2 rounded-full opacity-20 animate-float" style={{ background: 'var(--gold-light)', animationDelay: '3s' }} />
+        <div className="absolute bottom-[35%] right-[10%] w-3 h-3 rounded-full opacity-15 animate-float" style={{ background: 'var(--gold)', animationDelay: '5s' }} />
+      </div>
+
+      <div className="relative z-10 max-w-2xl mx-auto">
+        {/* Ink stroke top */}
+        <div className="ink-stroke-line mb-10 max-w-xs mx-auto">
+          <svg viewBox="0 0 300 20" className="w-full h-5" fill="none">
+            <path
+              d="M 5 15 Q 50 2 100 12 Q 150 22 200 8 Q 250 -2 295 15"
+              stroke="var(--gold)"
+              strokeWidth="1.5"
+              fill="none"
+              opacity="0.4"
+            />
+          </svg>
         </div>
-        <p className="text-sm mb-8" style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}>
-          Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir untuk memberikan doa restu kepada kami.
+
+        <p ref={text1Ref} className="text-lg sm:text-xl italic leading-relaxed mb-6 min-h-[2em]" style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown)' }}>
+          Dan seperti semua cerita indah yang dituliskan semesta, kisah kami baru saja dimulai.
         </p>
 
-        {submitted ? (
-          <div ref={formRef} className="bg-white/80 rounded-lg p-8 border border-[var(--gold)]/20">
-            <div className="text-4xl mb-4">&#10084;</div>
-            <h3 className="text-2xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
-              Terima Kasih!
-            </h3>
-            <p style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}>
-              Konfirmasi kehadiran Anda telah kami terima. Sampai jumpa di hari bahagia kami!
-            </p>
+        <p ref={text2Ref} className="text-base sm:text-lg italic leading-relaxed mb-8 min-h-[3em]" style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}>
+          Terima kasih telah menjadi bagian dari perjalanan kecil kami menuju selamanya.
+        </p>
+
+        <div ref={doaRef} className="bg-white/60 backdrop-blur-sm rounded-lg p-6 border border-[var(--gold)]/20 max-w-lg mx-auto mb-10" style={{ opacity: 0 }}>
+          <p className="text-sm sm:text-base leading-relaxed italic" style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown)' }}>
+            Semoga Allah senantiasa memberkahi rumah tangga kami dengan sakinah, mawaddah, dan rahmah.
+          </p>
+        </div>
+
+        {/* Nama mempelai with gold shimmer */}
+        <div ref={namesRef} style={{ opacity: 0 }}>
+          <h3 className="gold-shimmer text-4xl sm:text-5xl mb-2" style={{ fontFamily: 'var(--font-script)' }}>
+            Irwan & Anira
+          </h3>
+          <div className="ornament-divider max-w-[120px] mx-auto mt-4">
+            <span className="text-[var(--gold)] text-xs">&#10047;</span>
           </div>
-        ) : (
-          <form ref={formRef} onSubmit={handleSubmit} className="bg-white/80 backdrop-blur-sm rounded-lg p-8 shadow-md border border-[var(--gold)]/20 text-left" style={{ opacity: 0 }}>
-            <div className="mb-4">
-              <label className="block text-sm mb-1 font-medium" style={{ fontFamily: 'var(--font-body)', color: 'var(--brown)' }}>
-                Nama
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-2 border border-[var(--gold)]/30 rounded-lg focus:border-[var(--gold)] focus:outline-none transition-colors"
-                style={{ background: 'var(--cream)' }}
-                placeholder="Masukkan nama Anda"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm mb-1 font-medium" style={{ fontFamily: 'var(--font-body)', color: 'var(--brown)' }}>
-                Konfirmasi Kehadiran
-              </label>
-              <select
-                required
-                value={formData.attendance}
-                onChange={(e) => setFormData({ ...formData, attendance: e.target.value })}
-                className="w-full px-4 py-2 border border-[var(--gold)]/30 rounded-lg focus:border-[var(--gold)] focus:outline-none transition-colors"
-                style={{ background: 'var(--cream)' }}
-              >
-                <option value="">Pilih konfirmasi</option>
-                <option value="hadir">Hadir</option>
-                <option value="tidak">Tidak Hadir</option>
-                <option value="ragu">Masih Ragu</option>
-              </select>
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm mb-1 font-medium" style={{ fontFamily: 'var(--font-body)', color: 'var(--brown)' }}>
-                Jumlah Tamu
-              </label>
-              <select
-                value={formData.guests}
-                onChange={(e) => setFormData({ ...formData, guests: e.target.value })}
-                className="w-full px-4 py-2 border border-[var(--gold)]/30 rounded-lg focus:border-[var(--gold)] focus:outline-none transition-colors"
-                style={{ background: 'var(--cream)' }}
-              >
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <option key={n} value={n}>{n} orang</option>
-                ))}
-              </select>
-            </div>
-            <div className="mb-6">
-              <label className="block text-sm mb-1 font-medium" style={{ fontFamily: 'var(--font-body)', color: 'var(--brown)' }}>
-                Ucapan & Doa
-              </label>
-              <textarea
-                rows={4}
-                value={formData.message}
-                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                className="w-full px-4 py-2 border border-[var(--gold)]/30 rounded-lg focus:border-[var(--gold)] focus:outline-none transition-colors resize-none"
-                style={{ background: 'var(--cream)' }}
-                placeholder="Tuliskan ucapan dan doa Anda untuk kedua mempelai..."
-              />
-            </div>
-            <button
-              type="submit"
-              className="w-full py-3 border-2 border-[var(--gold)] text-[var(--brown)] tracking-[0.15em] uppercase text-sm
-                hover:bg-[var(--gold)] hover:text-white transition-all duration-300 cursor-pointer"
-              style={{ fontFamily: 'var(--font-body)' }}
-            >
-              Kirim Konfirmasi
-            </button>
-          </form>
-        )}
+        </div>
       </div>
     </section>
   )
 }
 
-// Gift Section
-function GiftSection() {
-  const sectionRef = useRef<HTMLDivElement>(null)
-  const [showBank, setShowBank] = useState<string | null>(null)
-
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      fadeIn(sectionRef.current!, { y: 30 })
-    })
-
-    return () => ctx.revert()
-  }, [])
-
-  return (
-    <section ref={sectionRef} className="py-20 px-6" style={{ background: 'var(--cream)', opacity: 0 }}>
-      <div className="max-w-lg mx-auto text-center">
-        <h2 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
-          Amplop Digital
-        </h2>
-        <div className="ornament-divider max-w-xs mx-auto mb-4">
-          <span className="text-[var(--gold)] text-lg">&#10047;</span>
-        </div>
-        <p className="text-sm mb-8" style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}>
-          Doa restu Anda merupakan karunia yang sangat berarti bagi kami. Namun jika Anda ingin memberikan tanda kasih, kami menyediakan amplop digital.
-        </p>
-
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button
-            onClick={() => setShowBank(showBank === 'groom' ? null : 'groom')}
-            className="flex-1 px-6 py-4 border-2 border-[var(--gold)] rounded-lg hover:bg-[var(--gold)] hover:text-white transition-all duration-300 cursor-pointer"
-            style={{ fontFamily: 'var(--font-body)', color: showBank === 'groom' ? 'white' : 'var(--brown)', background: showBank === 'groom' ? 'var(--gold)' : 'transparent' }}
-          >
-            <span className="text-xs tracking-widest uppercase block mb-1">Amplop untuk</span>
-            <span className="text-lg" style={{ fontFamily: 'var(--font-script)' }}>{WEDDING.groom.split(' ')[0]}</span>
-          </button>
-          <button
-            onClick={() => setShowBank(showBank === 'bride' ? null : 'bride')}
-            className="flex-1 px-6 py-4 border-2 border-[var(--gold)] rounded-lg hover:bg-[var(--gold)] hover:text-white transition-all duration-300 cursor-pointer"
-            style={{ fontFamily: 'var(--font-body)', color: showBank === 'bride' ? 'white' : 'var(--brown)', background: showBank === 'bride' ? 'var(--gold)' : 'transparent' }}
-          >
-            <span className="text-xs tracking-widest uppercase block mb-1">Amplop untuk</span>
-            <span className="text-lg" style={{ fontFamily: 'var(--font-script)' }}>{WEDDING.bride.split(' ')[0]}</span>
-          </button>
-        </div>
-
-        {showBank && (
-          <div className="mt-6 bg-white/80 rounded-lg p-6 border border-[var(--gold)]/20 animate-fade-in-up">
-            <p className="text-xs tracking-widest uppercase mb-3" style={{ fontFamily: 'var(--font-body)', color: 'var(--brown-light)' }}>
-              Rekening {showBank === 'groom' ? WEDDING.groom.split(' ')[0] : WEDDING.bride.split(' ')[0]}
-            </p>
-            <div className="py-4 px-6 rounded-lg" style={{ background: 'var(--cream)' }}>
-              <p className="text-sm mb-1" style={{ fontFamily: 'var(--font-body)', color: 'var(--brown-light)' }}>Bank Central Asia (BCA)</p>
-              <p className="text-xl font-medium tracking-wider" style={{ fontFamily: 'var(--font-body)', color: 'var(--brown)' }}>
-                {showBank === 'groom' ? '1234567890' : '0987654321'}
-              </p>
-              <p className="text-sm mt-1" style={{ fontFamily: 'var(--font-body)', color: 'var(--brown-light)' }}>
-                a.n. {showBank === 'groom' ? WEDDING.groom : WEDDING.bride}
-              </p>
-            </div>
-            <button
-              onClick={() => {
-                const number = showBank === 'groom' ? '1234567890' : '0987654321'
-                navigator.clipboard.writeText(number)
-              }}
-              className="mt-3 px-4 py-1.5 text-xs tracking-wider uppercase border border-[var(--gold)] rounded hover:bg-[var(--gold)] hover:text-white transition-all duration-300 cursor-pointer"
-              style={{ fontFamily: 'var(--font-body)', color: 'var(--brown)' }}
-            >
-              Salin Nomor Rekening
-            </button>
-          </div>
-        )}
-      </div>
-    </section>
-  )
-}
-
-// Footer Section
+// Footer Section — With "Forever starts with Bismillah.", gold shimmer, batik pattern
 function FooterSection() {
   const sectionRef = useRef<HTMLDivElement>(null)
   const bgRef = useRef<HTMLDivElement>(null)
@@ -1495,7 +1817,7 @@ function FooterSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative py-20 px-6 text-center overflow-hidden"
+      className="relative py-20 px-6 text-center overflow-hidden batik-kawung-dark"
     >
       <div
         ref={bgRef}
@@ -1503,31 +1825,34 @@ function FooterSection() {
         style={{ backgroundImage: "url('/images/footer-bg.jpg')" }}
       />
       <div className="absolute inset-0 bg-[var(--brown)]/80" />
+      {/* Batik pattern overlay */}
+      <div className="absolute inset-0 batik-kawung-dark pointer-events-none opacity-30" />
+
       <div ref={contentRef} className="relative z-10 max-w-2xl mx-auto" style={{ opacity: 0 }}>
         <p className="text-sm tracking-[0.3em] uppercase mb-4" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold-light)' }}>
           Terima Kasih
         </p>
-        <h2 className="text-4xl sm:text-5xl md:text-6xl mb-4" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-light)' }}>
+        <h2 className="gold-shimmer text-4xl sm:text-5xl md:text-6xl mb-4" style={{ fontFamily: 'var(--font-script)' }}>
           Irwan & Anira
         </h2>
         <div className="ornament-divider max-w-xs mx-auto mb-6">
           <span className="text-[var(--gold)] text-lg">&#10047;</span>
         </div>
-        <p className="text-sm leading-relaxed" style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold-light)' }}>
+        <p className="text-sm leading-relaxed mb-4" style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold-light)' }}>
           Atas kehadiran dan doa restu yang kalian berikan,<br />
           kami mengucapkan terima kasih.<br />
           Semoga Allah membalas kebaikan kalian.
         </p>
-        <p className="mt-8 text-xs tracking-wider" style={{ fontFamily: 'var(--font-body)', color: 'rgba(201, 169, 110, 0.6)' }}>
+        <p className="text-base italic tracking-wider mb-6" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-light)' }}>
+          Forever starts with Bismillah.
+        </p>
+        <p className="text-xs tracking-wider" style={{ fontFamily: 'var(--font-body)', color: 'rgba(201, 169, 110, 0.6)' }}>
           05 . 07 . 2026
         </p>
       </div>
     </section>
   )
 }
-
-// Music Player - using enhanced MusicPlayerComponent
-// The MusicPlayerComponent is imported and used directly in the Home component
 
 /* ===================== MAIN PAGE ===================== */
 export default function Home() {
@@ -1543,7 +1868,6 @@ export default function Home() {
 
   const handleOpen = useCallback(() => {
     setIsOpen(true)
-    // Auto play music
     if (audioRef.current) {
       audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {})
     }
@@ -1559,14 +1883,12 @@ export default function Home() {
     }
   }, [isPlaying])
 
-  // Hero section animation after opening
   const heroRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!isOpen || !heroRef.current) return
 
     const ctx = gsap.context(() => {
-      // Animate hero content in
       const hero = heroRef.current!
       const children = hero.querySelectorAll('.hero-animate')
 
@@ -1583,7 +1905,6 @@ export default function Home() {
         }
       )
 
-      // Parallax on hero background
       const heroBg = hero.querySelector('.hero-bg-parallax')
       if (heroBg) {
         parallaxScroll(heroBg, { speed: 0.2 })
@@ -1610,7 +1931,7 @@ export default function Home() {
       {/* Cursor follower (desktop only) */}
       {!isLoading && <CursorFollower />}
 
-      {/* Cover - always visible first - using enhanced envelope CoverSection */}
+      {/* Cover - always visible first */}
       {!isOpen && !isLoading && (
         <CoverSectionComponent onOpen={handleOpen} />
       )}
@@ -1646,14 +1967,15 @@ export default function Home() {
           <div ref={mainContentRef}>
             <BismillahSection />
             <CoupleSection />
-            <QuoteSection />
+            <DiaryIntroSection />
             <TimelineSection />
+            <LamaranSection />
+            <MenikahSection />
             <CountdownSection />
             <EventSection />
             <GallerySection />
-            <RSVPSection />
             <GuestWishes />
-            <GiftSection />
+            <ClosingSection />
             <FooterSection />
           </div>
 

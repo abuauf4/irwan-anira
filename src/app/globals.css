@@ -726,3 +726,129 @@ html.lenis, html.lenis body {
 .lenis.lenis-smooth iframe {
   pointer-events: none;
 }
+
+/* ========================================
+   LOVE DIARY CINEMATIC STYLES
+   ======================================== */
+
+/* Diary paper background - warm aged paper texture */
+.diary-paper-bg {
+  background-color: var(--cream-dark);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E"),
+    linear-gradient(135deg, rgba(166, 123, 61, 0.05) 0%, transparent 50%, rgba(166, 123, 61, 0.03) 100%);
+  background-repeat: repeat;
+  background-size: 200px 200px, 100% 100%;
+  position: relative;
+}
+
+.diary-paper-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(253, 248, 240, 0.5), transparent 20%, transparent 80%, rgba(253, 248, 240, 0.5));
+  pointer-events: none;
+}
+
+/* Diary note card - paper note effect with subtle shadow & rotation */
+.diary-note-card {
+  background: linear-gradient(145deg, #fffcf5, #f8f0e0);
+  box-shadow:
+    2px 3px 8px rgba(92, 74, 50, 0.1),
+    0 1px 3px rgba(92, 74, 50, 0.06),
+    inset 0 0 0 1px rgba(201, 169, 110, 0.08);
+  transform: rotate(-0.5deg);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+}
+
+.diary-note-card::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  right: 12px;
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(135deg, rgba(201, 169, 110, 0.3), rgba(201, 169, 110, 0.1));
+  border-radius: 2px;
+  transform: rotate(15deg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.diary-note-card:hover {
+  transform: rotate(0deg) translateY(-2px);
+  box-shadow:
+    4px 6px 16px rgba(92, 74, 50, 0.15),
+    0 2px 6px rgba(92, 74, 50, 0.08),
+    inset 0 0 0 1px rgba(201, 169, 110, 0.12);
+}
+
+/* Polaroid frame - photo frame with white border & shadow */
+.polaroid-frame {
+  background: white;
+  padding: 8px 8px 28px 8px;
+  border-radius: 2px;
+  box-shadow:
+    2px 4px 12px rgba(0, 0, 0, 0.12),
+    0 1px 4px rgba(0, 0, 0, 0.06);
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+.polaroid-frame:hover {
+  box-shadow:
+    4px 8px 24px rgba(0, 0, 0, 0.18),
+    0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Gold light leak overlay effect */
+.gold-light-leak {
+  background:
+    radial-gradient(ellipse at 20% 20%, rgba(201, 169, 110, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(212, 184, 122, 0.1) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 0%, rgba(201, 169, 110, 0.08) 0%, transparent 60%);
+  animation: lightLeakPulse 8s ease-in-out infinite;
+}
+
+@keyframes lightLeakPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* Ink stroke line - decorative ink stroke decoration */
+.ink-stroke-line {
+  position: relative;
+}
+
+.ink-stroke-line svg path {
+  will-change: stroke-dashoffset;
+}
+
+/* Diary page close - closing animation for diary */
+.diary-page-close {
+  position: relative;
+}
+
+@keyframes diaryClose {
+  0% {
+    opacity: 1;
+    transform: scale(1) perspective(800px);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.95) perspective(800px) rotateX(2deg);
+  }
+}
+
+/* Reduced motion overrides for new diary classes */
+@media (prefers-reduced-motion: reduce) {
+  .diary-note-card {
+    transform: none !important;
+  }
+  .polaroid-frame {
+    transform: none !important;
+  }
+  .gold-light-leak {
+    animation: none !important;
+    opacity: 0.8 !important;
+  }
+}
