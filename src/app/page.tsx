@@ -134,7 +134,7 @@ function handwritingReveal(
     rotation: 0,
     duration: charDuration,
     stagger,
-    ease: 'power1.out',
+    ease: 'power2.out',
     delay,
   })
 }
@@ -283,7 +283,7 @@ function BismillahSection() {
   }, [])
 
   return (
-    <section ref={sectionRef} className="cinema-dark-section cinema-vignette py-28 px-6 text-center relative overflow-hidden" style={{ opacity: 0 }}>
+    <section ref={sectionRef} className="cinema-dark-section cinema-vignette cinema-bloom cinema-dust py-28 px-6 text-center relative overflow-hidden" style={{ opacity: 0 }}>
       {/* Soft golden light spots */}
       <div className="gold-light-leak absolute inset-0 pointer-events-none" />
       <div className="max-w-2xl mx-auto relative z-10">
@@ -326,6 +326,8 @@ function CoupleSection() {
   const heartRef = useRef<HTMLDivElement>(null)
   const groomNameRef = useRef<HTMLHeadingElement>(null)
   const brideNameRef = useRef<HTMLHeadingElement>(null)
+  const groomParentsRef = useRef<HTMLParagraphElement>(null)
+  const brideParentsRef = useRef<HTMLParagraphElement>(null)
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -440,13 +442,50 @@ function CoupleSection() {
           }
         )
       }
+
+      // Parents text — gentle fade-in
+      if (groomParentsRef.current) {
+        gsap.fromTo(groomParentsRef.current,
+          { opacity: 0, y: 8 },
+          {
+            opacity: 0.8,
+            y: 0,
+            duration: 1,
+            delay: 1.2,
+            ease: 'power2.out',
+            scrollTrigger: {
+              trigger: sectionRef.current!,
+              start: 'top 85%',
+              toggleActions: 'play none none none',
+            },
+          }
+        )
+      }
+
+      if (brideParentsRef.current) {
+        gsap.fromTo(brideParentsRef.current,
+          { opacity: 0, y: 8 },
+          {
+            opacity: 0.8,
+            y: 0,
+            duration: 1,
+            delay: 1.2,
+            ease: 'power2.out',
+            scrollTrigger: {
+              trigger: sectionRef.current!,
+              start: 'top 85%',
+              toggleActions: 'play none none none',
+            },
+          }
+        )
+      }
     })
 
     return () => ctx.revert()
   }, [])
 
   return (
-    <section ref={sectionRef} className="cinema-dark-section cinema-vignette py-28 px-6 relative overflow-hidden" style={{ opacity: 0 }}>
+    <section ref={sectionRef} className="cinema-dark-section cinema-vignette cinema-bloom cinema-dust py-28 px-6 relative overflow-hidden" style={{ opacity: 0 }}>
       {/* Soft golden light spots */}
       <div className="gold-light-leak absolute inset-0 pointer-events-none" />
 
@@ -454,6 +493,7 @@ function CoupleSection() {
         <h2 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-light)' }}>
           Mempelai
         </h2>
+        <p className="text-sm italic mb-10" style={{ fontFamily: 'var(--font-serif)', color: 'var(--cream)', opacity: 0.6 }}>Dua jiwa, satu kisah</p>
         <div className="ornament-divider max-w-xs mx-auto mb-14">
           <span className="text-[var(--gold)] text-lg">&#10047;</span>
         </div>
@@ -461,7 +501,7 @@ function CoupleSection() {
         <div className="flex flex-col md:flex-row items-center justify-center gap-12 md:gap-20">
           {/* Groom */}
           <div ref={groomRef} className="text-center" style={{ opacity: 0 }}>
-            <div className="w-36 h-36 sm:w-44 sm:h-44 rounded-full overflow-hidden mx-auto mb-6 border-2 border-[var(--gold)] shadow-lg">
+            <div className="couple-photo-frame w-36 h-36 sm:w-44 sm:h-44 rounded-full overflow-hidden mx-auto mb-6 border-2 border-[var(--gold)] shadow-lg">
               <img src="/images/groom.jpg" alt={WEDDING.groom} className="w-full h-full object-cover" />
             </div>
             <h3 ref={groomNameRef} className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-light)', opacity: 0 }}>
@@ -470,7 +510,7 @@ function CoupleSection() {
             <div className="ornament-divider max-w-[120px] mx-auto mb-3">
               <span className="text-[var(--gold)] text-xs">&#10047;</span>
             </div>
-            <p className="text-sm italic" style={{ fontFamily: 'var(--font-serif)', color: 'var(--cream)', opacity: 0.8 }}>
+            <p ref={groomParentsRef} className="text-sm italic" style={{ fontFamily: 'var(--font-serif)', color: 'var(--cream)', opacity: 0 }}>
               Putra dari<br />
               <span className="not-italic font-medium" style={{ color: 'var(--cream)' }}>{WEDDING.groomParents}</span>
             </p>
@@ -487,7 +527,7 @@ function CoupleSection() {
 
           {/* Bride */}
           <div ref={brideRef} className="text-center" style={{ opacity: 0 }}>
-            <div className="w-36 h-36 sm:w-44 sm:h-44 rounded-full overflow-hidden mx-auto mb-6 border-2 border-[var(--gold)] shadow-lg">
+            <div className="couple-photo-frame w-36 h-36 sm:w-44 sm:h-44 rounded-full overflow-hidden mx-auto mb-6 border-2 border-[var(--gold)] shadow-lg">
               <img src="/images/bride.jpg" alt={WEDDING.bride} className="w-full h-full object-cover" />
             </div>
             <h3 ref={brideNameRef} className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-light)', opacity: 0 }}>
@@ -496,7 +536,7 @@ function CoupleSection() {
             <div className="ornament-divider max-w-[120px] mx-auto mb-3">
               <span className="text-[var(--gold)] text-xs">&#10047;</span>
             </div>
-            <p className="text-sm italic" style={{ fontFamily: 'var(--font-serif)', color: 'var(--cream)', opacity: 0.8 }}>
+            <p ref={brideParentsRef} className="text-sm italic" style={{ fontFamily: 'var(--font-serif)', color: 'var(--cream)', opacity: 0 }}>
               Putri dari<br />
               <span className="not-italic font-medium" style={{ color: 'var(--cream)' }}>{WEDDING.brideParents}</span>
             </p>
@@ -594,7 +634,7 @@ function DiaryIntroSection() {
   return (
     <section
       ref={sectionRef}
-      className="diary-paper-bg diary-lines diary-margin py-28 px-6 text-center relative overflow-hidden"
+      className="diary-paper-bg diary-lines diary-margin cinema-depth py-28 px-6 text-center relative overflow-hidden"
       style={{ opacity: 0 }}
     >
       {/* Diary entry date — top left like a journal */}
@@ -622,8 +662,8 @@ function DiaryIntroSection() {
         {/* The diary quote */}
         <p
           ref={textRef}
-          className="text-lg sm:text-xl italic leading-relaxed min-h-[4em]"
-          style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown)' }}
+          className="text-xl sm:text-2xl italic leading-relaxed min-h-[4em]"
+          style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown)', opacity: 0.85 }}
         >
           Kehendak-Nya menuntun kami pada pertemuan yang tak pernah disangka...
         </p>
@@ -759,7 +799,7 @@ function TimelineSection() {
           start: 'top 10%',
           end: `+=${WEDDING.timeline.length * 150}%`,
           pin: true,
-          scrub: 1.5,
+          scrub: 1.2,
           anticipatePin: 1,
           onUpdate: (self) => {
             if (progressBar) {
@@ -799,7 +839,7 @@ function TimelineSection() {
         if (svgPath) {
           masterTl.to(svgPath, {
             strokeDashoffset: 0,
-            duration: 1.5,
+            duration: 1.0,
             ease: 'power2.inOut',
           }, '-=0.4')
         }
@@ -822,10 +862,10 @@ function TimelineSection() {
           if (cornerPaths.length > 0) {
             masterTl.to(cornerPaths, {
               strokeDashoffset: 0,
-              duration: 0.75,
+              duration: 0.5,
               stagger: 0.15,
               ease: 'power2.inOut',
-            }, '-=0.75')
+            }, '-=0.5')
           }
         }
 
@@ -844,7 +884,7 @@ function TimelineSection() {
             dotRing.style.strokeDashoffset = String(ringLen)
             masterTl.to(dotRing, {
               strokeDashoffset: 0,
-              duration: 0.9,
+              duration: 0.6,
               ease: 'power2.inOut',
             }, '-=0.4')
           }
@@ -858,45 +898,45 @@ function TimelineSection() {
           }, '<')
         }
 
-        // Title handwriting — FIXED: faster stagger 0.05
+        // Title handwriting — FIXED: faster stagger 0.04
         if (titleChars && titleChars.length > 0) {
           masterTl.to(titleChars, {
             opacity: 1,
             y: 0,
             rotation: 0,
             duration: 0.3,
-            stagger: 0.05,
+            stagger: 0.04,
             ease: 'power2.out',
-          }, '-=0.75')
+          }, '-=0.6')
         }
 
-        // Description handwriting — FIXED: faster stagger 0.022
+        // Description handwriting — FIXED: faster stagger 0.018
         if (descChars && descChars.length > 0) {
           masterTl.to(descChars, {
             opacity: 1,
             y: 0,
             rotation: 0,
             duration: 0.12,
-            stagger: 0.022,
-            ease: 'power1.out',
-          }, '-=0.3')
+            stagger: 0.018,
+            ease: 'power2.out',
+          }, '-=0.2')
         }
 
-        // FIXED: Shorter gap between cards (0.4 instead of 0.75)
+        // FIXED: Shorter gap between cards (0.2 for smooth flow)
         if (index < WEDDING.timeline.length - 1) {
-          masterTl.to({}, { duration: 0.4 })
+          masterTl.to({}, { duration: 0.2 })
         }
       })
 
-      // FIXED: Shorter end padding (0.3 instead of 0.5)
-      masterTl.to({}, { duration: 0.3 })
+      // FIXED: Shorter end padding (0.15 for natural finish)
+      masterTl.to({}, { duration: 0.15 })
     })
 
     return () => ctx.revert()
   }, [])
 
   return (
-    <section ref={sectionRef} className="sidomukti-pattern py-28 px-6 relative" style={{ opacity: 0 }}>
+    <section ref={sectionRef} className="sidomukti-pattern cinema-depth py-28 px-6 relative" style={{ opacity: 0 }}>
       {/* Progress bar — thin, 1px, gold gradient */}
       <div
         ref={progressRef}
@@ -906,8 +946,8 @@ function TimelineSection() {
 
       <div ref={wrapperRef} className="max-w-4xl mx-auto text-center">
         {/* FIXED: Title font changed to serif italic — diary handwriting feel */}
-        <h2 className="text-3xl sm:text-4xl mb-2 italic" style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold-dark)' }}>
-          Love Journey
+        <h2 className="text-3xl sm:text-4xl mb-2 italic" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
+          Love Story
         </h2>
         <div className="ornament-divider max-w-xs mx-auto mb-16">
           <span className="text-[var(--gold)] text-lg">&#10047;</span>
@@ -952,7 +992,7 @@ function TimelineSection() {
 
               {/* Content */}
               <div className={`w-full sm:w-[calc(50%-40px)] ${index % 2 === 0 ? 'sm:pr-12 sm:text-right' : 'sm:pl-12 sm:text-left'}`}>
-                <div className="diary-note-card relative p-6 rounded-lg bg-white/80 backdrop-blur-sm shadow-md overflow-hidden" style={{ minHeight: '180px' }}>
+                <div className="diary-note-card diary-note-card-vignette relative p-6 rounded-lg bg-white/80 backdrop-blur-sm shadow-md overflow-hidden" style={{ minHeight: '180px' }}>
                   {/* SVG Border */}
                   <svg
                     className="absolute inset-0 w-full h-full pointer-events-none"
@@ -994,7 +1034,7 @@ function TimelineSection() {
                   <h3
                     ref={(el) => { if (el) titlesRef.current[index] = el }}
                     className="text-xl sm:text-2xl mb-3 relative z-10"
-                    style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}
+                    style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold-dark)', fontStyle: 'italic' }}
                   >
                     {item.title}
                   </h3>
@@ -1033,7 +1073,7 @@ function CountdownSection() {
   }, [])
 
   return (
-    <section ref={sectionRef} className="batik-kawung py-28 px-6 text-center" style={{ opacity: 0 }}>
+    <section ref={sectionRef} className="batik-kawung cinema-depth py-28 px-6 text-center" style={{ opacity: 0 }}>
       <div className="max-w-2xl mx-auto">
         <h2 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
           Menghitung Hari
@@ -1223,22 +1263,36 @@ function GallerySection() {
     const ctx = gsap.context(() => {
       fadeIn(sectionRef.current!, { duration: 1.2, y: 20 })
 
-      // Animate each polaroid with stagger reveal
+      // Animate each polaroid with stagger reveal — memories being placed into a diary
       const polaroids = sectionRef.current!.querySelectorAll('.polaroid-frame')
       if (polaroids.length > 0) {
         gsap.fromTo(polaroids,
-          { opacity: 0, y: 40, scale: 0.9 },
+          { opacity: 0, y: 30, scale: 0.92, rotate: -2 },
           {
             opacity: 1,
             y: 0,
             scale: 1,
-            duration: 0.8,
-            stagger: 0.15,
-            ease: 'power2.out',
+            rotate: 0,
+            duration: 1.2,
+            stagger: 0.25,
+            ease: 'power3.out',
             scrollTrigger: {
               trigger: sectionRef.current!,
               start: 'top 80%',
               toggleActions: 'play none none none',
+            },
+            onComplete: () => {
+              // Subtle continuous floating animation for each polaroid
+              polaroids.forEach((polaroid, index) => {
+                gsap.to(polaroid, {
+                  y: '+=2',
+                  duration: 3,
+                  ease: 'sine.inOut',
+                  yoyo: true,
+                  repeat: -1,
+                  delay: 1 + index * 0.25,
+                })
+              })
             },
           }
         )
@@ -1297,7 +1351,7 @@ function GallerySection() {
   }
 
   return (
-    <section ref={sectionRef} className="diary-paper-bg py-28 px-6" style={{ opacity: 0 }}>
+    <section ref={sectionRef} className="diary-paper-bg cinema-depth py-28 px-6" style={{ opacity: 0 }}>
       <div className="max-w-4xl mx-auto text-center">
         <h2 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
           Momen Kami
@@ -1311,7 +1365,7 @@ function GallerySection() {
           {WEDDING.galleryImages.map((img, index) => (
             <div
               key={index}
-              className="polaroid-frame cursor-pointer mx-auto"
+              className="polaroid-frame polaroid-layered cursor-pointer mx-auto"
               style={{
                 transform: `rotate(${rotations.current[index]}deg)`,
                 maxWidth: '240px',
@@ -1418,12 +1472,15 @@ function ClosingSection() {
   const subtitleRef = useRef<HTMLDivElement>(null)
   const doaRef = useRef<HTMLDivElement>(null)
   const footerLineRef = useRef<HTMLDivElement>(null)
+  const finalLineRef = useRef<HTMLDivElement>(null)
+  const shimmerRef = useRef<HTMLDivElement>(null)
+  const hasFinalAnimated = useRef(false)
 
   useEffect(() => {
     const ctx = gsap.context(() => {
       fadeIn(sectionRef.current!, { duration: 1.2, y: 20 })
 
-      // Title — cinematic blur reveal
+      // Title — cinematic blur reveal (slower pacing)
       if (titleRef.current) {
         gsap.fromTo(titleRef.current,
           { opacity: 0, filter: 'blur(8px)', y: 20 },
@@ -1431,7 +1488,8 @@ function ClosingSection() {
             opacity: 1,
             filter: 'blur(0px)',
             y: 0,
-            duration: 2,
+            duration: 2.5,
+            delay: 0.8,
             ease: 'power3.out',
             scrollTrigger: {
               trigger: sectionRef.current!,
@@ -1448,8 +1506,8 @@ function ClosingSection() {
           {
             opacity: 1,
             y: 0,
-            duration: 1.2,
-            delay: 0.5,
+            duration: 1.5,
+            delay: 1.2,
             ease: 'power3.out',
             scrollTrigger: {
               trigger: sectionRef.current!,
@@ -1466,8 +1524,8 @@ function ClosingSection() {
           {
             opacity: 1,
             y: 0,
-            duration: 1.2,
-            delay: 0.8,
+            duration: 1.5,
+            delay: 1.8,
             ease: 'power3.out',
             scrollTrigger: {
               trigger: sectionRef.current!,
@@ -1484,7 +1542,7 @@ function ClosingSection() {
           {
             opacity: 1,
             duration: 1,
-            delay: 1.2,
+            delay: 2.5,
             ease: 'power2.out',
             scrollTrigger: {
               trigger: sectionRef.current!,
@@ -1494,15 +1552,64 @@ function ClosingSection() {
           }
         )
       }
+
+      // Final handwriting sentence — emotional peak
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting && !hasFinalAnimated.current) {
+              hasFinalAnimated.current = true
+              // Handwriting reveal for the final line
+              setTimeout(() => {
+                if (finalLineRef.current) {
+                  gsap.set(finalLineRef.current, { opacity: 1 })
+                  handwritingReveal(finalLineRef.current, 0.04, 0.1, 0.5)
+                }
+                // Golden shimmer sweep after handwriting completes
+                setTimeout(() => {
+                  if (shimmerRef.current) {
+                    gsap.fromTo(shimmerRef.current,
+                      { opacity: 0, x: -100 },
+                      {
+                        opacity: 0.15,
+                        x: window.innerWidth,
+                        duration: 2,
+                        ease: 'power1.inOut',
+                        onComplete: () => {
+                          gsap.set(shimmerRef.current!, { opacity: 0 })
+                        },
+                      }
+                    )
+                  }
+                }, 2500)
+              }, 500)
+            }
+          })
+        },
+        { threshold: 0.5 }
+      )
+
+      if (sectionRef.current) {
+        observer.observe(sectionRef.current)
+      }
+
+      return () => observer.disconnect()
     })
 
     return () => ctx.revert()
   }, [])
 
   return (
-    <section ref={sectionRef} className="batik-kawung-dark relative py-28 px-6 text-center overflow-hidden" style={{ opacity: 0 }}>
+    <section ref={sectionRef} className="batik-kawung-dark cinema-vignette cinema-bloom cinema-dust diary-page-close relative py-28 px-6 text-center overflow-hidden" style={{ opacity: 0 }}>
       {/* Gold light leak */}
       <div className="gold-light-leak absolute inset-0 pointer-events-none" />
+
+      {/* Golden shimmer sweep */}
+      <div
+        ref={shimmerRef}
+        className="absolute inset-0 pointer-events-none z-20"
+        style={{ background: 'linear-gradient(90deg, transparent, rgba(201,169,110,0.1), transparent)', opacity: 0 }}
+      />
 
       <div className="relative z-10 max-w-2xl mx-auto">
         <div ref={titleRef} style={{ opacity: 0 }}>
@@ -1549,10 +1656,19 @@ function ClosingSection() {
 
         <div ref={footerLineRef} style={{ opacity: 0 }}>
           <p
-            className="text-sm italic"
+            className="text-sm italic gold-shimmer-text"
             style={{ fontFamily: 'var(--font-serif)', color: 'var(--cream)', opacity: 0.6 }}
           >
             Forever starts with Bismillah.
+          </p>
+        </div>
+
+        {/* Final handwriting — emotional peak */}
+        <div ref={finalLineRef} className="mt-8 min-h-[2em]" style={{ opacity: 0 }}>
+          <p
+            style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold)', opacity: 0.6, fontStyle: 'italic' }}
+          >
+            Cerita kami belum selesai...
           </p>
         </div>
       </div>
@@ -1639,14 +1755,17 @@ export default function Home() {
 
     const autoScroll = () => {
       if (userScrollingRef.current) return
-      window.scrollBy(0, 0.5) // 0.5px per frame, very slow
+      // Pause gracefully at the bottom of the page
+      const atBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 1)
+      if (atBottom) return
+      window.scrollBy(0, 0.4) // 0.4px per frame, very gentle
       animationId = requestAnimationFrame(autoScroll)
     }
 
-    // Start auto-scroll after a short delay
+    // Start auto-scroll after a short delay — let user breathe
     const startTimeout = setTimeout(() => {
       animationId = requestAnimationFrame(autoScroll)
-    }, 1000)
+    }, 2000)
 
     // Detect manual scroll — stop auto-scroll
     const onWheel = () => {
@@ -1654,11 +1773,14 @@ export default function Home() {
       cancelAnimationFrame(animationId)
       clearTimeout(resumeTimeout)
 
-      // Resume after 4 seconds of no interaction
+      // Resume after 5 seconds of no interaction — give user time to explore
       resumeTimeout = setTimeout(() => {
         userScrollingRef.current = false
-        animationId = requestAnimationFrame(autoScroll)
-      }, 4000)
+        const atBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 1)
+        if (!atBottom) {
+          animationId = requestAnimationFrame(autoScroll)
+        }
+      }, 5000)
     }
 
     const onTouchStart = () => {
@@ -1668,8 +1790,11 @@ export default function Home() {
 
       resumeTimeout = setTimeout(() => {
         userScrollingRef.current = false
-        animationId = requestAnimationFrame(autoScroll)
-      }, 4000)
+        const atBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 1)
+        if (!atBottom) {
+          animationId = requestAnimationFrame(autoScroll)
+        }
+      }, 5000)
     }
 
     window.addEventListener('wheel', onWheel, { passive: true })

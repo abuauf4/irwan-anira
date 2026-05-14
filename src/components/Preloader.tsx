@@ -18,6 +18,7 @@ export default function Preloader({ onComplete, groomName, brideName }: Preloade
   const progressRef = useRef<HTMLDivElement>(null)
   const ornamentRef = useRef<HTMLDivElement>(null)
   const inkDropRef = useRef<HTMLDivElement>(null)
+  const goldenTintRef = useRef<HTMLDivElement>(null)
 
   const groomFirst = groomName.split(' ')[0]
   const brideFirst = brideName.split(' ')[0]
@@ -38,9 +39,18 @@ export default function Preloader({ onComplete, groomName, brideName }: Preloade
 
     const tl = gsap.timeline({
       onComplete: () => {
-        // Cinematic fade out — like closing the diary cover
+        // Cinematic fade out — "the projector turning on"
+        // Golden tint appears during the last 0.5s
+        gsap.to(goldenTintRef.current, {
+          opacity: 0.15,
+          duration: 0.5,
+          ease: 'power1.in',
+        })
+
+        // Scale up slightly + fade out
         gsap.to(containerRef.current, {
           opacity: 0,
+          scale: 1.03,
           duration: 1.2,
           ease: 'power2.inOut',
           onComplete: () => onCompleteRef.current(),
@@ -70,7 +80,7 @@ export default function Preloader({ onComplete, groomName, brideName }: Preloade
       },
     }, 0.5)
 
-    // Animate groom name — slow, letter by letter, like being written
+    // Animate groom name — slightly faster stagger for less mechanical feel
     tl.fromTo(
       groomCharsRef.current,
       { opacity: 0, y: 15, filter: 'blur(4px)' },
@@ -79,13 +89,13 @@ export default function Preloader({ onComplete, groomName, brideName }: Preloade
         y: 0,
         filter: 'blur(0px)',
         duration: 0.5,
-        stagger: 0.1,
+        stagger: 0.08,
         ease: 'power2.out',
       },
       0.8
     )
 
-    // Ampersand — gentle fade, no wild spin
+    // Ampersand — snappier duration
     tl.fromTo(
       ampersandRef.current,
       { opacity: 0, scale: 0.8, filter: 'blur(4px)' },
@@ -93,13 +103,13 @@ export default function Preloader({ onComplete, groomName, brideName }: Preloade
         opacity: 1,
         scale: 1,
         filter: 'blur(0px)',
-        duration: 0.8,
+        duration: 0.6,
         ease: 'power2.out',
       },
       1.5
     )
 
-    // Animate bride name
+    // Animate bride name — slightly faster stagger
     tl.fromTo(
       brideCharsRef.current,
       { opacity: 0, y: 15, filter: 'blur(4px)' },
@@ -108,7 +118,7 @@ export default function Preloader({ onComplete, groomName, brideName }: Preloade
         y: 0,
         filter: 'blur(0px)',
         duration: 0.5,
-        stagger: 0.1,
+        stagger: 0.08,
         ease: 'power2.out',
       },
       1.8
@@ -137,8 +147,21 @@ export default function Preloader({ onComplete, groomName, brideName }: Preloade
     <div
       ref={containerRef}
       className="fixed inset-0 z-[9999] flex flex-col items-center justify-center"
-      style={{ background: '#F5EDDF' }}
+      style={{
+        background: 'linear-gradient(135deg, #F5EDDF 0%, #EDE4D4 50%, #F5EDDF 100%)',
+        transformOrigin: 'center center',
+      }}
     >
+      {/* Golden tint overlay — appears during cinematic exit */}
+      <div
+        ref={goldenTintRef}
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'radial-gradient(ellipse at center, rgba(201,169,110,0.2) 0%, transparent 60%)',
+          opacity: 0,
+        }}
+      />
+
       {/* Vignette overlay — dark edges for cinematic depth */}
       <div className="absolute inset-0 pointer-events-none" style={{
         background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.15) 100%)'
@@ -247,7 +270,7 @@ export default function Preloader({ onComplete, groomName, brideName }: Preloade
           className="text-center mt-4 text-[10px] tracking-[0.4em] uppercase"
           style={{ fontFamily: 'var(--font-body)', color: 'var(--brown-soft)', opacity: 0.5 }}
         >
-          {progress < 100 ? 'membuka kenangan...' : 'siap'}
+          {progress < 100 ? 'membuka diary...' : 'selamat datang'}
         </p>
       </div>
     </div>

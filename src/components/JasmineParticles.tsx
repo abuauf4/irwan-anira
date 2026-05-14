@@ -14,6 +14,7 @@ interface Petal {
   swayOffset: number
   fallSpeed: number
   opacity: number
+  isGolden: boolean
   element: HTMLDivElement
 }
 
@@ -22,37 +23,55 @@ export default function JasmineParticles() {
   const petalsRef = useRef<Petal[]>([])
   const animFrameRef = useRef<number>(0)
   const scrollYRef = useRef(0)
+  const spawnCountRef = useRef(0)
 
-  const createPetal = useCallback((container: HTMLDivElement): Petal => {
+  const createPetal = useCallback((container: HTMLDivElement, isGolden = false): Petal => {
     const el = document.createElement('div')
     el.style.position = 'absolute'
     el.style.pointerEvents = 'none'
     el.style.willChange = 'transform, opacity'
 
-    // Create jasmine petal SVG shape
-    const size = 8 + Math.random() * 12
-    el.innerHTML = `
-      <svg width="${size}" height="${size * 1.2}" viewBox="0 0 20 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M10 0C10 0 14 4 14 10C14 16 10 24 10 24C10 24 6 16 6 10C6 4 10 0 10 0Z"
-          fill="rgba(255, 250, 240, ${0.3 + Math.random() * 0.4})" />
-        <path d="M10 2C10 2 13 5 13 10C13 15 10 22 10 22C10 22 7 15 7 10C7 5 10 2 10 2Z"
-          fill="rgba(255, 245, 225, ${0.2 + Math.random() * 0.3})" />
-      </svg>
-    `
+    if (isGolden) {
+      // Golden dust particle — tiny circle catching light
+      const size = 3 + Math.random() * 3
+      el.style.width = `${size}px`
+      el.style.height = `${size}px`
+      el.style.borderRadius = '50%'
+      el.style.background = `rgba(201, 169, 110, ${0.3 + Math.random() * 0.2})`
+    } else {
+      // Jasmine petal SVG shape
+      const size = 6 + Math.random() * 16
+      // Smaller petals tend to be more transparent (atmospheric perspective)
+      const sizeFactor = (size - 6) / 16 // 0..1 where 0 = smallest
+      const baseOpacity = 0.15 + sizeFactor * 0.45 // 0.15 for tiny, 0.6 for large
+
+      el.innerHTML = `
+        <svg width="${size}" height="${size * 1.2}" viewBox="0 0 20 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M10 0C10 0 14 4 14 10C14 16 10 24 10 24C10 24 6 16 6 10C6 4 10 0 10 0Z"
+            fill="rgba(255, 250, 240, ${baseOpacity})" />
+          <path d="M10 2C10 2 13 5 13 10C13 15 10 22 10 22C10 22 7 15 7 10C7 5 10 2 10 2Z"
+            fill="rgba(255, 245, 225, ${baseOpacity * 0.7})" />
+        </svg>
+      `
+    }
 
     container.appendChild(el)
+
+    const size = isGolden ? 3 + Math.random() * 3 : 6 + Math.random() * 16
+    const sizeFactor = isGolden ? 0.5 : (size - 6) / 16
 
     const petal: Petal = {
       x: Math.random() * window.innerWidth,
       y: -30 - Math.random() * 100,
       size,
       rotation: Math.random() * 360,
-      rotationSpeed: (Math.random() - 0.5) * 2,
-      swayAmplitude: 30 + Math.random() * 50,
-      swaySpeed: 0.5 + Math.random() * 1.5,
+      rotationSpeed: (Math.random() - 0.5) * 1.5,
+      swayAmplitude: 40 + Math.random() * 60,
+      swaySpeed: 0.3 + Math.random() * 1.0,
       swayOffset: Math.random() * Math.PI * 2,
-      fallSpeed: 0.3 + Math.random() * 0.7,
-      opacity: 0.4 + Math.random() * 0.5,
+      fallSpeed: 0.15 + Math.random() * 0.5,
+      opacity: isGolden ? 0.3 + Math.random() * 0.2 : 0.15 + sizeFactor * 0.65,
+      isGolden,
       element: el,
     }
 
@@ -69,9 +88,9 @@ export default function JasmineParticles() {
     let lastTime = 0
     const spawnInterval = 800 // ms between new petals
 
-    // Initialize petals
-    for (let i = 0; i < 12; i++) {
-      const petal = createPetal(container)
+    // Initialize fewer petals — avoid "petal explosion" feeling
+    for (let i = 0; i < 7; i++) {
+      const petal = createPetal(container, false)
       petal.y = Math.random() * window.innerHeight * 2
       petalsRef.current.push(petal)
     }
@@ -79,9 +98,11 @@ export default function JasmineParticles() {
     const animate = (time: number) => {
       const delta = time - lastTime
 
-      // Spawn new petal periodically
+      // Spawn new petal periodically — every 3rd-4th is golden dust
       if (delta > spawnInterval && petalsRef.current.length < maxPetals) {
-        const newPetal = createPetal(container)
+        spawnCountRef.current++
+        const isGolden = spawnCountRef.current % 4 === 0
+        const newPetal = createPetal(container, isGolden)
         petalsRef.current.push(newPetal)
         lastTime = time
       }
@@ -89,7 +110,7 @@ export default function JasmineParticles() {
       const scrollDensity = Math.min(1, scrollYRef.current / 2000)
 
       petalsRef.current.forEach((petal, index) => {
-        // Update position
+        // Update position — gentle fall speed
         petal.y += petal.fallSpeed * (0.5 + scrollDensity * 0.5)
         const sway = Math.sin(time * 0.001 * petal.swaySpeed + petal.swayOffset) * petal.swayAmplitude
         petal.rotation += petal.rotationSpeed
@@ -103,7 +124,14 @@ export default function JasmineParticles() {
         if (petal.y > window.innerHeight + 50) {
           petal.y = -30
           petal.x = Math.random() * window.innerWidth
-          petal.opacity = 0.4 + Math.random() * 0.5
+
+          // Recalculate opacity based on size for variety
+          if (petal.isGolden) {
+            petal.opacity = 0.3 + Math.random() * 0.2
+          } else {
+            const sizeFactor = (petal.size - 6) / 16
+            petal.opacity = 0.15 + sizeFactor * 0.65
+          }
         }
       })
 

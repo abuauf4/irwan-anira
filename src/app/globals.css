@@ -117,6 +117,12 @@
   --dark-overlay: rgba(26, 21, 16, 0.85);
   --cinema-glow: rgba(201, 169, 110, 0.06);
   --cinema-spotlight: rgba(201, 169, 110, 0.08);
+
+  /* ====== CINEMATIC EASING — motion with soul ====== */
+  --ease-cinema: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-cinema-in: cubic-bezier(0.42, 0, 1, 1);
+  --ease-cinema-out: cubic-bezier(0, 0, 0.58, 1);
+  --ease-breathe: cubic-bezier(0.4, 0, 0.6, 1);
 }
 
 /* ========================================
@@ -258,6 +264,81 @@ html {
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+/* NEW: Dust mote floating — caught in golden light */
+@keyframes dustFloat1 {
+  0%, 100% { transform: translate(0, 0); opacity: 0.05; }
+  25% { transform: translate(8px, -12px); opacity: 0.09; }
+  50% { transform: translate(-4px, -6px); opacity: 0.06; }
+  75% { transform: translate(6px, -18px); opacity: 0.08; }
+}
+
+@keyframes dustFloat2 {
+  0%, 100% { transform: translate(0, 0); opacity: 0.06; }
+  30% { transform: translate(-10px, -8px); opacity: 0.1; }
+  60% { transform: translate(5px, -16px); opacity: 0.05; }
+  80% { transform: translate(-6px, -22px); opacity: 0.08; }
+}
+
+@keyframes dustFloat3 {
+  0%, 100% { transform: translate(0, 0); opacity: 0.04; }
+  20% { transform: translate(12px, -6px); opacity: 0.08; }
+  55% { transform: translate(-8px, -14px); opacity: 0.06; }
+  85% { transform: translate(4px, -20px); opacity: 0.09; }
+}
+
+@keyframes dustFloat4 {
+  0%, 100% { transform: translate(0, 0); opacity: 0.07; }
+  35% { transform: translate(-7px, -10px); opacity: 0.05; }
+  65% { transform: translate(9px, -18px); opacity: 0.1; }
+  90% { transform: translate(-3px, -8px); opacity: 0.06; }
+}
+
+/* NEW: Polaroid gentle float — memory breathing */
+@keyframes polaroidFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-2px); }
+}
+
+/* NEW: Gallery memory entrance — photo placed into a diary */
+@keyframes galleryMemoryIn {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.92) rotate(-1.5deg);
+  }
+  60% {
+    opacity: 0.9;
+    transform: translateY(-2px) scale(1.005) rotate(0.3deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+}
+
+/* NEW: Diary page closing — the final page settling */
+@keyframes diaryPageClose {
+  0% {
+    opacity: 0.7;
+    transform: scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* NEW: Gold shimmer for text — warm, slow, elegant */
+@keyframes goldShimmerText {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+/* NEW: Hero golden tint breathing — golden hour pulse */
+@keyframes heroBreathe {
+  0%, 100% { opacity: 0.04; }
+  50% { opacity: 0.08; }
+}
+
 /* ========================================
    11. ANIMATION UTILITY CLASSES
    Cinematic pacing — nothing rushed
@@ -327,15 +408,24 @@ html {
 /* ========================================
    14. DIARY PAPER TEXTURES
    Warm aged paper, like opening an old journal
+   Enhanced with deeper grain and warm aged tint
    ======================================== */
 .diary-paper-bg {
   background-color: var(--paper);
   background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.02'/%3E%3C/svg%3E"),
-    linear-gradient(135deg, rgba(166, 123, 61, 0.03) 0%, transparent 50%, rgba(166, 123, 61, 0.02) 100%);
+    /* Primary grain — stronger paper texture */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"),
+    /* Secondary grain — different frequency for depth */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cfilter id='noise2'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise2)' opacity='0.025'/%3E%3C/svg%3E"),
+    /* Warm aged tint — like paper yellowed by time */
+    linear-gradient(135deg, rgba(166, 123, 61, 0.04) 0%, transparent 50%, rgba(166, 123, 61, 0.03) 100%),
+    /* Subtle warm yellowish undertone — aged paper warmth */
+    linear-gradient(180deg, rgba(201, 169, 110, 0.02) 0%, transparent 30%, transparent 70%, rgba(201, 169, 110, 0.015) 100%);
   background-repeat: repeat;
-  background-size: 300px 300px, 100% 100%;
+  background-size: 300px 300px, 200px 200px, 100% 100%, 100% 100%;
   position: relative;
+  backdrop-filter: blur(0.5px);
+  -webkit-backdrop-filter: blur(0.5px);
 }
 
 .diary-paper-bg::before {
@@ -382,6 +472,26 @@ html {
     inset 0 0 0 1px rgba(201, 169, 110, 0.1);
 }
 
+/* Diary note card warm vignette — lit by candlelight */
+.diary-note-card-vignette {
+  position: relative;
+}
+
+.diary-note-card-vignette::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(ellipse at 50% 30%, rgba(201, 169, 110, 0.12) 0%, transparent 60%);
+  pointer-events: none;
+  opacity: 0.4;
+  transition: opacity 0.5s ease;
+}
+
+.diary-note-card-vignette:hover::after {
+  opacity: 0.55;
+}
+
 /* ========================================
    16. POLAROID FRAME — memory captured
    Enhanced with cinematic hover scale
@@ -404,6 +514,25 @@ html {
     0 0 20px rgba(201, 169, 110, 0.08);
 }
 
+/* Polaroid gentle float — memory breathing on the page */
+.polaroid-float {
+  animation: polaroidFloat 6s var(--ease-breathe) infinite;
+}
+
+/* Polaroid layered shadow — stacked photos on a desk */
+.polaroid-layered {
+  box-shadow:
+    1px 2px 8px rgba(0, 0, 0, 0.08),
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    2px 3px 0 rgba(201, 169, 110, 0.04),
+    4px 5px 0 rgba(166, 123, 61, 0.02);
+}
+
+/* Gallery memory entrance — photo placed into a diary, slow and emotional */
+.gallery-memory-in {
+  animation: galleryMemoryIn 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
 /* ========================================
    17. GOLD LIGHT LEAK — cinematic warmth
    Like sunlight through dusty curtains
@@ -414,6 +543,26 @@ html {
     radial-gradient(ellipse at 80% 80%, rgba(212, 184, 122, 0.08) 0%, transparent 50%),
     radial-gradient(ellipse at 50% 0%, rgba(201, 169, 110, 0.06) 0%, transparent 60%);
   animation: lightLeakPulse 10s ease-in-out infinite;
+}
+
+/* ========================================
+   17b. CINEMA BLOOM — soft light bleeding through
+   Warm golden glow like candlelight in a dark room
+   ======================================== */
+.cinema-bloom {
+  position: relative;
+}
+
+.cinema-bloom::before {
+  content: '';
+  position: absolute;
+  top: -10%;
+  left: 20%;
+  right: 20%;
+  height: 50%;
+  background: radial-gradient(ellipse at 50% 0%, rgba(201, 169, 110, 0.05) 0%, rgba(201, 169, 110, 0.02) 40%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* ========================================
@@ -473,14 +622,31 @@ html {
 /* ========================================
    21. HERO / COVER
    The opening scene — darkness before the story
+   Enhanced with golden hour light filtering through
    ======================================== */
 .hero-overlay {
+  position: relative;
   background: linear-gradient(
     to bottom,
     rgba(44, 34, 24, 0.4) 0%,
     rgba(44, 34, 24, 0.55) 50%,
     rgba(44, 34, 24, 0.75) 100%
   );
+}
+
+/* Golden hour tint — warm light filtering through */
+.hero-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 30%, rgba(201, 169, 110, 0.06) 0%, transparent 60%);
+  pointer-events: none;
+  animation: heroBreathe 8s var(--ease-breathe) infinite;
+}
+
+/* Hero breathe — golden light pulsing gently */
+.hero-breathe {
+  animation: heroBreathe 8s var(--ease-breathe) infinite;
 }
 
 /* ========================================
@@ -797,14 +963,19 @@ html.lenis, html.lenis body { height: auto; }
    32. VIGNETTE & SPOTLIGHT
    Dark edges, bright center — the cinema
    Soft golden light from above
+   Enhanced with warm brown tones and golden inner glow
    ======================================== */
 
-/* Vignette overlay — dark edges, bright center */
+/* Vignette overlay — warm dark edges, bright center, like a warm room at night */
 .cinema-vignette::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.4) 100%);
+  background:
+    /* Warm vignette — intimate, not cold */
+    radial-gradient(ellipse at center, transparent 40%, rgba(26, 21, 16, 0.5) 100%),
+    /* Golden inner glow — warmth bleeding from the center */
+    radial-gradient(ellipse at center, rgba(201, 169, 110, 0.03) 0%, transparent 50%);
   pointer-events: none;
   z-index: 1;
 }
@@ -832,7 +1003,11 @@ html.lenis, html.lenis body { height: auto; }
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.4) 100%);
+  background:
+    /* Warm vignette — intimate, not cold */
+    radial-gradient(ellipse at center, transparent 40%, rgba(26, 21, 16, 0.5) 100%),
+    /* Golden inner glow — warmth bleeding from the center */
+    radial-gradient(ellipse at center, rgba(201, 169, 110, 0.03) 0%, transparent 50%);
   pointer-events: none;
   z-index: 1;
 }
@@ -848,6 +1023,62 @@ html.lenis, html.lenis body { height: auto; }
   background: radial-gradient(ellipse at center, rgba(201, 169, 110, 0.06) 0%, transparent 70%);
   pointer-events: none;
   z-index: 1;
+}
+
+/* ========================================
+   32b. CINEMA DEPTH — layered physical depth
+   Sections feel like they have thickness
+   Like pages stacked with weight
+   ======================================== */
+.cinema-depth {
+  position: relative;
+  box-shadow:
+    inset 0 2px 4px rgba(201, 169, 110, 0.04),
+    inset 0 -1px 2px rgba(44, 34, 24, 0.03);
+  background: linear-gradient(to bottom, rgba(251, 247, 240, 0.015) 0%, transparent 8%, transparent 92%, rgba(44, 34, 24, 0.02) 100%);
+}
+
+/* ========================================
+   32c. CINEMA DUST — ambient floating particles
+   Dust motes caught in golden light
+   Like a projector beam in a dark room
+   ======================================== */
+.cinema-dust {
+  position: relative;
+  overflow: hidden;
+}
+
+.cinema-dust::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background:
+    /* Dust mote 1 — top left area */
+    radial-gradient(circle at 22% 18%, rgba(201, 169, 110, 0.07) 0%, rgba(201, 169, 110, 0.07) 1.5px, transparent 1.5px),
+    /* Dust mote 2 — center right */
+    radial-gradient(circle at 72% 35%, rgba(201, 169, 110, 0.06) 0%, rgba(201, 169, 110, 0.06) 1px, transparent 1px),
+    /* Dust mote 3 — bottom left */
+    radial-gradient(circle at 35% 72%, rgba(201, 169, 110, 0.05) 0%, rgba(201, 169, 110, 0.05) 1.5px, transparent 1.5px),
+    /* Dust mote 4 — top right */
+    radial-gradient(circle at 78% 14%, rgba(212, 184, 122, 0.06) 0%, rgba(212, 184, 122, 0.06) 1px, transparent 1px);
+  animation: dustFloat1 20s var(--ease-breathe) infinite;
+}
+
+.cinema-dust::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background:
+    /* Secondary dust layer — different positions, slower drift */
+    radial-gradient(circle at 45% 42%, rgba(201, 169, 110, 0.04) 0%, rgba(201, 169, 110, 0.04) 1px, transparent 1px),
+    radial-gradient(circle at 15% 58%, rgba(212, 184, 122, 0.05) 0%, rgba(212, 184, 122, 0.05) 1.5px, transparent 1.5px),
+    radial-gradient(circle at 62% 80%, rgba(201, 169, 110, 0.04) 0%, rgba(201, 169, 110, 0.04) 1px, transparent 1px),
+    radial-gradient(circle at 88% 52%, rgba(212, 184, 122, 0.03) 0%, rgba(212, 184, 122, 0.03) 1.5px, transparent 1.5px);
+  animation: dustFloat3 25s var(--ease-breathe) infinite;
 }
 
 /* ========================================
@@ -1006,7 +1237,37 @@ html.lenis, html.lenis body { height: auto; }
 }
 
 /* ========================================
-   35. REDUCED MOTION OVERRIDES
+   35. ENDING EMOTIONAL CSS
+   The final page of the diary
+   Like a book closing with a gentle hand
+   ======================================== */
+
+/* Diary page close — the final page settling into place */
+.diary-page-close {
+  animation: diaryPageClose 2s var(--ease-cinema) forwards;
+}
+
+/* Gold shimmer text — warm, slow, elegant shimmer for ending words */
+.gold-shimmer-text {
+  background: linear-gradient(
+    90deg,
+    var(--gold-dark),
+    var(--gold),
+    var(--gold-light),
+    #E8C878,
+    var(--gold-light),
+    var(--gold),
+    var(--gold-dark)
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: goldShimmerText 6s linear infinite;
+}
+
+/* ========================================
+   36. REDUCED MOTION OVERRIDES
    Final word — no animation if preferred
    ======================================== */
 @media (prefers-reduced-motion: reduce) {
@@ -1019,4 +1280,18 @@ html.lenis, html.lenis body { height: auto; }
   .cinema-spotlight::after { animation: none !important; }
   .cinema-atmosphere::after { animation: none !important; }
   .couple-dark-section::after { animation: none !important; }
+
+  /* New animation overrides for reduced motion */
+  .polaroid-float { animation: none !important; }
+  .gallery-memory-in { animation: none !important; opacity: 1 !important; }
+  .diary-page-close { animation: none !important; opacity: 1 !important; }
+  .gold-shimmer-text { animation: none !important; }
+  .hero-overlay::after { animation: none !important; }
+  .hero-breathe { animation: none !important; }
+  .cinema-dust::before { animation: none !important; }
+  .cinema-dust::after { animation: none !important; }
+  .diary-note-card-vignette::after { transition: none !important; }
+  [style*="goldenLightDrift"] { animation: none !important; }
+  [style*="goldenFlash"] { animation: none !important; opacity: 0 !important; }
+  [style*="handwritingReveal"] { animation: none !important; clip-path: none !important; }
 }
