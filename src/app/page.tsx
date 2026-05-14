@@ -958,11 +958,10 @@ function DiaryStorySection() {
       }
 
       // Signal that diary section is done — auto-scroll can resume smoothly
-      // 500ms delay to let Lenis smooth scroll engine settle after pin removal
-      // If this is too short, auto-scroll will fight with Lenis position recalculation
+      // 800ms delay to let Lenis smooth scroll engine + ScrollTrigger.refresh() settle after pin removal
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('diary-sequence-complete'))
-      }, 500)
+      }, 800)
     }
 
     // ─── IntersectionObserver: detect entry ───
@@ -972,9 +971,6 @@ function DiaryStorySection() {
         entries.forEach((entry) => {
           if (entry.isIntersecting && !hasEnteredRef.current) {
             hasEnteredRef.current = true
-
-            // Signal auto-scroll to pause — diary controls its own rhythm
-            window.dispatchEvent(new CustomEvent('diary-sequence-start'))
 
             gsap.to(section, { opacity: 1, duration: 0.5, ease: 'power2.out' })
             gsap.to(card, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out', delay: 0.1,
@@ -991,6 +987,20 @@ function DiaryStorySection() {
     )
     enterObserver.observe(section)
 
+    // ─── ScrollTrigger: PAUSE auto-scroll at top 0% ───
+    // When the diary section's top reaches the top of viewport (top 0%),
+    // dispatch diary-sequence-start to pause auto-scroll
+    // This is more precise than the IntersectionObserver threshold
+    ScrollTrigger.create({
+      trigger: section,
+      start: 'top 0%',
+      onEnter: () => {
+        if (!sequenceCompleteRef.current) {
+          window.dispatchEvent(new CustomEvent('diary-sequence-start'))
+        }
+      },
+    })
+
     // ─── ScrollTrigger: PIN ONLY, no story progression logic ───
     // Pin the section while the time-based sequence plays
     // Calculate a reasonable pin duration based on estimated total sequence time
@@ -1003,7 +1013,7 @@ function DiaryStorySection() {
 
     const pinTrigger = ScrollTrigger.create({
       trigger: section,
-      start: 'top 10%',
+      start: 'top 0%',
       end: `+=${pinDistance}vh`,
       pin: true,
       anticipatePin: 1,
@@ -1589,9 +1599,12 @@ function GallerySection() {
 /* ═══════════════════════════════════════════════════════════
    9. CLOSING — Diary Ending
    The last page of this chapter, the first of forever
+   DIRECT ENTRANCE — elements slide in smoothly, no handwriting
+   Like turning the final page and finding everything already written
    ═══════════════════════════════════════════════════════════ */
 function ClosingSection() {
   const sectionRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
   const titleRef = useRef<HTMLDivElement>(null)
   const subtitleRef = useRef<HTMLDivElement>(null)
   const doaRef = useRef<HTMLDivElement>(null)
@@ -1599,67 +1612,17 @@ function ClosingSection() {
   const finalLineRef = useRef<HTMLDivElement>(null)
   const dateRef = useRef<HTMLDivElement>(null)
   const shimmerRef = useRef<HTMLDivElement>(null)
-  const hasFinalAnimated = useRef(false)
-
-  // Handwriting reveal for closing — per letter stagger 0.04s
-  // Returns total duration so next element knows when to start
-  const doClosingHandwriting = (
-    el: HTMLDivElement,
-    stagger: number = 0.04,
-    charDuration: number = 0.08,
-    delay: number = 0,
-  ): number => {
-    if (!el) return 0
-    const isMobile = window.innerWidth < 768
-    const fullText = el.textContent || ''
-    el.innerHTML = ''
-
-    const allChars: HTMLSpanElement[] = []
-    const words = fullText.split(' ')
-    words.forEach((word, wi) => {
-      const ws = document.createElement('span')
-      ws.style.cssText = 'white-space:nowrap;display:inline;'
-      for (let j = 0; j < word.length; j++) {
-        const cs = document.createElement('span')
-        cs.className = 'hw-char'
-        cs.style.cssText = isMobile
-          ? `display:inline-block;opacity:0;transform:translateY(2px);min-width:0.08em;`
-          : `display:inline-block;will-change:opacity,transform;opacity:0;transform:translateY(3px) rotate(-1deg);min-width:0.08em;`
-        cs.textContent = word[j]
-        ws.appendChild(cs)
-        allChars.push(cs)
-      }
-      el.appendChild(ws)
-      if (wi < words.length - 1) {
-        const sp = document.createElement('span')
-        sp.innerHTML = '\u00A0'
-        sp.style.display = 'inline'
-        el.appendChild(sp)
-      }
-    })
-
-    gsap.to(allChars, {
-      opacity: 1,
-      y: 0,
-      rotation: 0,
-      duration: charDuration,
-      stagger,
-      ease: 'power2.out',
-      delay,
-    })
-
-    // Return total duration
-    return delay + allChars.length * stagger + charDuration
-  }
 
   useEffect(() => {
     const ctx = gsap.context(() => {
+      const isMobile = window.innerWidth < 768
+
       // Section fade-in — ScrollTrigger top 80%
       gsap.fromTo(sectionRef.current!,
         { opacity: 0 },
         {
           opacity: 1,
-          duration: 1.2,
+          duration: 1.5,
           scrollTrigger: {
             trigger: sectionRef.current!,
             start: 'top 80%',
@@ -1668,214 +1631,76 @@ function ClosingSection() {
         }
       )
 
-      // ALL elements get handwriting — sequential from paragraph 1
-      // IntersectionObserver threshold 0.3 to trigger the sequence
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting && !hasFinalAnimated.current) {
-              hasFinalAnimated.current = true
-              const isMobile = window.innerWidth < 768
+      // ─── DIRECT ENTRANCE — semua elemen langsung masuk ───
+      // No handwriting, no per-letter animation
+      // Elements fade in from below with stagger — clean, cinematic, immediate
+      // Like the final page is already written, you just need to see it
+      const entranceElements = [
+        titleRef.current,
+        subtitleRef.current,
+        doaRef.current,
+        footerLineRef.current,
+        finalLineRef.current,
+      ].filter(Boolean) as HTMLDivElement[]
 
-              // Sequential handwriting — each element starts after the previous finishes
-              // Element 1: Title ("Dan seperti semua cerita indah...")
-              const charStagger = 0.04
-              const charDuration = 0.08
-              const breathingGap = 0.6 // pause between elements
+      // Set initial hidden state for all elements
+      entranceElements.forEach(el => {
+        gsap.set(el, { opacity: 0, y: isMobile ? 15 : 20 })
+      })
 
-              let cumulativeDelay = 0.3 // initial delay after section fades in
-
-              // 1. Title handwriting
-              if (titleRef.current) {
-                gsap.set(titleRef.current, { opacity: 1 })
-                const titleDuration = doClosingHandwriting(titleRef.current, charStagger, charDuration, cumulativeDelay)
-                cumulativeDelay = titleDuration + breathingGap
-              }
-
-              // 2. Subtitle handwriting
-              if (subtitleRef.current) {
-                gsap.set(subtitleRef.current, { opacity: 1 })
-                const subtitleDuration = doClosingHandwriting(subtitleRef.current, charStagger, charDuration, cumulativeDelay)
-                cumulativeDelay = subtitleDuration + breathingGap
-              }
-
-              // 3. Doa handwriting — two paragraphs separately (Arabic + transliteration)
-              if (doaRef.current) {
-                gsap.set(doaRef.current, { opacity: 1 })
-                const doaParagraphs = doaRef.current.querySelectorAll('p')
-                if (doaParagraphs.length > 1) {
-                  // Arabic line
-                  const arabicEl = doaParagraphs[0] as HTMLParagraphElement
-                  const arabicDur = doClosingHandwriting(arabicEl, charStagger, charDuration, cumulativeDelay)
-                  cumulativeDelay = arabicDur + breathingGap * 0.5
-                  // Transliteration line
-                  const latinEl = doaParagraphs[1] as HTMLParagraphElement
-                  const latinDur = doClosingHandwriting(latinEl, charStagger, charDuration, cumulativeDelay)
-                  cumulativeDelay = latinDur + breathingGap
-                } else {
-                  const doaDuration = doClosingHandwriting(doaRef.current, charStagger, charDuration, cumulativeDelay)
-                  cumulativeDelay = doaDuration + breathingGap
-                }
-              }
-
-              // 4. Footer line handwriting
-              if (footerLineRef.current) {
-                gsap.set(footerLineRef.current, { opacity: 1 })
-                const footerDuration = doClosingHandwriting(footerLineRef.current, charStagger, charDuration, cumulativeDelay)
-                cumulativeDelay = footerDuration + breathingGap
-              }
-
-              // 5. Final line handwriting — emotional peak
-              if (finalLineRef.current) {
-                gsap.set(finalLineRef.current, { opacity: 1 })
-                const finalDuration = doClosingHandwriting(finalLineRef.current, charStagger, charDuration, cumulativeDelay)
-                cumulativeDelay = finalDuration + breathingGap + 1.0 // extra pause before dissolve
-              }
-
-              // ─── After ALL handwriting completes — dust dissolve ───
-              // Schedule the dust dissolve based on the total cumulative delay
-              const totalWritingTime = cumulativeDelay
-
-              setTimeout(() => {
-                // === DUST DISSOLVE — ALL text elements dissolve together ===
-                const contentEl = sectionRef.current?.querySelector('.relative.z-10') as HTMLDivElement | null
-                if (!contentEl) return
-
-                const dissolveTargets: HTMLElement[] = []
-
-                const refsToDissolve = [titleRef.current, subtitleRef.current, doaRef.current, footerLineRef.current, finalLineRef.current]
-                refsToDissolve.forEach(ref => {
-                  if (ref && ref.textContent && ref.textContent.trim()) {
-                    dissolveTargets.push(ref)
-                  }
-                })
-
-                // Reverse order: bottom elements dissolve first
-                const reversedTargets = [...dissolveTargets].reverse()
-
-                reversedTargets.forEach((el, ri) => {
-                  const spawnDustParticles = () => {
-                    if (isMobile) return
-                    const rect = el.getBoundingClientRect()
-                    const sectionRect = sectionRef.current?.getBoundingClientRect()
-                    if (!sectionRect) return
-                    const particleCount = 3 + Math.floor(Math.random() * 3)
-                    for (let p = 0; p < particleCount; p++) {
-                      const particle = document.createElement('span')
-                      const size = 1 + Math.random() * 3
-                      particle.style.cssText = `
-                        position:absolute;
-                        width:${size}px;
-                        height:${size}px;
-                        border-radius:50%;
-                        background:rgba(201,169,110,${0.15 + Math.random() * 0.35});
-                        pointer-events:none;
-                        top:${rect.top - sectionRect.top + Math.random() * rect.height}px;
-                        left:${rect.left - sectionRect.left + Math.random() * rect.width}px;
-                        z-index:15;
-                      `
-                      contentEl.appendChild(particle)
-
-                      gsap.to(particle, {
-                        opacity: 0,
-                        x: (8 + Math.random() * 30) * (Math.random() > 0.3 ? 1 : -1),
-                        y: -(8 + Math.random() * 20),
-                        scale: 0.3 + Math.random() * 0.4,
-                        rotation: Math.random() * 40 - 20,
-                        duration: 2.0 + Math.random() * 1.0,
-                        ease: 'power1.out',
-                        delay: ri * 0.4 + Math.random() * 0.3,
-                        onComplete: () => particle.remove(),
-                      })
-                    }
-                  }
-
-                  const organicDelay = ri * 0.4 + Math.random() * 0.15
-                  const windDriftX = (10 + Math.random() * 25) * (Math.random() > 0.4 ? 1 : -0.6)
-                  const windDriftY = -(6 + Math.random() * 15)
-                  const dissolveDuration = isMobile ? 1.2 : 1.6 + Math.random() * 0.3
-
-                  gsap.to(el, {
-                    opacity: 0,
-                    x: `+=${windDriftX}`,
-                    y: `+=${windDriftY}`,
-                    scale: 0.94 + Math.random() * 0.04,
-                    rotation: (Math.random() - 0.5) * 3,
-                    ...(isMobile ? {} : { filter: 'blur(1.5px)' }),
-                    duration: dissolveDuration,
-                    ease: 'power1.inOut',
-                    delay: organicDelay,
-                    onStart: spawnDustParticles,
-                  })
-                })
-
-                // After all elements dissolved — warm empty moment, then fade to darkness
-                const dissolveDuration = reversedTargets.length * 0.4 + 2.0 + 1.0
-                setTimeout(() => {
-                  if (shimmerRef.current) {
-                    gsap.fromTo(shimmerRef.current,
-                      { opacity: 0, x: -100 },
-                      {
-                        opacity: 0.08,
-                        x: window.innerWidth,
-                        duration: 2.5,
-                        ease: 'power1.inOut',
-                        onComplete: () => {
-                          gsap.set(shimmerRef.current!, { opacity: 0 })
-
-                          setTimeout(() => {
-                            const contentEl = sectionRef.current?.querySelector('.relative.z-10') as HTMLDivElement | null
-                            if (contentEl) {
-                              gsap.to(contentEl, {
-                                ...(isMobile ? {} : { filter: 'blur(2px)' }),
-                                opacity: 0.6,
-                                duration: isMobile ? 3 : 4,
-                                ease: 'power2.inOut',
-                              })
-                              gsap.to(contentEl, {
-                                scale: 0.98,
-                                duration: isMobile ? 3 : 4,
-                                ease: 'power2.inOut',
-                              })
-                            }
-
-                            const fadeOverlay = sectionRef.current?.querySelector('.ending-fade-overlay') as HTMLDivElement | null
-                            if (fadeOverlay) {
-                              gsap.to(fadeOverlay, {
-                                opacity: 0.88,
-                                duration: isMobile ? 5 : 6,
-                                ease: 'power2.inOut',
-                              })
-                            }
-
-                            setTimeout(() => {
-                              if (dateRef.current) {
-                                gsap.set(dateRef.current, { opacity: 1 })
-                                gsap.to(dateRef.current.querySelector('p'), {
-                                  opacity: 0.7,
-                                  duration: 2.5,
-                                  ease: 'power2.out',
-                                })
-                              }
-                            }, isMobile ? 3000 : 4000)
-                          }, 1500)
-                        },
-                      }
-                    )
-                  }
-                }, dissolveDuration * 1000)
-              }, totalWritingTime * 1000)
-            }
-          })
+      // Sequential entrance — each element slides up and fades in after the previous
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: sectionRef.current!,
+          start: 'top 80%',
+          toggleActions: 'play none none none',
         },
-        { threshold: 0.3 }
-      )
+      })
 
-      if (sectionRef.current) {
-        observer.observe(sectionRef.current)
+      entranceElements.forEach((el, i) => {
+        const staggerDelay = isMobile ? 0.4 * i : 0.5 * i
+        tl.to(el, {
+          opacity: 1,
+          y: 0,
+          duration: isMobile ? 0.8 : 1.0,
+          ease: 'power3.out',
+        }, staggerDelay + 0.3)
+      })
+
+      // After all elements are visible — golden shimmer sweeps across
+      const totalEntranceTime = entranceElements.length * (isMobile ? 0.4 : 0.5) + 1.5
+
+      tl.call(() => {
+        if (shimmerRef.current) {
+          gsap.fromTo(shimmerRef.current,
+            { opacity: 0, x: -100 },
+            {
+              opacity: 0.06,
+              x: window.innerWidth,
+              duration: 3,
+              ease: 'power1.inOut',
+            }
+          )
+        }
+      }, undefined, totalEntranceTime)
+
+      // Date appears at the end — subtle, like a signature
+      if (dateRef.current) {
+        gsap.set(dateRef.current, { opacity: 0 })
+        tl.to(dateRef.current, {
+          opacity: 1,
+          duration: 1.5,
+          ease: 'power2.out',
+        }, totalEntranceTime + 0.5)
+        if (dateRef.current.querySelector('p')) {
+          gsap.set(dateRef.current.querySelector('p'), { opacity: 0 })
+          tl.to(dateRef.current.querySelector('p')!, {
+            opacity: 0.7,
+            duration: 2,
+            ease: 'power2.out',
+          }, totalEntranceTime + 0.8)
+        }
       }
-
-      return () => observer.disconnect()
     })
 
     return () => ctx.revert()
@@ -1891,15 +1716,6 @@ function ClosingSection() {
         ref={shimmerRef}
         className="absolute inset-0 pointer-events-none z-20"
         style={{ background: 'linear-gradient(90deg, transparent, rgba(201,169,110,0.1), transparent)', opacity: 0 }}
-      />
-
-      {/* Ending fade overlay — warm darkness slowly closing in, like candlelight dimming */}
-      <div
-        className="ending-fade-overlay absolute inset-0 pointer-events-none z-30"
-        style={{
-          background: 'linear-gradient(to bottom, rgba(26,21,16,0.9), rgba(26,21,16,0.7) 50%, rgba(26,21,16,0.95))',
-          opacity: 0,
-        }}
       />
 
       {/* Final petals — the last visible movement before silence */}
@@ -1925,8 +1741,9 @@ function ClosingSection() {
         ))}
       </div>
 
-      <div className="relative z-10 max-w-2xl mx-auto">
-        <div ref={titleRef} style={{ opacity: 0 }}>
+      <div ref={contentRef} className="relative z-10 max-w-2xl mx-auto">
+        {/* Title — first to enter */}
+        <div ref={titleRef}>
           <p
             className="text-lg sm:text-xl italic leading-relaxed mb-8"
             style={{ fontFamily: 'var(--font-serif)', color: 'var(--cream)' }}
@@ -1937,7 +1754,8 @@ function ClosingSection() {
           </p>
         </div>
 
-        <div ref={subtitleRef} style={{ opacity: 0 }}>
+        {/* Subtitle — enters after title */}
+        <div ref={subtitleRef}>
           <p
             className="text-sm sm:text-base leading-relaxed mb-10"
             style={{ fontFamily: 'var(--font-serif)', color: 'var(--cream)', opacity: 0.8 }}
@@ -1946,8 +1764,8 @@ function ClosingSection() {
           </p>
         </div>
 
-        {/* Doa */}
-        <div ref={doaRef} style={{ opacity: 0 }}>
+        {/* Doa — Arabic + transliteration */}
+        <div ref={doaRef}>
           <p
             className="text-base sm:text-lg leading-relaxed mb-6"
             style={{ fontFamily: 'var(--font-arabic)', color: 'var(--gold-light)' }}
@@ -1968,7 +1786,8 @@ function ClosingSection() {
           <span className="text-[var(--gold)] text-xs">&#10047;</span>
         </div>
 
-        <div ref={footerLineRef} style={{ opacity: 0 }}>
+        {/* Footer line — enters after doa */}
+        <div ref={footerLineRef}>
           <p
             className="text-sm italic gold-shimmer-text"
             style={{ fontFamily: 'var(--font-serif)', color: 'var(--cream)', opacity: 0.6 }}
@@ -1977,11 +1796,10 @@ function ClosingSection() {
           </p>
         </div>
 
-        {/* Final handwriting — emotional peak, then words drift away */}
+        {/* Final emotional line — enters last */}
         <div
           ref={finalLineRef}
           className="mt-16 min-h-[2em]"
-          style={{ opacity: 0 }}
         >
           <p
             className="text-2xl sm:text-3xl gold-shimmer-text"
@@ -1995,7 +1813,6 @@ function ClosingSection() {
         <div
           ref={dateRef}
           className="mt-8"
-          style={{ opacity: 0 }}
         >
           <p
             className="text-sm tracking-[0.4em]"
@@ -2235,14 +2052,28 @@ export default function Home() {
       // Start with a gentle speed — ramp up feels cinematic
       state.currentSpeed = isMobile ? 0.8 : 0.5
 
-      // Small delay to let Lenis/DOM settle after pin removal
-      // Without this, the auto-scroll can fight with Lenis recalculating positions
+      // Delay to let Lenis/DOM settle after pin removal
+      // The pin kill + ScrollTrigger.refresh() changes the page layout
+      // We need to wait for Lenis to recalibrate before restarting auto-scroll
       setTimeout(() => {
+        // After pin removal, we need to ensure we're past the diary section
+        // The diary section might still be in view if the pin just released
+        // Force scroll past it to avoid getting stuck in the zero-speed zone
+        const diarySection = document.querySelector('.diary-paper-bg.diary-lines.cinema-depth')
+        if (diarySection) {
+          const diaryBottom = diarySection.getBoundingClientRect().bottom + window.scrollY
+          // If we're still within the diary section area, jump past it
+          if (window.scrollY < diaryBottom - window.innerHeight * 0.5) {
+            window.scrollTo(0, diaryBottom + 100)
+          }
+        }
+
+        // Now check if we're at the bottom
         const atBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 1)
         if (!atBottom && !state.diaryActive) {
           animationId = requestAnimationFrame(autoScroll)
         }
-      }, 300)
+      }, 600) // Longer delay — 600ms to ensure Lenis + ScrollTrigger settle
     }
 
     window.addEventListener('diary-sequence-start', onDiaryStart)
