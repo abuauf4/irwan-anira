@@ -955,10 +955,11 @@ function DiaryStorySection() {
       }
 
       // Signal that diary section is done — auto-scroll can resume smoothly
-      // Small delay to let the DOM settle after pin removal
+      // 500ms delay to let Lenis smooth scroll engine settle after pin removal
+      // If this is too short, auto-scroll will fight with Lenis position recalculation
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('diary-sequence-complete'))
-      }, 100)
+      }, 500)
     }
 
     // ─── IntersectionObserver: detect entry ───
@@ -2077,6 +2078,7 @@ export default function Home() {
     paused: false,
     currentSpeed: 0,
     targetSpeed: 1.0,
+    diaryActive: false, // When true, auto-scroll is fully controlled by diary — nothing else can resume it
   })
   const userScrollingRef = useRef(false)
 
@@ -2101,7 +2103,8 @@ export default function Home() {
   }, [isPlaying])
 
   // Auto-scroll — cinematic breathing rhythm, mobile-first
-  // Emotional synchronization: scroll speed matches reading speed + animation timing
+  // Diary section has PRIORITY: when diary is active, nothing else can resume auto-scroll
+  // This prevents race conditions between user scroll pause/resume and diary events
   useEffect(() => {
     if (!isOpen) return
 
@@ -2110,42 +2113,52 @@ export default function Home() {
 
     const isMobile = window.innerWidth < 768
 
-    // Speed zones — mobile-optimized, no dead emotional space
-    // Mobile base speeds are higher because: smaller viewport = less scroll distance needed
+    // Speed zones — updated for new page layout (RSVP, Amplop Digital, Wishes added)
+    // Page is now ~30% longer, so progress percentages are shifted
     const getSpeedForPosition = (scrollY: number, docHeight: number) => {
       const progress = scrollY / docHeight
       if (isMobile) {
-        // Mobile: faster, tighter, more responsive
-        if (progress < 0.05) return 2.0    // Cover
-        if (progress < 0.12) return 4.5    // Transition
-        if (progress < 0.20) return 2.2    // Bismillah
-        if (progress < 0.30) return 4.0    // Transition
-        if (progress < 0.40) return 2.8    // Couple
-        if (progress < 0.50) return 4.5    // Transitions
-        if (progress < 0.60) return 2.0    // Diary/story — slower, synced with slow handwriting
-        if (progress < 0.70) return 4.0    // Countdown/events
-        if (progress < 0.80) return 4.0    // Gallery
+        if (progress < 0.04) return 2.0    // Cover
+        if (progress < 0.10) return 4.5    // Transition
+        if (progress < 0.16) return 2.2    // Bismillah
+        if (progress < 0.24) return 4.0    // Transition
+        if (progress < 0.32) return 2.8    // Couple
+        if (progress < 0.40) return 4.5    // Transitions + Diary Intro
+        if (progress < 0.48) return 0.0    // Diary Story — diary controls scroll, auto-scroll paused
+        if (progress < 0.55) return 4.0    // Countdown/events
+        if (progress < 0.62) return 3.5    // Events
+        if (progress < 0.70) return 3.5    // Gallery
+        if (progress < 0.76) return 3.0    // RSVP
+        if (progress < 0.82) return 3.0    // Amplop Digital
         if (progress < 0.90) return 2.8    // Wishes
         return 1.5                          // Closing — slow, emotional
       } else {
-        // Desktop: same 2x speeds from before
-        if (progress < 0.05) return 1.4
-        if (progress < 0.12) return 3.6
-        if (progress < 0.20) return 1.6
-        if (progress < 0.30) return 3.0
-        if (progress < 0.40) return 2.0
-        if (progress < 0.50) return 3.6
-        if (progress < 0.60) return 1.8    // Diary/story — slower, synced with slow handwriting
-        if (progress < 0.70) return 3.0
-        if (progress < 0.80) return 3.0
-        if (progress < 0.90) return 2.0
-        return 1.0
+        if (progress < 0.04) return 1.4    // Cover
+        if (progress < 0.10) return 3.6    // Transition
+        if (progress < 0.16) return 1.6    // Bismillah
+        if (progress < 0.24) return 3.0    // Transition
+        if (progress < 0.32) return 2.0    // Couple
+        if (progress < 0.40) return 3.6    // Transitions + Diary Intro
+        if (progress < 0.48) return 0.0    // Diary Story — diary controls scroll
+        if (progress < 0.55) return 3.0    // Countdown/events
+        if (progress < 0.62) return 2.5    // Events
+        if (progress < 0.70) return 3.0    // Gallery
+        if (progress < 0.76) return 2.5    // RSVP
+        if (progress < 0.82) return 2.5    // Amplop Digital
+        if (progress < 0.90) return 2.0    // Wishes
+        return 1.0                          // Closing
       }
     }
 
     const state = autoScrollState.current
 
     const autoScroll = () => {
+      // If diary is controlling scroll, auto-scroll must NOT run
+      if (state.diaryActive) {
+        state.active = false
+        return
+      }
+
       if (userScrollingRef.current) return
 
       // Pause gracefully at the bottom
@@ -2157,6 +2170,12 @@ export default function Home() {
 
       // Calculate target speed based on current position in the story
       state.targetSpeed = getSpeedForPosition(window.scrollY, document.documentElement.scrollHeight)
+
+      // If we're in a zero-speed zone (diary section), don't scroll
+      if (state.targetSpeed === 0) {
+        state.active = false
+        return
+      }
 
       // Mobile: faster lerp for more responsive speed changes
       // Desktop: smooth lerp for cinematic feel
@@ -2176,17 +2195,24 @@ export default function Home() {
     const startTimeout = setTimeout(() => {
       state.currentSpeed = isMobile ? 1.5 : 1.0
       animationId = requestAnimationFrame(autoScroll)
-    }, isMobile ? 600 : 800) // Mobile: shorter delay
+    }, isMobile ? 600 : 800)
 
     // User takes control — story pauses, then resumes
+    // BUT: if diary is active, do NOT schedule resume — diary controls its own exit
     const pauseAndResume = () => {
+      // If diary is controlling the scroll, ignore user scroll interruptions
+      // The diary section will handle its own scroll rhythm
+      if (state.diaryActive) return
+
       userScrollingRef.current = true
       state.paused = true
       cancelAnimationFrame(animationId)
       clearTimeout(resumeTimeout)
 
-      // Mobile: shorter pause before resume (1.5s vs 2.5s)
       resumeTimeout = setTimeout(() => {
+        // Double-check diary isn't active before resuming
+        if (state.diaryActive) return
+
         userScrollingRef.current = false
         state.paused = false
         const atBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 1)
@@ -2203,26 +2229,37 @@ export default function Home() {
     window.addEventListener('wheel', onWheel, { passive: true })
     window.addEventListener('touchstart', onTouchStart, { passive: true })
 
-    // ─── Diary section integration ───
-    // When diary story sequence starts, pause auto-scroll — diary controls its own rhythm
-    // When diary sequence completes, resume auto-scroll smoothly
+    // ─── Diary section integration — DIARY HAS PRIORITY ───
+    // When diary starts: kill auto-scroll completely, nothing can restart it
+    // When diary ends: clean state, then restart auto-scroll fresh
     const onDiaryStart = () => {
+      // Set diary priority flag FIRST — this prevents any other mechanism from restarting auto-scroll
+      state.diaryActive = true
       userScrollingRef.current = true
       state.paused = true
       state.currentSpeed = 0
+      // Kill any running auto-scroll loop
       cancelAnimationFrame(animationId)
+      // Kill any pending resume from user scroll — diary takes over
       clearTimeout(resumeTimeout)
     }
 
     const onDiaryComplete = () => {
+      // Clear diary flag FIRST
+      state.diaryActive = false
       userScrollingRef.current = false
       state.paused = false
-      // Gentle ramp-up instead of sudden resume — feels cinematic
+      // Start with a gentle speed — ramp up feels cinematic
       state.currentSpeed = isMobile ? 0.8 : 0.5
-      const atBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 1)
-      if (!atBottom) {
-        animationId = requestAnimationFrame(autoScroll)
-      }
+
+      // Small delay to let Lenis/DOM settle after pin removal
+      // Without this, the auto-scroll can fight with Lenis recalculating positions
+      setTimeout(() => {
+        const atBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 1)
+        if (!atBottom && !state.diaryActive) {
+          animationId = requestAnimationFrame(autoScroll)
+        }
+      }, 300)
     }
 
     window.addEventListener('diary-sequence-start', onDiaryStart)
