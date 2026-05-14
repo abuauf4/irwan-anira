@@ -339,6 +339,26 @@ html {
   50% { opacity: 0.08; }
 }
 
+/* NEW: Golden light drift across hero — like moonlight shifting */
+@keyframes goldenLightDrift {
+  0% { transform: translateX(-10%) translateY(0); }
+  100% { transform: translateX(10%) translateY(-5%); }
+}
+
+/* NEW: Handwriting reveal for hero names */
+@keyframes handwritingReveal {
+  0% { clip-path: inset(0 100% 0 0); }
+  100% { clip-path: inset(0 0% 0 0); }
+}
+
+/* NEW: Final petal drift — the last movement before silence */
+@keyframes finalPetalDrift {
+  0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.4; }
+  80% { opacity: 0.2; }
+  100% { transform: translateY(85vh) rotate(180deg); opacity: 0; }
+}
+
 /* ========================================
    11. ANIMATION UTILITY CLASSES
    Cinematic pacing — nothing rushed
@@ -956,7 +976,7 @@ html.lenis, html.lenis body { height: auto; }
   background-size: 300px 300px;
   pointer-events: none;
   z-index: 0;
-  opacity: 0.6;
+  opacity: 0.8;
 }
 
 /* ========================================
@@ -974,8 +994,8 @@ html.lenis, html.lenis body { height: auto; }
   background:
     /* Warm vignette — intimate, not cold */
     radial-gradient(ellipse at center, transparent 40%, rgba(26, 21, 16, 0.5) 100%),
-    /* Golden inner glow — warmth bleeding from the center */
-    radial-gradient(ellipse at center, rgba(201, 169, 110, 0.03) 0%, transparent 50%);
+    /* Golden inner glow — warmth bleeding from center */
+    radial-gradient(ellipse at center, rgba(201, 169, 110, 0.05) 0%, transparent 50%);
   pointer-events: none;
   z-index: 1;
 }
@@ -1007,7 +1027,7 @@ html.lenis, html.lenis body { height: auto; }
     /* Warm vignette — intimate, not cold */
     radial-gradient(ellipse at center, transparent 40%, rgba(26, 21, 16, 0.5) 100%),
     /* Golden inner glow — warmth bleeding from the center */
-    radial-gradient(ellipse at center, rgba(201, 169, 110, 0.03) 0%, transparent 50%);
+    radial-gradient(ellipse at center, rgba(201, 169, 110, 0.05) 0%, transparent 50%);
   pointer-events: none;
   z-index: 1;
 }

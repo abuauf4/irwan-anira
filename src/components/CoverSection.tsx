@@ -8,52 +8,40 @@ interface CoverSectionProps {
 
 export default function CoverSection({ onOpen }: CoverSectionProps) {
   const [isOpening, setIsOpening] = useState(false)
+  const [phase, setPhase] = useState<'idle' | 'leaning' | 'blooming' | 'dissolving' | 'darkness'>('idle')
   const containerRef = useRef<HTMLDivElement>(null)
   const bgRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const petalContainerRef = useRef<HTMLDivElement>(null)
   const mouseRef = useRef({ x: 0, y: 0 })
-  const [goldenFlash, setGoldenFlash] = useState(false)
 
   // Parallax on mouse move (desktop only)
   useEffect(() => {
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (prefersReduced) return
 
-    // Only enable on non-touch devices
     const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
     if (isTouchDevice) return
 
     const handleMouseMove = (e: MouseEvent) => {
+      if (isOpening) return
       const rect = containerRef.current?.getBoundingClientRect()
       if (!rect) return
 
       const centerX = rect.left + rect.width / 2
       const centerY = rect.top + rect.height / 2
-      // Normalize to -1..1
       const nx = (e.clientX - centerX) / (rect.width / 2)
       const ny = (e.clientY - centerY) / (rect.height / 2)
       mouseRef.current = { x: nx, y: ny }
 
-      // Background shifts opposite to mouse (2-3px max)
       if (bgRef.current) {
-        const bgX = -nx * 2.5
-        const bgY = -ny * 2.5
-        bgRef.current.style.transform = `translate3d(${bgX}px, ${bgY}px, 0)`
+        bgRef.current.style.transform = `translate3d(${-nx * 2.5}px, ${-ny * 2.5}px, 0)`
       }
-
-      // Content shifts toward mouse (1-2px max)
       if (contentRef.current) {
-        const cX = nx * 1.5
-        const cY = ny * 1.5
-        contentRef.current.style.transform = `translate3d(${cX}px, ${cY}px, 0)`
+        contentRef.current.style.transform = `translate3d(${nx * 1.5}px, ${ny * 1.5}px, 0)`
       }
-
-      // Petals gently drift in mouse direction
       if (petalContainerRef.current) {
-        const px = nx * 8
-        const py = ny * 5
-        petalContainerRef.current.style.transform = `translate3d(${px}px, ${py}px, 0)`
+        petalContainerRef.current.style.transform = `translate3d(${nx * 8}px, ${ny * 5}px, 0)`
       }
     }
 
@@ -70,19 +58,28 @@ export default function CoverSection({ onOpen }: CoverSectionProps) {
       window.removeEventListener('mousemove', handleMouseMove)
       containerRef.current?.removeEventListener('mouseleave', handleMouseLeave)
     }
-  }, [])
+  }, [isOpening])
 
+  // The signature moment — entering their world
   const handleOpen = useCallback(() => {
+    if (isOpening) return
     setIsOpening(true)
 
-    // Golden flash — brief, dim, warm
-    setTimeout(() => setGoldenFlash(true), 150)
+    // Phase 1: Lean in — content draws closer, like leaning toward a door (300ms)
+    setPhase('leaning')
 
-    // Cinematic open — gentle scale up, then enter
-    setTimeout(() => {
-      onOpen()
-    }, 400)
-  }, [onOpen])
+    // Phase 2: Golden bloom — warm light blooms from center, candle being lit (400ms)
+    setTimeout(() => setPhase('blooming'), 300)
+
+    // Phase 3: Dissolve — the cover softly melts away, not a hard cut (600ms)
+    setTimeout(() => setPhase('dissolving'), 700)
+
+    // Phase 4: Brief darkness — the breath before the story begins (300ms)
+    setTimeout(() => setPhase('darkness'), 1300)
+
+    // Phase 5: Enter the story
+    setTimeout(() => onOpen(), 1600)
+  }, [isOpening, onOpen])
 
   // Petal configurations — 8 petals with varied timing
   const petalConfigs = [
@@ -99,12 +96,10 @@ export default function CoverSection({ onOpen }: CoverSectionProps) {
   return (
     <section
       ref={containerRef}
-      className={`relative min-h-screen flex items-center justify-center overflow-hidden ${isOpening ? 'opacity-0' : 'opacity-100'}`}
+      className="relative min-h-screen flex items-center justify-center overflow-hidden"
       style={{
-        transition: isOpening
-          ? 'opacity 0.5s ease 0.15s, transform 0.5s ease 0.15s'
-          : 'none',
-        transform: isOpening ? 'scale(1.02)' : 'scale(1)',
+        transition: 'opacity 0.8s ease',
+        opacity: phase === 'darkness' ? 0 : 1,
       }}
     >
       {/* Background Image — warm, cinematic with parallax */}
@@ -119,12 +114,12 @@ export default function CoverSection({ onOpen }: CoverSectionProps) {
       />
       <div className="hero-overlay absolute inset-0" />
 
-      {/* Vignette — dark edges */}
+      {/* Vignette — dark warm edges */}
       <div className="absolute inset-0 pointer-events-none z-[1]" style={{
-        background: 'radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.5) 100%)'
+        background: 'radial-gradient(ellipse at center, transparent 30%, rgba(26,21,16,0.5) 100%)'
       }} />
 
-      {/* Subtle golden light drift — like moonlight or candlelight shifting */}
+      {/* Subtle golden light drift — like moonlight shifting */}
       <div
         className="absolute inset-0 pointer-events-none z-[2]"
         style={{
@@ -133,16 +128,28 @@ export default function CoverSection({ onOpen }: CoverSectionProps) {
         }}
       />
 
-      {/* Golden flash overlay on open */}
-      {goldenFlash && (
-        <div
-          className="absolute inset-0 pointer-events-none z-50"
-          style={{
-            background: 'radial-gradient(ellipse at center, rgba(201,169,110,0.15) 0%, transparent 60%)',
-            animation: 'goldenFlash 0.4s ease-out forwards',
-          }}
-        />
-      )}
+      {/* ─── THE SIGNATURE MOMENT ─── */}
+
+      {/* Bloom layer — warm golden light expanding from center */}
+      <div
+        className="absolute inset-0 pointer-events-none z-[3]"
+        style={{
+          background: 'radial-gradient(ellipse at center, rgba(201,169,110,0.25) 0%, rgba(201,169,110,0.08) 40%, transparent 70%)',
+          opacity: phase === 'blooming' || phase === 'dissolving' ? 1 : 0,
+          transform: phase === 'blooming' ? 'scale(1)' : phase === 'dissolving' ? 'scale(1.5)' : 'scale(0.5)',
+          transition: 'opacity 0.6s ease, transform 0.8s ease',
+        }}
+      />
+
+      {/* Darkness layer — the breath before the story */}
+      <div
+        className="absolute inset-0 pointer-events-none z-[4]"
+        style={{
+          background: 'rgba(26, 21, 16, 0.95)',
+          opacity: phase === 'darkness' ? 1 : 0,
+          transition: 'opacity 0.4s ease',
+        }}
+      />
 
       {/* Corner ornaments */}
       <div className="absolute inset-0 pointer-events-none z-20">
@@ -152,7 +159,7 @@ export default function CoverSection({ onOpen }: CoverSectionProps) {
         <div className="absolute bottom-6 right-6 w-16 h-16 border-b border-r opacity-30" style={{ borderColor: 'var(--gold)' }} />
       </div>
 
-      {/* Floating jasmine petals — 8 with varied timing and mouse reactivity */}
+      {/* Floating jasmine petals */}
       <div
         ref={petalContainerRef}
         className="absolute inset-0 z-30 pointer-events-none"
@@ -179,11 +186,20 @@ export default function CoverSection({ onOpen }: CoverSectionProps) {
         ))}
       </div>
 
-      {/* Content — with parallax and handwriting reveal */}
+      {/* Content — with cinematic entrance */}
       <div
         ref={contentRef}
         className="relative z-10 w-full max-w-md mx-auto px-6 text-center"
-        style={{ transition: 'transform 0.6s ease-out', willChange: 'transform' }}
+        style={{
+          transition: 'transform 0.6s ease-out, opacity 0.6s ease',
+          willChange: 'transform, opacity',
+          // Lean in: content draws closer when opening
+          transform: phase === 'leaning' ? 'translate3d(0, 0, 0) scale(1.04)' :
+                     phase === 'blooming' ? 'translate3d(0, 0, 0) scale(1.06)' :
+                     phase === 'dissolving' ? 'translate3d(0, 0, 0) scale(1.08)' :
+                     undefined,
+          opacity: phase === 'dissolving' ? 0.6 : phase === 'darkness' ? 0 : 1,
+        }}
       >
         {/* Seal */}
         <div
@@ -204,7 +220,7 @@ export default function CoverSection({ onOpen }: CoverSectionProps) {
           The Wedding Invitation of
         </p>
 
-        {/* Names with handwriting reveal animation */}
+        {/* Names with handwriting reveal */}
         <h2
           className="text-4xl sm:text-5xl mb-3"
           style={{
@@ -225,18 +241,17 @@ export default function CoverSection({ onOpen }: CoverSectionProps) {
           05 . 07 . 2026
         </p>
 
-        {/* Single button — directly enters the invitation */}
+        {/* The button that opens the door */}
         <button
           onClick={handleOpen}
           disabled={isOpening}
           className="px-8 py-3 border border-[var(--gold)]/60 text-[var(--gold-light)] tracking-[0.3em] uppercase text-[10px] sm:text-xs
-            hover:bg-[var(--gold)]/10 transition-all duration-700 cursor-pointer"
+            hover:bg-[var(--gold)]/10 hover:border-[var(--gold)]/80 transition-all duration-700 cursor-pointer"
           style={{ fontFamily: 'var(--font-body)' }}
         >
-          {isOpening ? 'Membuka...' : 'Buka Undangan'}
+          {isOpening ? '' : 'Buka Undangan'}
         </button>
       </div>
-
     </section>
   )
 }

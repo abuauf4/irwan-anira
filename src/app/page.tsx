@@ -785,21 +785,21 @@ function TimelineSection() {
         }
       })
 
-      // === STEP 3: Set initial states ===
-      cards.forEach((card) => { if (card) gsap.set(card, { opacity: 0, y: 30 }) })
+      // === STEP 3: Set initial states — subtle, not dramatic ===
+      cards.forEach((card) => { if (card) gsap.set(card, { opacity: 0, y: 12, scale: 0.98 }) })
       dots.forEach((dot) => { if (dot) gsap.set(dot, { scale: 0, opacity: 0 }) })
       mobileDots.forEach((dot) => { if (dot) gsap.set(dot, { scale: 0, opacity: 0 }) })
       if (timelineLine) gsap.set(timelineLine, { scaleY: 0, transformOrigin: 'top center' })
       if (progressBar) gsap.set(progressBar, { scaleX: 0, transformOrigin: 'left center' })
 
-      // === STEP 4: Build master timeline with scroll scrub ===
+      // === STEP 4: Build master timeline — the story flows, not stutters ===
       const masterTl = gsap.timeline({
         scrollTrigger: {
           trigger: section,
           start: 'top 10%',
-          end: `+=${WEDDING.timeline.length * 150}%`,
+          end: `+=${WEDDING.timeline.length * 120}%`,
           pin: true,
-          scrub: 1.2,
+          scrub: 0.8,
           anticipatePin: 1,
           onUpdate: (self) => {
             if (progressBar) {
@@ -829,19 +829,21 @@ function TimelineSection() {
 
         if (!card) return
 
+        // Card enters softly — like turning a diary page
         masterTl.to(card, {
           opacity: 1,
           y: 0,
-          duration: 0.75,
-          ease: 'power2.out',
+          scale: 1,
+          duration: 0.6,
+          ease: 'power3.out',
         })
 
         if (svgPath) {
           masterTl.to(svgPath, {
             strokeDashoffset: 0,
-            duration: 1.0,
+            duration: 0.8,
             ease: 'power2.inOut',
-          }, '-=0.4')
+          }, '-=0.3')
         }
 
         // Corner flourishes
@@ -862,10 +864,10 @@ function TimelineSection() {
           if (cornerPaths.length > 0) {
             masterTl.to(cornerPaths, {
               strokeDashoffset: 0,
-              duration: 0.5,
-              stagger: 0.15,
+              duration: 0.4,
+              stagger: 0.1,
               ease: 'power2.inOut',
-            }, '-=0.5')
+            }, '-=0.4')
           }
         }
 
@@ -875,61 +877,61 @@ function TimelineSection() {
           masterTl.to(dot, {
             scale: 1,
             opacity: 1,
-            duration: 0.6,
-            ease: 'back.out(2.5)',
-          }, '-=1')
+            duration: 0.5,
+            ease: 'back.out(1.7)',
+          }, '-=0.7')
           if (dotRing) {
             const ringLen = dotRing.getTotalLength ? dotRing.getTotalLength() : 163.36
             dotRing.style.strokeDasharray = String(ringLen)
             dotRing.style.strokeDashoffset = String(ringLen)
             masterTl.to(dotRing, {
               strokeDashoffset: 0,
-              duration: 0.6,
+              duration: 0.5,
               ease: 'power2.inOut',
-            }, '-=0.4')
+            }, '-=0.3')
           }
         }
         if (mobileDot) {
           masterTl.to(mobileDot, {
             scale: 1,
             opacity: 1,
-            duration: 0.6,
-            ease: 'back.out(2.5)',
+            duration: 0.5,
+            ease: 'back.out(1.7)',
           }, '<')
         }
 
-        // Title handwriting — FIXED: faster stagger 0.04
+        // Title — words appearing like ink flowing
         if (titleChars && titleChars.length > 0) {
           masterTl.to(titleChars, {
             opacity: 1,
             y: 0,
             rotation: 0,
-            duration: 0.3,
-            stagger: 0.04,
+            duration: 0.25,
+            stagger: 0.035,
             ease: 'power2.out',
-          }, '-=0.6')
+          }, '-=0.4')
         }
 
-        // Description handwriting — FIXED: faster stagger 0.018
+        // Description — ink flowing faster, story continuing
         if (descChars && descChars.length > 0) {
           masterTl.to(descChars, {
             opacity: 1,
             y: 0,
             rotation: 0,
-            duration: 0.12,
-            stagger: 0.018,
+            duration: 0.1,
+            stagger: 0.016,
             ease: 'power2.out',
-          }, '-=0.2')
+          }, '-=0.15')
         }
 
-        // FIXED: Shorter gap between cards (0.2 for smooth flow)
+        // The story continues — brief breath between pages
         if (index < WEDDING.timeline.length - 1) {
-          masterTl.to({}, { duration: 0.2 })
+          masterTl.to({}, { duration: 0.15 })
         }
       })
 
-      // FIXED: Shorter end padding (0.15 for natural finish)
-      masterTl.to({}, { duration: 0.15 })
+      // Final breath — the diary page settles
+      masterTl.to({}, { duration: 0.1 })
     })
 
     return () => ctx.revert()
@@ -1263,39 +1265,51 @@ function GallerySection() {
     const ctx = gsap.context(() => {
       fadeIn(sectionRef.current!, { duration: 1.2, y: 20 })
 
-      // Animate each polaroid with stagger reveal — memories being placed into a diary
+      // Memories returning one by one — each photo is a separate moment
       const polaroids = sectionRef.current!.querySelectorAll('.polaroid-frame')
       if (polaroids.length > 0) {
-        gsap.fromTo(polaroids,
-          { opacity: 0, y: 30, scale: 0.92, rotate: -2 },
-          {
-            opacity: 1,
-            y: 0,
-            scale: 1,
-            rotate: 0,
-            duration: 1.2,
-            stagger: 0.25,
-            ease: 'power3.out',
-            scrollTrigger: {
-              trigger: sectionRef.current!,
-              start: 'top 80%',
-              toggleActions: 'play none none none',
-            },
-            onComplete: () => {
-              // Subtle continuous floating animation for each polaroid
-              polaroids.forEach((polaroid, index) => {
+        polaroids.forEach((polaroid, i) => {
+          // Each photo arrives at its own pace — like memories surfacing
+          gsap.fromTo(polaroid,
+            { opacity: 0, y: 24, scale: 0.93, rotation: -1.5 },
+            {
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              rotation: 0,
+              duration: 1,
+              delay: i * 0.35,
+              ease: 'power3.out',
+              scrollTrigger: {
+                trigger: sectionRef.current!,
+                start: 'top 78%',
+                toggleActions: 'play none none none',
+              },
+              onComplete: () => {
+                // A warm glow pulse — the memory solidifying, becoming real
+                gsap.fromTo(polaroid,
+                  { boxShadow: '0 0 0px rgba(201,169,110,0)' },
+                  {
+                    boxShadow: '0 0 20px rgba(201,169,110,0.1)',
+                    duration: 0.6,
+                    yoyo: true,
+                    repeat: 1,
+                    ease: 'power2.inOut',
+                  }
+                )
+                // Then it breathes — alive, not static
                 gsap.to(polaroid, {
                   y: '+=2',
-                  duration: 3,
+                  duration: 3.5 + i * 0.4,
                   ease: 'sine.inOut',
                   yoyo: true,
                   repeat: -1,
-                  delay: 1 + index * 0.25,
+                  delay: 0.5 + i * 0.2,
                 })
-              })
-            },
-          }
-        )
+              },
+            }
+          )
+        })
       }
     })
     return () => ctx.revert()
@@ -1553,40 +1567,52 @@ function ClosingSection() {
         )
       }
 
-      // Final handwriting sentence — emotional peak
+      // Final handwriting sentence — the emotional peak
       const observer = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
             if (entry.isIntersecting && !hasFinalAnimated.current) {
               hasFinalAnimated.current = true
-              // Handwriting reveal for the final line
+              // Handwriting reveal for the final line — slow, emotional
               setTimeout(() => {
                 if (finalLineRef.current) {
                   gsap.set(finalLineRef.current, { opacity: 1 })
-                  handwritingReveal(finalLineRef.current, 0.04, 0.1, 0.5)
+                  handwritingReveal(finalLineRef.current, 0.045, 0.12, 0.8)
                 }
-                // Golden shimmer sweep after handwriting completes
+                // Golden shimmer sweep — like the last light of golden hour
                 setTimeout(() => {
                   if (shimmerRef.current) {
                     gsap.fromTo(shimmerRef.current,
                       { opacity: 0, x: -100 },
                       {
-                        opacity: 0.15,
+                        opacity: 0.12,
                         x: window.innerWidth,
-                        duration: 2,
+                        duration: 2.5,
                         ease: 'power1.inOut',
                         onComplete: () => {
                           gsap.set(shimmerRef.current!, { opacity: 0 })
+                          // After the shimmer, the diary slowly fades to warm darkness
+                          // Like closing the book in candlelight
+                          setTimeout(() => {
+                            const fadeOverlay = sectionRef.current?.querySelector('.ending-fade-overlay') as HTMLDivElement | null
+                            if (fadeOverlay) {
+                              gsap.to(fadeOverlay, {
+                                opacity: 0.6,
+                                duration: 4,
+                                ease: 'power2.inOut',
+                              })
+                            }
+                          }, 1000)
                         },
                       }
                     )
                   }
-                }, 2500)
+                }, 3000)
               }, 500)
             }
           })
         },
-        { threshold: 0.5 }
+        { threshold: 0.4 }
       )
 
       if (sectionRef.current) {
@@ -1610,6 +1636,35 @@ function ClosingSection() {
         className="absolute inset-0 pointer-events-none z-20"
         style={{ background: 'linear-gradient(90deg, transparent, rgba(201,169,110,0.1), transparent)', opacity: 0 }}
       />
+
+      {/* Ending fade overlay — warm darkness slowly closing in, like candlelight dimming */}
+      <div
+        className="ending-fade-overlay absolute inset-0 pointer-events-none z-30"
+        style={{
+          background: 'linear-gradient(to bottom, rgba(26,21,16,0.9), rgba(26,21,16,0.7) 50%, rgba(26,21,16,0.95))',
+          opacity: 0,
+        }}
+      />
+
+      {/* Final petal — the last visible movement before silence */}
+      <div className="absolute inset-0 pointer-events-none z-25 overflow-hidden">
+        <div
+          style={{
+            position: 'absolute',
+            left: '45%',
+            top: '-20px',
+            width: '12px',
+            height: '14px',
+            opacity: 0,
+            animation: 'finalPetalDrift 8s ease-in 6s forwards',
+          }}
+        >
+          <svg width="12" height="14" viewBox="0 0 20 24" fill="none">
+            <path d="M10 0C10 0 14 4 14 10C14 16 10 24 10 24C10 24 6 16 6 10C6 4 10 0 10 0Z"
+              fill="rgba(201,169,110,0.35)" />
+          </svg>
+        </div>
+      </div>
 
       <div className="relative z-10 max-w-2xl mx-auto">
         <div ref={titleRef} style={{ opacity: 0 }}>
@@ -1746,41 +1801,59 @@ export default function Home() {
     }
   }, [isPlaying])
 
-  // Auto-scroll cinematic experience
+  // Auto-scroll — the story flows, it doesn't scroll
+  // Breathes like music: slower at emotional moments, flowing between them
   useEffect(() => {
     if (!isOpen) return
 
     let animationId: number
     let resumeTimeout: ReturnType<typeof setTimeout>
+    let startTime = 0
 
-    const autoScroll = () => {
+    const autoScroll = (timestamp: number) => {
       if (userScrollingRef.current) return
-      // Pause gracefully at the bottom of the page
+      // Pause gracefully at the bottom
       const atBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 1)
       if (atBottom) return
-      window.scrollBy(0, 0.4) // 0.4px per frame, very gentle
+
+      if (!startTime) startTime = timestamp
+      const elapsed = (timestamp - startTime) / 1000 // seconds
+
+      // Breathing rhythm — the scroll speed gently oscillates like breathing
+      // Base: 0.55px/frame, oscillates between 0.35 and 0.75
+      // This creates a natural flow — not mechanical, not random
+      const breathCycle = Math.sin(elapsed * 0.15) * 0.5 + 0.5 // 0..1, slow cycle (~42s period)
+      const baseSpeed = 0.35 + breathCycle * 0.4 // 0.35 to 0.75 px/frame
+
+      // Slow down near section boundaries (every ~100vh) — emotional pause
+      const scrollProgress = window.scrollY / document.documentElement.scrollHeight
+      const nearBoundary = Math.sin(scrollProgress * Math.PI * 6) * 0.5 + 0.5 // peaks at section edges
+      const speed = baseSpeed * (0.7 + nearBoundary * 0.3) // slight slowdown at boundaries
+
+      window.scrollBy(0, speed)
       animationId = requestAnimationFrame(autoScroll)
     }
 
-    // Start auto-scroll after a short delay — let user breathe
+    // Start after the story breathes in — not immediately
     const startTimeout = setTimeout(() => {
       animationId = requestAnimationFrame(autoScroll)
-    }, 2000)
+    }, 2500)
 
-    // Detect manual scroll — stop auto-scroll
+    // User takes control — story pauses respectfully
     const onWheel = () => {
       userScrollingRef.current = true
       cancelAnimationFrame(animationId)
       clearTimeout(resumeTimeout)
 
-      // Resume after 5 seconds of no interaction — give user time to explore
+      // Resume after the user has had time to explore
       resumeTimeout = setTimeout(() => {
         userScrollingRef.current = false
         const atBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 1)
         if (!atBottom) {
+          startTime = 0 // reset rhythm on resume
           animationId = requestAnimationFrame(autoScroll)
         }
-      }, 5000)
+      }, 4000)
     }
 
     const onTouchStart = () => {
@@ -1792,9 +1865,10 @@ export default function Home() {
         userScrollingRef.current = false
         const atBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 1)
         if (!atBottom) {
+          startTime = 0
           animationId = requestAnimationFrame(autoScroll)
         }
-      }, 5000)
+      }, 4000)
     }
 
     window.addEventListener('wheel', onWheel, { passive: true })
