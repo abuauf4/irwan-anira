@@ -332,77 +332,160 @@ function QuoteSection() {
   )
 }
 
-// Typewriter effect hook - types text character by character
-function useTypewriter(text: string, speed: number = 30, startDelay: number = 0) {
-  const [displayText, setDisplayText] = useState('')
-  const [isTyping, setIsTyping] = useState(false)
-  const [isComplete, setIsComplete] = useState(false)
-  const startTypingRef = useRef<(() => void) | null>(null)
-
-  const startTyping = useCallback(() => {
-    if (isTyping || isComplete) return
-    setIsTyping(true)
-    setDisplayText('')
-    let i = 0
-    const interval = setInterval(() => {
-      if (i < text.length) {
-        setDisplayText(text.slice(0, i + 1))
-        i++
-      } else {
-        clearInterval(interval)
-        setIsTyping(false)
-        setIsComplete(true)
-      }
-    }, speed)
-  }, [text, speed, isTyping, isComplete])
-
-  startTypingRef.current = startTyping
-
-  return { displayText, isTyping, isComplete, startTyping: () => startTypingRef.current?.() }
-}
-
-// Individual Timeline Story Card with typewriter effect
-function TimelineStoryCard({ item, index, isVisible }: {
+// Individual Timeline Story Card with handwriting animation
+function TimelineStoryCard({ item, index, shouldAnimate, onStart, onComplete }: {
   item: { year: string; title: string; description: string }
   index: number
-  isVisible: boolean
+  shouldAnimate: boolean
+  onStart: () => void
+  onComplete: () => void
 }) {
-  const { displayText, isComplete, startTyping } = useTypewriter(item.description, 25, 0)
-  const hasStarted = useRef(false)
   const cardRef = useRef<HTMLDivElement>(null)
   const titleRef = useRef<HTMLHeadingElement>(null)
   const dotRef = useRef<HTMLDivElement>(null)
+  const textContainerRef = useRef<HTMLDivElement>(null)
+  const mobileDotRef = useRef<HTMLDivElement>(null)
+  const borderRef = useRef<HTMLDivElement>(null)
+  const hasAnimated = useRef(false)
+  const onCompleteRef = useRef(onComplete)
+  const onStartRef = useRef(onStart)
+  const charsPreparedRef = useRef(false)
 
-  // Start typing when card becomes visible
   useEffect(() => {
-    if (isVisible && !hasStarted.current) {
-      hasStarted.current = true
+    onCompleteRef.current = onComplete
+    onStartRef.current = onStart
+  }, [onComplete, onStart])
 
-      // Animate the dot appearing first
+  // Prepare characters for handwriting animation — only when shouldAnimate is true
+  useEffect(() => {
+    if (!shouldAnimate || !textContainerRef.current || charsPreparedRef.current) return
+    charsPreparedRef.current = true
+
+    // Split text into words, then characters — preserve spaces
+    const text = item.description
+    const container = textContainerRef.current
+    container.innerHTML = ''
+
+    const words = text.split(' ')
+    words.forEach((word, wordIdx) => {
+      const wordSpan = document.createElement('span')
+      wordSpan.style.whiteSpace = 'nowrap'
+      wordSpan.style.display = 'inline'
+
+      for (let i = 0; i < word.length; i++) {
+        const charSpan = document.createElement('span')
+        charSpan.className = 'handwriting-char'
+        charSpan.style.display = 'inline-block'
+        charSpan.style.willChange = 'opacity, transform'
+        charSpan.style.opacity = '0'
+        charSpan.style.transform = 'translateY(4px) rotate(-3deg)'
+        charSpan.style.minWidth = '0.1em'
+        charSpan.textContent = word[i]
+        wordSpan.appendChild(charSpan)
+      }
+
+      container.appendChild(wordSpan)
+
+      // Add space between words
+      if (wordIdx < words.length - 1) {
+        const space = document.createElement('span')
+        space.innerHTML = '\u00A0'
+        space.style.opacity = '0'
+        space.className = 'handwriting-char'
+        space.style.willChange = 'opacity'
+        container.appendChild(space)
+      }
+    })
+  }, [shouldAnimate, item.description])
+
+  // Trigger handwriting when shouldAnimate becomes true
+  useEffect(() => {
+    if (!shouldAnimate || hasAnimated.current) return
+
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      if (hasAnimated.current) return
+      hasAnimated.current = true
+      onStartRef.current()
+
+      const tl = gsap.timeline({
+        onComplete: () => {
+          onCompleteRef.current()
+        },
+      })
+
+      // Step 1: Card border draws in
+      if (borderRef.current) {
+        tl.fromTo(borderRef.current,
+          { clipPath: 'inset(0 100% 100% 0)' },
+          { clipPath: 'inset(0 0% 0% 0%)', duration: 0.8, ease: 'power2.inOut' },
+          0
+        )
+      }
+
+      // Step 2: Timeline dot pops in
       if (dotRef.current) {
-        gsap.fromTo(dotRef.current,
+        tl.fromTo(dotRef.current,
           { scale: 0, opacity: 0 },
-          { scale: 1, opacity: 1, duration: 0.5, ease: 'back.out(2)' }
+          { scale: 1, opacity: 1, duration: 0.5, ease: 'back.out(2)' },
+          0.3
         )
       }
 
-      // Then the title fades in
+      // Mobile dot
+      if (mobileDotRef.current) {
+        tl.fromTo(mobileDotRef.current,
+          { scale: 0, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.5, ease: 'back.out(2)' },
+          0.3
+        )
+      }
+
+      // Step 3: Title writes in (character by character with slight rotation)
       if (titleRef.current) {
-        gsap.fromTo(titleRef.current,
-          { opacity: 0, y: 15 },
-          { opacity: 1, y: 0, duration: 0.6, delay: 0.3, ease: 'power2.out' }
-        )
+        const titleText = titleRef.current.textContent || ''
+        titleRef.current.innerHTML = ''
+        const titleChars: HTMLSpanElement[] = []
+
+        for (const char of titleText) {
+          const span = document.createElement('span')
+          span.style.display = 'inline-block'
+          span.style.willChange = 'opacity, transform'
+          span.style.opacity = '0'
+          span.style.transform = 'translateY(8px) rotate(-5deg)'
+          span.textContent = char === ' ' ? '\u00A0' : char
+          titleRef.current.appendChild(span)
+          titleChars.push(span)
+        }
+
+        tl.to(titleChars, {
+          opacity: 1,
+          y: 0,
+          rotation: 0,
+          duration: 0.15,
+          stagger: 0.04,
+          ease: 'power2.out',
+        }, 0.5)
       }
 
-      // Then start the typewriter after a short delay
-      setTimeout(() => {
-        startTyping()
-      }, 800)
-    }
-  }, [isVisible, startTyping])
+      // Step 4: Description handwriting animation
+      if (textContainerRef.current) {
+        const chars = textContainerRef.current.querySelectorAll('.handwriting-char')
 
-  // Blinking cursor effect while typing
-  const showCursor = isVisible && !isComplete && hasStarted.current
+        // Animate each character appearing as if being written
+        tl.to(chars, {
+          opacity: 1,
+          y: 0,
+          rotation: 0,
+          duration: 0.08,
+          stagger: 0.022, // Smooth handwriting pace
+          ease: 'power1.out',
+        }, 0.9)
+      }
+    }, 100)
+
+    return () => clearTimeout(timer)
+  }, [shouldAnimate])
 
   return (
     <div
@@ -425,13 +508,28 @@ function TimelineStoryCard({ item, index, isVisible }: {
       {/* Content */}
       <div className={`w-full sm:w-[calc(50%-40px)] ${index % 2 === 0 ? 'sm:pr-12 sm:text-right' : 'sm:pl-12 sm:text-left'}`}>
         <div className="bg-white/80 backdrop-blur-sm rounded-lg p-6 shadow-md border border-[var(--gold)]/20 relative overflow-hidden">
+          {/* Animated border draw */}
+          <div
+            ref={borderRef}
+            className="absolute inset-0 rounded-lg pointer-events-none"
+            style={{
+              clipPath: 'inset(0 100% 100% 0%)',
+              border: '2px solid var(--gold)',
+              opacity: 0.4,
+            }}
+          />
+
           {/* Decorative corner accent */}
           <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 opacity-30" style={{ borderColor: 'var(--gold)' }} />
           <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 opacity-30" style={{ borderColor: 'var(--gold)' }} />
 
           {/* Mobile year */}
           <div className="sm:hidden flex items-center justify-center mb-3">
-            <div className="w-12 h-12 rounded-full border-2 border-[var(--gold)] flex items-center justify-center" style={{ background: 'var(--cream)' }}>
+            <div
+              ref={mobileDotRef}
+              className="w-12 h-12 rounded-full border-2 border-[var(--gold)] flex items-center justify-center"
+              style={{ background: 'var(--cream)', opacity: 0 }}
+            >
               <span className="text-xs font-bold" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold-dark)' }}>
                 {item.year}
               </span>
@@ -441,24 +539,17 @@ function TimelineStoryCard({ item, index, isVisible }: {
           <h3
             ref={titleRef}
             className="text-xl sm:text-2xl mb-3"
-            style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)', opacity: 0 }}
+            style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)', opacity: 1 }}
           >
             {item.title}
           </h3>
 
-          {/* Typewriter text area */}
-          <div className="text-sm leading-relaxed min-h-[3em]" style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}>
-            <span>{displayText}</span>
-            {showCursor && (
-              <span
-                className="inline-block w-[2px] h-[1em] ml-[1px] align-middle"
-                style={{
-                  background: 'var(--gold)',
-                  animation: 'typewriterBlink 0.8s step-end infinite',
-                }}
-              />
-            )}
-          </div>
+          {/* Handwriting text area */}
+          <div
+            ref={textContainerRef}
+            className="text-sm leading-relaxed min-h-[3em]"
+            style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}
+          />
         </div>
       </div>
 
@@ -468,97 +559,168 @@ function TimelineStoryCard({ item, index, isVisible }: {
   )
 }
 
-// Timeline Section with sequential typewriter storytelling
+// Timeline Section with sequential handwriting storytelling + auto-scroll
 function TimelineSection() {
   const sectionRef = useRef<HTMLDivElement>(null)
-  const [visibleItems, setVisibleItems] = useState<Set<number>>(new Set())
+  const completedRef = useRef<Set<number>>(new Set())
+  const [, forceUpdate] = useState(0)
+  const autoScrollRef = useRef<number | null>(null)
+  const isScrollPausedRef = useRef(false)
+  const userScrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
+  // Detect user manual scroll to pause auto-scroll temporarily
+  useEffect(() => {
+    const handleUserScroll = () => {
+      // If auto-scroll is active, detect manual scroll by checking if scroll position
+      // differs significantly from where auto-scroll would put it
+      isScrollPausedRef.current = true
+
+      if (userScrollTimeoutRef.current) {
+        clearTimeout(userScrollTimeoutRef.current)
+      }
+
+      // Resume auto-scroll after 3 seconds of no manual scrolling
+      userScrollTimeoutRef.current = setTimeout(() => {
+        isScrollPausedRef.current = false
+      }, 3000)
+    }
+
+    // Use wheel/touch events to detect intentional user scroll
+    const handleWheel = () => {
+      isScrollPausedRef.current = true
+      if (userScrollTimeoutRef.current) clearTimeout(userScrollTimeoutRef.current)
+      userScrollTimeoutRef.current = setTimeout(() => {
+        isScrollPausedRef.current = false
+      }, 3000)
+    }
+
+    const handleTouchStart = () => {
+      isScrollPausedRef.current = true
+      if (userScrollTimeoutRef.current) clearTimeout(userScrollTimeoutRef.current)
+      userScrollTimeoutRef.current = setTimeout(() => {
+        isScrollPausedRef.current = false
+      }, 5000)
+    }
+
+    window.addEventListener('wheel', handleWheel, { passive: true })
+    window.addEventListener('touchstart', handleTouchStart, { passive: true })
+
+    return () => {
+      window.removeEventListener('wheel', handleWheel)
+      window.removeEventListener('touchstart', handleTouchStart)
+      if (userScrollTimeoutRef.current) clearTimeout(userScrollTimeoutRef.current)
+    }
+  }, [])
+
+  // Slow auto-scroll function
+  const startAutoScroll = useCallback(() => {
+    if (autoScrollRef.current) return // Already scrolling
+
+    const scrollSpeed = 0.4 // pixels per frame — very slow and gentle
+
+    const scrollStep = () => {
+      if (isScrollPausedRef.current) {
+        autoScrollRef.current = requestAnimationFrame(scrollStep)
+        return
+      }
+
+      // Check if all cards are complete — stop scrolling
+      const allDone = completedRef.current.size >= WEDDING.timeline.length
+      if (allDone) {
+        if (autoScrollRef.current) {
+          cancelAnimationFrame(autoScrollRef.current)
+          autoScrollRef.current = null
+        }
+        return
+      }
+
+      // Check if the timeline section is still in view
+      if (sectionRef.current) {
+        const rect = sectionRef.current.getBoundingClientRect()
+        const sectionBottom = rect.bottom
+
+        // Stop scrolling if we've passed the section
+        if (sectionBottom < 100) {
+          if (autoScrollRef.current) {
+            cancelAnimationFrame(autoScrollRef.current)
+            autoScrollRef.current = null
+          }
+          return
+        }
+      }
+
+      window.scrollBy(0, scrollSpeed)
+      autoScrollRef.current = requestAnimationFrame(scrollStep)
+    }
+
+    autoScrollRef.current = requestAnimationFrame(scrollStep)
+  }, [])
+
+  // Stop auto-scroll
+  const stopAutoScroll = useCallback(() => {
+    if (autoScrollRef.current) {
+      cancelAnimationFrame(autoScrollRef.current)
+      autoScrollRef.current = null
+    }
+  }, [])
+
+  // Handle card completion — triggers next card
+  const handleCardComplete = useCallback((index: number) => {
+    completedRef.current.add(index)
+    forceUpdate(n => n + 1)
+
+    // If all cards are done, stop auto-scroll
+    if (completedRef.current.size >= WEDDING.timeline.length) {
+      stopAutoScroll()
+    }
+  }, [stopAutoScroll])
+
+  // Handle card start — begin auto-scroll on first card
+  const handleCardStart = useCallback((index: number) => {
+    if (index === 0) {
+      startAutoScroll()
+    }
+  }, [startAutoScroll])
+
+  // Determine which card should be active
+  // Card N is active if all cards before it are complete
+  const getActiveCardIndex = useCallback((): number => {
+    for (let i = 0; i < WEDDING.timeline.length; i++) {
+      if (!completedRef.current.has(i)) return i
+    }
+    return WEDDING.timeline.length // All complete
+  }, [])
+
+  // Kick off the first card when section enters viewport
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // Fade in section title
       fadeIn(sectionRef.current!, { y: 30 })
     })
 
-    // Set up IntersectionObserver for sequential reveal
-    // Each item triggers when scrolled into view, then types sequentially
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const index = Number(entry.target.getAttribute('data-index'))
-            if (!isNaN(index) && !visibleItems.has(index)) {
-              // Check if all previous items are already visible (sequential reveal)
-              setVisibleItems((prev) => {
-                const newSet = new Set(prev)
-                // Allow this item to be visible only if all previous are done
-                // or if it's the first item
-                let canShow = true
-                for (let i = 0; i < index; i++) {
-                  if (!prev.has(i)) {
-                    canShow = false
-                    break
-                  }
-                }
-                if (canShow) {
-                  newSet.add(index)
-                }
-                return newSet
-              })
-            }
+          if (entry.isIntersecting && completedRef.current.size === 0) {
+            // Trigger first card
+            forceUpdate(n => n + 1)
           }
         })
       },
-      { threshold: 0.3, rootMargin: '0px 0px -10% 0px' }
+      { threshold: 0.2 }
     )
 
-    // Observe all timeline item containers
-    const items = sectionRef.current?.querySelectorAll('[data-timeline-item]')
-    items?.forEach((item) => observer.observe(item))
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current)
+    }
 
     return () => {
       ctx.revert()
       observer.disconnect()
+      stopAutoScroll()
     }
-  }, [])
+  }, [stopAutoScroll])
 
-  // Auto-reveal next items when previous ones complete typing
-  useEffect(() => {
-    // Check sequentially - if item N is visible, check if item N+1 is in viewport
-    const checkNextItems = () => {
-      if (!sectionRef.current) return
-
-      WEDDING.timeline.forEach((_, index) => {
-        if (visibleItems.has(index) && !visibleItems.has(index + 1) && index + 1 < WEDDING.timeline.length) {
-          const nextEl = sectionRef.current?.querySelector(`[data-index="${index + 1}"]`)
-          if (nextEl) {
-            const rect = nextEl.getBoundingClientRect()
-            const inView = rect.top < window.innerHeight * 0.85 && rect.bottom > 0
-            if (inView) {
-              // Add a delay before showing next card (feels like sequential storytelling)
-              setTimeout(() => {
-                setVisibleItems((prev) => {
-                  const newSet = new Set(prev)
-                  // Only add if all previous are visible
-                  let canShow = true
-                  for (let i = 0; i <= index; i++) {
-                    if (!prev.has(i)) {
-                      canShow = false
-                      break
-                    }
-                  }
-                  if (canShow) newSet.add(index + 1)
-                  return newSet
-                })
-              }, 2000) // 2 second pause between stories to feel like storytelling
-            }
-          }
-        }
-      })
-    }
-
-    const interval = setInterval(checkNextItems, 500)
-    return () => clearInterval(interval)
-  }, [visibleItems])
+  const activeCardIndex = getActiveCardIndex()
 
   return (
     <section ref={sectionRef} className="py-20 px-6" style={{ background: 'var(--cream)', opacity: 0 }}>
@@ -574,15 +736,37 @@ function TimelineSection() {
           {/* Center line */}
           <div className="timeline-line hidden sm:block" />
 
-          {WEDDING.timeline.map((item, index) => (
-            <div key={item.year} data-timeline-item data-index={index}>
-              <TimelineStoryCard
-                item={item}
-                index={index}
-                isVisible={visibleItems.has(index)}
-              />
-            </div>
-          ))}
+          {WEDDING.timeline.map((item, index) => {
+            // Card is active if it's the next one to animate
+            const isActive = index === activeCardIndex
+            // Card is already done (animation complete)
+            const isDone = completedRef.current.has(index)
+            // Card should animate if it's active OR already done (to keep content visible)
+            const shouldAnimate = isActive || isDone
+            // Card should be visible (active or done)
+            const shouldShow = isDone || isActive
+
+            return (
+              <div key={item.year} data-timeline-item data-index={index}
+                style={{
+                  opacity: shouldShow ? 1 : 0,
+                  transition: 'opacity 0.8s ease',
+                  pointerEvents: shouldShow ? 'auto' : 'none',
+                  maxHeight: shouldShow ? '1000px' : '0px',
+                  overflow: 'hidden',
+                  marginBottom: shouldShow ? undefined : 0,
+                }}
+              >
+                <TimelineStoryCard
+                  item={item}
+                  index={index}
+                  shouldAnimate={shouldAnimate}
+                  onStart={() => handleCardStart(index)}
+                  onComplete={() => handleCardComplete(index)}
+                />
+              </div>
+            )
+          })}
         </div>
       </div>
     </section>
