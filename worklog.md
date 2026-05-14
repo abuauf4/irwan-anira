@@ -252,3 +252,96 @@ Work Log:
 Stage Summary:
 - All new CSS classes properly integrated into page.tsx
 - Build compiles successfully with no errors
+
+---
+Task ID: 2
+Agent: full-stack-developer
+Task: Auto-scroll breathing rhythm + Timeline/Lamaran card seamless transitions
+
+Work Log:
+- Replaced entire auto-scroll system in Home component with cinematic breathing rhythm
+- Implemented position-based speed zones (getSpeedForPosition): cover=0.4, transitions=1.2, Bismillah=0.5, couple=0.6, diary/timeline=0.8, countdown/events=1.0, gallery=1.0, wishes=0.6, closing=0.3
+- Added smooth acceleration via lerp interpolation (lerpFactor=0.03, ~30 frames to reach target speed)
+- Changed resume delay from 4s to 3s after user scroll interaction
+- Kept 2s initial start delay, gentle ramp-up from 0.2px/frame
+- On resume after user interaction, speed halves (×0.5) for smooth re-entry instead of hard restart
+- Replaced autoScrollRef (number | null) with autoScrollState ref object tracking active/paused/currentSpeed/targetSpeed
+- Reduced Timeline scroll pin distance from 120% to 80% per card (360% → 240% total)
+- Increased scrub responsiveness from 0.8 to 0.5
+- Tightened all Timeline animation durations:
+  - Card enter: 0.6 → 0.4
+  - SVG border: 0.8 → 0.5, overlap 0.3 → 0.2
+  - Corner flourishes: 0.4 → 0.25, stagger 0.1 → 0.06, overlap 0.4 → 0.25
+  - Dot reveal: 0.5 → 0.35, overlap 0.7 → 0.45
+  - Dot ring: 0.5 → 0.35, overlap 0.3 → 0.2
+  - Mobile dot: 0.5 → 0.35
+  - Title chars: 0.25 → 0.18, stagger 0.035 → 0.025, overlap 0.4 → 0.25
+  - Description chars: 0.1 → 0.07, stagger 0.016 → 0.012, overlap 0.15 → 0.1
+  - Gap between cards: 0.15 → 0.08
+  - Final padding: 0.1 → 0.05
+- Verified dev server compiles successfully (HTTP 200)
+- No new lint errors introduced in source files
+
+Stage Summary:
+- Auto-scroll now breathes like music with 10 speed zones mapped to scroll position
+- Smooth lerp-based acceleration eliminates mechanical feel (0.03 factor, ~0.5s easing)
+- Resume after user interaction is graceful: 3s pause, half-speed re-entry, then ramp up
+- Timeline/Lamaran card stutter eliminated: 33% less scroll distance + tighter overlaps = seamless page-turning feel
+- Key insight: The lamaran stutter was caused by excessive scroll pin distance making each card wait for scroll progress; reducing from 120% to 80% per card removes the dead-air
+
+---
+Task ID: 3
+Agent: full-stack-developer
+Task: Gallery memories + Emotional ending aftertaste
+
+Work Log:
+- Replaced Gallery grid layout (gallery-grid) with organic diary-page layout (gallery-memories): flex column with staggered positions, varying sizes, and offset margins for organic feel
+- Changed polaroid-frame/polaroid-layered to memory-photo class with same visual styling (white background, padding, layered shadow)
+- Updated Gallery GSAP animation: non-linear stagger (first 3 fast at 0.15s, middle 5 steady at 0.2s, last 2 slow at 0.35s), blur(4px)→blur(0px) memory-coming-into-focus effect, scale 0.88→1, warm glow pulse on complete, removed infinite float animation
+- Added CSS for gallery-memories (flex column, centered) and memory-photo (polaroid styling with hover effect) in globals.css
+- Added reduced-motion override for memory-photo in globals.css
+- Replaced single falling petal in Closing section with 5 petals at varied positions (15%, 35%, 55%, 72%, 88%), varied sizes, speeds (7-13s), and delays (5-11s)
+- Added dateRef ref to ClosingSection component
+- Replaced final handwriting section with enhanced version: text-2xl/sm:text-3xl with gold-shimmer-text and font-script (was smaller with font-serif)
+- Added "05 . 07 . 2026" date element below the final handwriting with tracking-[0.4em]
+- Updated Closing GSAP: slower handwriting stagger (0.045→0.06), longer charDuration (0.12→0.15), 1.5s wait after shimmer before fade-to-darkness, more dramatic fade overlay (opacity 0.6→0.85, duration 4s→6s), date fade-in 3.5s after darkness begins with slow 3s opacity animation
+- All changes compile successfully, no lint errors in source files
+
+Stage Summary:
+- Gallery transformed from "images in a grid" to "memories returning one by one" with organic layout and emotional entrance animations
+- Non-linear stagger creates feeling of memories flooding then trickling
+- Blur-to-focus animation makes photos feel like memories coming into consciousness
+- Infinite float animation removed — photos are memories, not UI elements
+- Closing section now has cinematic ending sequence: handwriting → shimmer → 5 petals → fade-to-warm-darkness → date appears → silence
+- Ending opacity increased from 0.6 to 0.85 for more dramatic "dissolve into warmth" effect
+- Page no longer "ends" — it "dissolves" like falling asleep after reading a love letter
+
+---
+Task ID: 4
+Agent: full-stack-developer
+Task: Hero signature moment + CSS warm cinematic atmosphere
+
+Work Log:
+- Added 'breathing' phase to CoverSection.tsx phase state type (idle → leaning → blooming → breathing → dissolving → darkness)
+- Added scale pulse on section container during breathing phase (1.0 → 1.02 → 1.0) making the world feel alive
+- Added cinematic light leak sweep div (z-[3.5]) with diagonal golden gradient that slides across during dissolving phase — like sunlight through a doorway
+- Added film grain overlay div (z-[1.5]) with SVG fractalNoise filter at mix-blend-overlay for analog warmth
+- Updated bloom layer to remain visible during breathing phase with scale(1.05)
+- Updated phase transition timings: leaning 300ms, bloom 500ms (was 300ms), breathing 300ms (new), dissolve 900ms (was 700ms), darkness 400ms (was 300ms)
+- Updated setTimeout sequence: blooming at 300ms, breathing at 800ms, dissolving at 1100ms, darkness at 2000ms, onOpen at 2400ms
+- Added global warm paper grain overlay (body::after) with fixed positioning, z-index 9997, fractalNoise baseFrequency 0.85, opacity 0.35, mix-blend-overlay
+- Updated gallery-memories class: flex-direction column → flex-wrap wrap, align-items center → justify-content center, padding 0 0.5rem → 0 1rem
+- Updated memory-photo hover: scale 1.03 → 1.04, box-shadow gold glow 0 0 20px → 0 0 25px with 0.1 opacity
+- Enhanced cinema-dark-section noise: SVG noise opacity 0.03 → 0.04, parent opacity 0.8 → 0.9
+- Added warmGlow keyframe animation (candlelight flicker: 0.04 → 0.07 → 0.03 → 0.06 → 0.04)
+- Added .cinema-warm-glow utility class with radial-gradient and warmGlow 8s animation
+- Added global section transition smoothness: section::before and section::after with 60px cream gradient edges at 0.3 opacity
+- Added dark section override to exclude cream gradients from cinema-dark-section and batik-kawung-dark
+- Fixed duplicate body::after block that was created during multi-edit
+
+Stage Summary:
+- CoverSection.tsx: Hero now has 3 signature cinematic moments — breathing scale pulse, light leak sweep, film grain overlay — making the opening feel like entering a living world
+- globals.css: 7 atmospheric enhancements adding analog warmth (paper grain, warm glow keyframe, section dissolve edges, enhanced noise)
+- Phase timings slowed from 1600ms total → 2400ms for more cinematic breathing room
+- No lint errors in modified source files (existing no-this-alias warnings are from GSAP/Lenis third-party code)
+- Dev server compiles and serves successfully (HTTP 200)

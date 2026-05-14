@@ -8,7 +8,7 @@ interface CoverSectionProps {
 
 export default function CoverSection({ onOpen }: CoverSectionProps) {
   const [isOpening, setIsOpening] = useState(false)
-  const [phase, setPhase] = useState<'idle' | 'leaning' | 'blooming' | 'dissolving' | 'darkness'>('idle')
+  const [phase, setPhase] = useState<'idle' | 'leaning' | 'blooming' | 'breathing' | 'dissolving' | 'darkness'>('idle')
   const containerRef = useRef<HTMLDivElement>(null)
   const bgRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
@@ -68,17 +68,20 @@ export default function CoverSection({ onOpen }: CoverSectionProps) {
     // Phase 1: Lean in — content draws closer, like leaning toward a door (300ms)
     setPhase('leaning')
 
-    // Phase 2: Golden bloom — warm light blooms from center, candle being lit (400ms)
+    // Phase 2: Golden bloom — warm light blooms from center, candle being lit (500ms — more time to feel the light)
     setTimeout(() => setPhase('blooming'), 300)
 
-    // Phase 3: Dissolve — the cover softly melts away, not a hard cut (600ms)
-    setTimeout(() => setPhase('dissolving'), 700)
+    // Phase 2b: Breathe — the world responds to your touch, a subtle pulse of life (300ms)
+    setTimeout(() => setPhase('breathing'), 800)
 
-    // Phase 4: Brief darkness — the breath before the story begins (300ms)
-    setTimeout(() => setPhase('darkness'), 1300)
+    // Phase 3: Dissolve — the cover softly melts away, not a hard cut (900ms — slower, more cinematic)
+    setTimeout(() => setPhase('dissolving'), 1100)
+
+    // Phase 4: Brief darkness — the breath before the story begins (400ms — slightly longer breath)
+    setTimeout(() => setPhase('darkness'), 2000)
 
     // Phase 5: Enter the story
-    setTimeout(() => onOpen(), 1600)
+    setTimeout(() => onOpen(), 2400)
   }, [isOpening, onOpen])
 
   // Petal configurations — 8 petals with varied timing
@@ -98,8 +101,10 @@ export default function CoverSection({ onOpen }: CoverSectionProps) {
       ref={containerRef}
       className="relative min-h-screen flex items-center justify-center overflow-hidden"
       style={{
-        transition: 'opacity 0.8s ease',
+        transition: 'opacity 0.8s ease, transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
         opacity: phase === 'darkness' ? 0 : 1,
+        // Signature moment: the world breathes — subtle scale pulse when opening
+        transform: phase === 'breathing' ? 'scale(1.02)' : 'scale(1)',
       }}
     >
       {/* Background Image — warm, cinematic with parallax */}
@@ -128,6 +133,15 @@ export default function CoverSection({ onOpen }: CoverSectionProps) {
         }}
       />
 
+      {/* Film grain — analog warmth */}
+      <div
+        className="absolute inset-0 pointer-events-none z-[1.5] mix-blend-overlay"
+        style={{
+          backgroundImage: "url('data:image/svg+xml,%3Csvg xmlns=\"http://www.w3.org/2000/svg\" width=\"200\" height=\"200\" viewBox=\"0 0 200 200\"%3E%3Cfilter id=\"noise\"%3E%3CfeTurbulence type=\"fractalNoise\" baseFrequency=\"0.9\" numOctaves=\"4\" stitchTiles=\"stitch\"/%3E%3C/filter%3E%3Crect width=\"100%25\" height=\"100%25\" filter=\"url(%23noise)\" opacity=\"0.04\"/%3E%3C/svg%3E')",
+          opacity: 0.4,
+        }}
+      />
+
       {/* ─── THE SIGNATURE MOMENT ─── */}
 
       {/* Bloom layer — warm golden light expanding from center */}
@@ -135,9 +149,20 @@ export default function CoverSection({ onOpen }: CoverSectionProps) {
         className="absolute inset-0 pointer-events-none z-[3]"
         style={{
           background: 'radial-gradient(ellipse at center, rgba(201,169,110,0.25) 0%, rgba(201,169,110,0.08) 40%, transparent 70%)',
-          opacity: phase === 'blooming' || phase === 'dissolving' ? 1 : 0,
-          transform: phase === 'blooming' ? 'scale(1)' : phase === 'dissolving' ? 'scale(1.5)' : 'scale(0.5)',
+          opacity: phase === 'blooming' || phase === 'breathing' || phase === 'dissolving' ? 1 : 0,
+          transform: phase === 'blooming' ? 'scale(1)' : phase === 'breathing' ? 'scale(1.05)' : phase === 'dissolving' ? 'scale(1.5)' : 'scale(0.5)',
           transition: 'opacity 0.6s ease, transform 0.8s ease',
+        }}
+      />
+
+      {/* Cinematic light sweep — sunlight through a doorway */}
+      <div
+        className="absolute inset-0 pointer-events-none z-[3.5]"
+        style={{
+          background: 'linear-gradient(135deg, transparent 30%, rgba(201,169,110,0.15) 45%, rgba(232,200,120,0.2) 50%, rgba(201,169,110,0.15) 55%, transparent 70%)',
+          opacity: phase === 'dissolving' ? 1 : 0,
+          transform: phase === 'dissolving' ? 'translateX(0%)' : 'translateX(-100%)',
+          transition: 'opacity 0.3s ease, transform 0.6s ease',
         }}
       />
 
@@ -196,6 +221,7 @@ export default function CoverSection({ onOpen }: CoverSectionProps) {
           // Lean in: content draws closer when opening
           transform: phase === 'leaning' ? 'translate3d(0, 0, 0) scale(1.04)' :
                      phase === 'blooming' ? 'translate3d(0, 0, 0) scale(1.06)' :
+                     phase === 'breathing' ? 'translate3d(0, 0, 0) scale(1.06)' :
                      phase === 'dissolving' ? 'translate3d(0, 0, 0) scale(1.08)' :
                      undefined,
           opacity: phase === 'dissolving' ? 0.6 : phase === 'darkness' ? 0 : 1,

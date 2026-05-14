@@ -797,9 +797,9 @@ function TimelineSection() {
         scrollTrigger: {
           trigger: section,
           start: 'top 10%',
-          end: `+=${WEDDING.timeline.length * 120}%`,
+          end: `+=${WEDDING.timeline.length * 80}%`,
           pin: true,
-          scrub: 0.8,
+          scrub: 0.5,
           anticipatePin: 1,
           onUpdate: (self) => {
             if (progressBar) {
@@ -834,16 +834,16 @@ function TimelineSection() {
           opacity: 1,
           y: 0,
           scale: 1,
-          duration: 0.6,
+          duration: 0.4,
           ease: 'power3.out',
         })
 
         if (svgPath) {
           masterTl.to(svgPath, {
             strokeDashoffset: 0,
-            duration: 0.8,
+            duration: 0.5,
             ease: 'power2.inOut',
-          }, '-=0.3')
+          }, '-=0.2')
         }
 
         // Corner flourishes
@@ -864,10 +864,10 @@ function TimelineSection() {
           if (cornerPaths.length > 0) {
             masterTl.to(cornerPaths, {
               strokeDashoffset: 0,
-              duration: 0.4,
-              stagger: 0.1,
+              duration: 0.25,
+              stagger: 0.06,
               ease: 'power2.inOut',
-            }, '-=0.4')
+            }, '-=0.25')
           }
         }
 
@@ -877,25 +877,25 @@ function TimelineSection() {
           masterTl.to(dot, {
             scale: 1,
             opacity: 1,
-            duration: 0.5,
+            duration: 0.35,
             ease: 'back.out(1.7)',
-          }, '-=0.7')
+          }, '-=0.45')
           if (dotRing) {
             const ringLen = dotRing.getTotalLength ? dotRing.getTotalLength() : 163.36
             dotRing.style.strokeDasharray = String(ringLen)
             dotRing.style.strokeDashoffset = String(ringLen)
             masterTl.to(dotRing, {
               strokeDashoffset: 0,
-              duration: 0.5,
+              duration: 0.35,
               ease: 'power2.inOut',
-            }, '-=0.3')
+            }, '-=0.2')
           }
         }
         if (mobileDot) {
           masterTl.to(mobileDot, {
             scale: 1,
             opacity: 1,
-            duration: 0.5,
+            duration: 0.35,
             ease: 'back.out(1.7)',
           }, '<')
         }
@@ -906,10 +906,10 @@ function TimelineSection() {
             opacity: 1,
             y: 0,
             rotation: 0,
-            duration: 0.25,
-            stagger: 0.035,
+            duration: 0.18,
+            stagger: 0.025,
             ease: 'power2.out',
-          }, '-=0.4')
+          }, '-=0.25')
         }
 
         // Description — ink flowing faster, story continuing
@@ -918,20 +918,20 @@ function TimelineSection() {
             opacity: 1,
             y: 0,
             rotation: 0,
-            duration: 0.1,
-            stagger: 0.016,
+            duration: 0.07,
+            stagger: 0.012,
             ease: 'power2.out',
-          }, '-=0.15')
+          }, '-=0.1')
         }
 
         // The story continues — brief breath between pages
         if (index < WEDDING.timeline.length - 1) {
-          masterTl.to({}, { duration: 0.15 })
+          masterTl.to({}, { duration: 0.08 })
         }
       })
 
       // Final breath — the diary page settles
-      masterTl.to({}, { duration: 0.1 })
+      masterTl.to({}, { duration: 0.05 })
     })
 
     return () => ctx.revert()
@@ -1266,19 +1266,22 @@ function GallerySection() {
       fadeIn(sectionRef.current!, { duration: 1.2, y: 20 })
 
       // Memories returning one by one — each photo is a separate moment
-      const polaroids = sectionRef.current!.querySelectorAll('.polaroid-frame')
+      const polaroids = sectionRef.current!.querySelectorAll('.memory-photo')
       if (polaroids.length > 0) {
         polaroids.forEach((polaroid, i) => {
-          // Each photo arrives at its own pace — like memories surfacing
+          // Non-linear stagger: first 3 fast, middle steady, last 2 slow
+          const staggerDelay = i < 3 ? 0.15 * i : i < 8 ? 0.45 + 0.2 * (i - 3) : 1.45 + 0.35 * (i - 8)
+
           gsap.fromTo(polaroid,
-            { opacity: 0, y: 24, scale: 0.93, rotation: -1.5 },
+            { opacity: 0, y: 30, scale: 0.88, rotation: -2, filter: 'blur(4px)' },
             {
               opacity: 1,
               y: 0,
               scale: 1,
               rotation: 0,
-              duration: 1,
-              delay: i * 0.35,
+              filter: 'blur(0px)',
+              duration: 0.9,
+              delay: staggerDelay,
               ease: 'power3.out',
               scrollTrigger: {
                 trigger: sectionRef.current!,
@@ -1286,26 +1289,17 @@ function GallerySection() {
                 toggleActions: 'play none none none',
               },
               onComplete: () => {
-                // A warm glow pulse — the memory solidifying, becoming real
+                // Warm glow pulse — memory solidifying
                 gsap.fromTo(polaroid,
                   { boxShadow: '0 0 0px rgba(201,169,110,0)' },
                   {
-                    boxShadow: '0 0 20px rgba(201,169,110,0.1)',
-                    duration: 0.6,
+                    boxShadow: '0 0 25px rgba(201,169,110,0.12)',
+                    duration: 0.5,
                     yoyo: true,
                     repeat: 1,
                     ease: 'power2.inOut',
                   }
                 )
-                // Then it breathes — alive, not static
-                gsap.to(polaroid, {
-                  y: '+=2',
-                  duration: 3.5 + i * 0.4,
-                  ease: 'sine.inOut',
-                  yoyo: true,
-                  repeat: -1,
-                  delay: 0.5 + i * 0.2,
-                })
               },
             }
           )
@@ -1374,15 +1368,21 @@ function GallerySection() {
           <span className="text-[var(--gold)] text-lg">&#10047;</span>
         </div>
 
-        {/* Polaroid Grid */}
-        <div className="gallery-grid">
+        {/* Memories returning one by one — like photos pinned to a diary page */}
+        <div className="gallery-memories">
           {WEDDING.galleryImages.map((img, index) => (
             <div
               key={index}
-              className="polaroid-frame polaroid-layered cursor-pointer mx-auto"
+              className="memory-photo cursor-pointer"
               style={{
+                // Each photo placed at a slightly different position, like photos pinned to a diary page
                 transform: `rotate(${rotations.current[index]}deg)`,
-                maxWidth: '240px',
+                // Vary sizes — some bigger (featured memories), some smaller (casual moments)
+                maxWidth: index % 3 === 0 ? '280px' : index % 3 === 1 ? '220px' : '200px',
+                // Offset positions for organic feel
+                marginLeft: index % 2 === 0 ? 'auto' : '5%',
+                marginRight: index % 2 === 0 ? '5%' : 'auto',
+                marginBottom: index % 3 === 0 ? '-10px' : '0',
               }}
               onClick={() => openLightbox(index)}
               role="button"
@@ -1487,6 +1487,7 @@ function ClosingSection() {
   const doaRef = useRef<HTMLDivElement>(null)
   const footerLineRef = useRef<HTMLDivElement>(null)
   const finalLineRef = useRef<HTMLDivElement>(null)
+  const dateRef = useRef<HTMLDivElement>(null)
   const shimmerRef = useRef<HTMLDivElement>(null)
   const hasFinalAnimated = useRef(false)
 
@@ -1573,11 +1574,11 @@ function ClosingSection() {
           entries.forEach((entry) => {
             if (entry.isIntersecting && !hasFinalAnimated.current) {
               hasFinalAnimated.current = true
-              // Handwriting reveal for the final line — slow, emotional
+              // Handwriting reveal for the final line — VERY slow, emotional, like the last sentence ever written
               setTimeout(() => {
                 if (finalLineRef.current) {
                   gsap.set(finalLineRef.current, { opacity: 1 })
-                  handwritingReveal(finalLineRef.current, 0.045, 0.12, 0.8)
+                  handwritingReveal(finalLineRef.current, 0.06, 0.15, 0.8)
                 }
                 // Golden shimmer sweep — like the last light of golden hour
                 setTimeout(() => {
@@ -1591,18 +1592,29 @@ function ClosingSection() {
                         ease: 'power1.inOut',
                         onComplete: () => {
                           gsap.set(shimmerRef.current!, { opacity: 0 })
-                          // After the shimmer, the diary slowly fades to warm darkness
-                          // Like closing the book in candlelight
+                          // After the shimmer, wait 1.5s then begin fade-to-warm-darkness
                           setTimeout(() => {
                             const fadeOverlay = sectionRef.current?.querySelector('.ending-fade-overlay') as HTMLDivElement | null
                             if (fadeOverlay) {
                               gsap.to(fadeOverlay, {
-                                opacity: 0.6,
-                                duration: 4,
+                                opacity: 0.85,
+                                duration: 6,
                                 ease: 'power2.inOut',
                               })
                             }
-                          }, 1000)
+                            // After the darkness settles, fade in the date
+                            // The last thing you see — the beginning of forever
+                            setTimeout(() => {
+                              if (dateRef.current) {
+                                gsap.set(dateRef.current, { opacity: 1 })
+                                gsap.to(dateRef.current.querySelector('p'), {
+                                  opacity: 0.7,
+                                  duration: 3,
+                                  ease: 'power2.out',
+                                })
+                              }
+                            }, 3500)
+                          }, 1500)
                         },
                       }
                     )
@@ -1646,24 +1658,27 @@ function ClosingSection() {
         }}
       />
 
-      {/* Final petal — the last visible movement before silence */}
+      {/* Final petals — the last visible movement before silence */}
       <div className="absolute inset-0 pointer-events-none z-25 overflow-hidden">
-        <div
-          style={{
-            position: 'absolute',
-            left: '45%',
-            top: '-20px',
-            width: '12px',
-            height: '14px',
-            opacity: 0,
-            animation: 'finalPetalDrift 8s ease-in 6s forwards',
-          }}
-        >
-          <svg width="12" height="14" viewBox="0 0 20 24" fill="none">
-            <path d="M10 0C10 0 14 4 14 10C14 16 10 24 10 24C10 24 6 16 6 10C6 4 10 0 10 0Z"
-              fill="rgba(201,169,110,0.35)" />
-          </svg>
-        </div>
+        {[15, 35, 55, 72, 88].map((left, i) => (
+          <div
+            key={`final-petal-${i}`}
+            style={{
+              position: 'absolute',
+              left: `${left}%`,
+              top: '-20px',
+              width: `${8 + i * 2}px`,
+              height: `${10 + i * 2}px`,
+              opacity: 0,
+              animation: `finalPetalDrift ${7 + i * 1.5}s ease-in ${5 + i * 1.5}s forwards`,
+            }}
+          >
+            <svg width="100%" height="100%" viewBox="0 0 20 24" fill="none">
+              <path d="M10 0C10 0 14 4 14 10C14 16 10 24 10 24C10 24 6 16 6 10C6 4 10 0 10 0Z"
+                fill={`rgba(201,169,110,${0.2 + i * 0.04})`} />
+            </svg>
+          </div>
+        ))}
       </div>
 
       <div className="relative z-10 max-w-2xl mx-auto">
@@ -1719,11 +1734,30 @@ function ClosingSection() {
         </div>
 
         {/* Final handwriting — emotional peak */}
-        <div ref={finalLineRef} className="mt-8 min-h-[2em]" style={{ opacity: 0 }}>
+        <div
+          ref={finalLineRef}
+          className="mt-16 min-h-[2em]"
+          style={{ opacity: 0 }}
+        >
           <p
-            style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold)', opacity: 0.6, fontStyle: 'italic' }}
+            className="text-2xl sm:text-3xl gold-shimmer-text"
+            style={{ fontFamily: 'var(--font-script)' }}
           >
             Cerita kami belum selesai...
+          </p>
+        </div>
+
+        {/* The date — the beginning of forever */}
+        <div
+          ref={dateRef}
+          className="mt-8"
+          style={{ opacity: 0 }}
+        >
+          <p
+            className="text-sm tracking-[0.4em]"
+            style={{ fontFamily: 'var(--font-body)', color: 'var(--gold)', opacity: 0 }}
+          >
+            05 . 07 . 2026
           </p>
         </div>
       </div>
@@ -1778,7 +1812,12 @@ export default function Home() {
   const [isOpen, setIsOpen] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const audioRef = useRef<HTMLAudioElement>(null)
-  const autoScrollRef = useRef<number | null>(null)
+  const autoScrollState = useRef({
+    active: false,
+    paused: false,
+    currentSpeed: 0,
+    targetSpeed: 1.0,
+  })
   const userScrollingRef = useRef(false)
 
   const handlePreloaderComplete = useCallback(() => setIsLoading(false), [])
@@ -1801,75 +1840,88 @@ export default function Home() {
     }
   }, [isPlaying])
 
-  // Auto-scroll — the story flows, it doesn't scroll
-  // Breathes like music: slower at emotional moments, flowing between them
+  // Auto-scroll — cinematic breathing rhythm like music
+  // Slow at emotional peaks, flowing through transitions, reading-speed in content
   useEffect(() => {
     if (!isOpen) return
 
     let animationId: number
     let resumeTimeout: ReturnType<typeof setTimeout>
-    let startTime = 0
 
-    const autoScroll = (timestamp: number) => {
+    // Speed zones based on scroll position — like a conductor's tempo markings
+    const getSpeedForPosition = (scrollY: number, docHeight: number) => {
+      const progress = scrollY / docHeight
+      if (progress < 0.05) return 0.4    // Cover — slow, reverent
+      if (progress < 0.12) return 1.2    // Transition to Bismillah — flowing
+      if (progress < 0.20) return 0.5    // Bismillah — slow, sacred
+      if (progress < 0.30) return 1.0    // Transition to couple — moving
+      if (progress < 0.40) return 0.6    // Couple names — breathing
+      if (progress < 0.50) return 1.2    // Transitions — flowing
+      if (progress < 0.60) return 0.8    // Diary/timeline — reading
+      if (progress < 0.70) return 1.0    // Countdown/events — medium
+      if (progress < 0.80) return 1.0    // Gallery — flowing
+      if (progress < 0.90) return 0.6    // Wishes — breathing
+      return 0.3                          // Closing — slow, emotional
+    }
+
+    const state = autoScrollState.current
+
+    const autoScroll = () => {
       if (userScrollingRef.current) return
+
       // Pause gracefully at the bottom
       const atBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 1)
-      if (atBottom) return
+      if (atBottom) {
+        state.active = false
+        return
+      }
 
-      if (!startTime) startTime = timestamp
-      const elapsed = (timestamp - startTime) / 1000 // seconds
+      // Calculate target speed based on current position in the story
+      state.targetSpeed = getSpeedForPosition(window.scrollY, document.documentElement.scrollHeight)
 
-      // Breathing rhythm — the scroll speed gently oscillates like breathing
-      // Base: 0.55px/frame, oscillates between 0.35 and 0.75
-      // This creates a natural flow — not mechanical, not random
-      const breathCycle = Math.sin(elapsed * 0.15) * 0.5 + 0.5 // 0..1, slow cycle (~42s period)
-      const baseSpeed = 0.35 + breathCycle * 0.4 // 0.35 to 0.75 px/frame
+      // Smooth acceleration — ease into new speed, never snap
+      // Lerp factor 0.03 means ~30 frames to reach target (0.5s at 60fps)
+      const lerpFactor = 0.03
+      state.currentSpeed += (state.targetSpeed - state.currentSpeed) * lerpFactor
 
-      // Slow down near section boundaries (every ~100vh) — emotional pause
-      const scrollProgress = window.scrollY / document.documentElement.scrollHeight
-      const nearBoundary = Math.sin(scrollProgress * Math.PI * 6) * 0.5 + 0.5 // peaks at section edges
-      const speed = baseSpeed * (0.7 + nearBoundary * 0.3) // slight slowdown at boundaries
+      // Only scroll if we've built up enough speed to avoid jerky starts
+      if (state.currentSpeed > 0.05) {
+        window.scrollBy(0, state.currentSpeed)
+      }
 
-      window.scrollBy(0, speed)
+      state.active = true
       animationId = requestAnimationFrame(autoScroll)
     }
 
-    // Start after the story breathes in — not immediately
+    // Start after the story breathes in — 2s delay
     const startTimeout = setTimeout(() => {
+      state.currentSpeed = 0.2 // Gentle start, will ramp up smoothly
       animationId = requestAnimationFrame(autoScroll)
-    }, 2500)
+    }, 2000)
 
-    // User takes control — story pauses respectfully
-    const onWheel = () => {
+    // User takes control — story pauses respectfully, then resumes smoothly
+    const pauseAndResume = () => {
       userScrollingRef.current = true
+      state.paused = true
       cancelAnimationFrame(animationId)
       clearTimeout(resumeTimeout)
 
-      // Resume after the user has had time to explore
+      // Resume after 3s — story gently continues from where we are
       resumeTimeout = setTimeout(() => {
         userScrollingRef.current = false
+        state.paused = false
         const atBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 1)
         if (!atBottom) {
-          startTime = 0 // reset rhythm on resume
+          // Don't reset speed — keep current speed for smooth continuation
+          // Just slow down slightly to signal "I'm back"
+          state.currentSpeed *= 0.5
           animationId = requestAnimationFrame(autoScroll)
         }
-      }, 4000)
+      }, 3000)
     }
 
-    const onTouchStart = () => {
-      userScrollingRef.current = true
-      cancelAnimationFrame(animationId)
-      clearTimeout(resumeTimeout)
-
-      resumeTimeout = setTimeout(() => {
-        userScrollingRef.current = false
-        const atBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 1)
-        if (!atBottom) {
-          startTime = 0
-          animationId = requestAnimationFrame(autoScroll)
-        }
-      }, 4000)
-    }
+    const onWheel = () => pauseAndResume()
+    const onTouchStart = () => pauseAndResume()
 
     window.addEventListener('wheel', onWheel, { passive: true })
     window.addEventListener('touchstart', onTouchStart, { passive: true })

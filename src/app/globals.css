@@ -139,6 +139,18 @@
   }
 }
 
+/* Global warm paper grain — every section feels analog */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9997;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  opacity: 0.35;
+  mix-blend-mode: overlay;
+}
+
 /* ========================================
    8. CUSTOM SCROLLBAR
    Thin, warm, barely there — like flipping pages
@@ -357,6 +369,27 @@ html {
   10% { opacity: 0.4; }
   80% { opacity: 0.2; }
   100% { transform: translateY(85vh) rotate(180deg); opacity: 0; }
+}
+
+/* Warm ambient glow — like candlelight flicker */
+@keyframes warmGlow {
+  0%, 100% { opacity: 0.04; }
+  30% { opacity: 0.07; }
+  60% { opacity: 0.03; }
+  80% { opacity: 0.06; }
+}
+
+/* ========================================
+   10b. CINEMA WARM GLOW — candlelight ambiance
+   ======================================== */
+.cinema-warm-glow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 30%, rgba(201, 169, 110, 0.08) 0%, transparent 60%);
+  animation: warmGlow 8s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* ========================================
@@ -670,20 +703,45 @@ html {
 }
 
 /* ========================================
-   22. GALLERY GRID
-   Photos pinned to the diary page
+   22. GALLERY MEMORIES
+   Photos pinned to the diary page — organic, not gridded
+   Like memories returning one by one
    ======================================== */
-.gallery-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
+.gallery-memories {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 0 1rem;
 }
 
 @media (min-width: 640px) {
-  .gallery-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
+  .gallery-memories {
+    gap: 2rem;
+    padding: 0 1rem;
   }
+}
+
+/* Memory photo — like a polaroid pinned to a diary page */
+.memory-photo {
+  background: white;
+  padding: 6px 6px 24px 6px;
+  border-radius: 1px;
+  box-shadow:
+    1px 2px 8px rgba(0, 0, 0, 0.08),
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    2px 3px 0 rgba(201, 169, 110, 0.04),
+    4px 5px 0 rgba(166, 123, 61, 0.02);
+  transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.6s ease;
+  will-change: transform, opacity, filter;
+}
+
+.memory-photo:hover {
+  transform: rotate(0deg) scale(1.04) translateY(-4px) !important;
+  box-shadow:
+    2px 4px 16px rgba(0, 0, 0, 0.12),
+    0 1px 4px rgba(0, 0, 0, 0.06),
+    0 0 25px rgba(201, 169, 110, 0.1);
 }
 
 /* ========================================
@@ -971,12 +1029,12 @@ html.lenis, html.lenis body { height: auto; }
   content: '';
   position: absolute;
   inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
   background-repeat: repeat;
   background-size: 300px 300px;
   pointer-events: none;
   z-index: 0;
-  opacity: 0.8;
+  opacity: 0.9;
 }
 
 /* ========================================
@@ -1287,12 +1345,55 @@ html.lenis, html.lenis body { height: auto; }
 }
 
 /* ========================================
+   37. SECTION TRANSITION SMOOTHNESS
+   Every section boundary feels like a film dissolve
+   ======================================== */
+
+/* Smooth section transitions — like film dissolves */
+section {
+  position: relative;
+}
+
+/* Warm edge gradients for all sections — soft boundaries */
+section::before,
+section::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 60px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+section::before {
+  top: -1px;
+  background: linear-gradient(to bottom, var(--cream), transparent);
+  opacity: 0.3;
+}
+
+section::after {
+  bottom: -1px;
+  background: linear-gradient(to top, var(--cream), transparent);
+  opacity: 0.3;
+}
+
+/* Override for dark sections — don't add cream gradients to dark sections */
+.cinema-dark-section::before,
+.cinema-dark-section::after,
+.batik-kawung-dark::before,
+.batik-kawung-dark::after {
+  display: none !important;
+}
+
+/* ========================================
    36. REDUCED MOTION OVERRIDES
    Final word — no animation if preferred
    ======================================== */
 @media (prefers-reduced-motion: reduce) {
   .diary-note-card { transform: none !important; }
   .polaroid-frame { transform: none !important; }
+  .memory-photo { transform: none !important; filter: none !important; }
   .gold-light-leak { animation: none !important; opacity: 0.6 !important; }
   .animate-float { animation: none !important; }
   .animate-breathe { animation: none !important; }
