@@ -9,6 +9,8 @@ import SmoothScroll from '@/components/SmoothScroll'
 import CoverSectionComponent from '@/components/CoverSection'
 import MusicPlayerComponent from '@/components/MusicPlayer'
 import GuestWishes from '@/components/GuestWishes'
+import RSVPSection from '@/components/RSVPSection'
+import DigitalEnvelope from '@/components/DigitalEnvelope'
 import ScrollToTop from '@/components/ScrollToTop'
 import { fadeIn, slideIn, scaleIn, initCursorFollower, prefersReducedMotion } from '@/lib/animations'
 
@@ -2327,6 +2329,8 @@ export default function Home() {
             <CountdownSection />
             <EventSection />
             <GallerySection />
+            <RSVPSection />
+            <DigitalEnvelope />
             <GuestWishes />
             <ClosingSection />
             <FooterSection />

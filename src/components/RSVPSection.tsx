@@ -1,0 +1,314 @@
+'use client'
+
+import { useState, useEffect, useRef, useCallback } from 'react'
+
+interface RSVPEntry {
+  id: string
+  name: string
+  attending: boolean
+  guests: number
+  message: string
+  createdAt: string
+}
+
+export default function RSVPSection() {
+  const [name, setName] = useState('')
+  const [attending, setAttending] = useState<boolean | null>(null)
+  const [guests, setGuests] = useState(1)
+  const [message, setMessage] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [errorMsg, setErrorMsg] = useState('')
+  const [rsvpList, setRsvpList] = useState<RSVPEntry[]>([])
+  const [attendCount, setAttendCount] = useState(0)
+  const sectionRef = useRef<HTMLDivElement>(null)
+
+  const fetchRSVPs = useCallback(async () => {
+    try {
+      const res = await fetch('/api/rsvp')
+      if (res.ok) {
+        const data = await res.json()
+        if (Array.isArray(data)) {
+          setRsvpList(data)
+          setAttendCount(data.filter((r: RSVPEntry) => r.attending).reduce((sum: number, r: RSVPEntry) => sum + r.guests, 0))
+        }
+      }
+    } catch {
+      // silent
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchRSVPs()
+  }, [fetchRSVPs])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!name.trim() || attending === null) return
+
+    setIsSubmitting(true)
+    setSubmitStatus('idle')
+    setErrorMsg('')
+
+    try {
+      const res = await fetch('/api/rsvp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name.trim(),
+          attending,
+          guests: attending ? guests : 0,
+          message: message.trim(),
+        }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        setErrorMsg(data.error || 'Gagal mengirim konfirmasi')
+        setSubmitStatus('error')
+        return
+      }
+
+      const newRSVP = await res.json()
+      setRsvpList(prev => [newRSVP, ...prev])
+      if (newRSVP.attending) {
+        setAttendCount(prev => prev + newRSVP.guests)
+      }
+
+      setName('')
+      setAttending(null)
+      setGuests(1)
+      setMessage('')
+      setSubmitStatus('success')
+
+      setTimeout(() => setSubmitStatus('idle'), 3000)
+    } catch {
+      setErrorMsg('Gagal mengirim konfirmasi. Silakan coba lagi.')
+      setSubmitStatus('error')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <section ref={sectionRef} className="py-20 px-6 cinema-depth" style={{ background: 'var(--cream)' }}>
+      <div className="max-w-4xl mx-auto text-center">
+        <h2 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
+          Konfirmasi Kehadiran
+        </h2>
+        <div className="ornament-divider max-w-xs mx-auto mb-4">
+          <span className="text-[var(--gold)] text-lg">&#10047;</span>
+        </div>
+        <p className="text-sm mb-8" style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}>
+          Mohon konfirmasi kehadiran Anda untuk merencanakan acara dengan baik
+        </p>
+
+        {/* Attendance counter */}
+        {attendCount > 0 && (
+          <div className="mb-8 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--gold)]/30"
+            style={{ background: 'rgba(255,255,255,0.6)' }}>
+            <span className="text-xs" style={{ fontFamily: 'var(--font-body)', color: 'var(--brown)' }}>
+              {attendCount} tamu akan hadir
+            </span>
+          </div>
+        )}
+
+        {/* ─── RSVP Form ─── */}
+        <form
+          onSubmit={handleSubmit}
+          className="max-w-lg mx-auto mb-10 p-6 rounded-xl border border-[var(--gold)]/20 shadow-sm text-left"
+          style={{ background: 'rgba(255,255,255,0.7)' }}
+        >
+          <div className="mb-4">
+            <label
+              className="block text-xs font-medium mb-1.5"
+              style={{ fontFamily: 'var(--font-body)', color: 'var(--brown)' }}
+            >
+              Nama
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Nama Anda"
+              required
+              maxLength={100}
+              className="w-full px-4 py-2.5 rounded-lg border border-[var(--gold)]/30 text-sm
+                focus:outline-none focus:border-[var(--gold)] focus:ring-1 focus:ring-[var(--gold)]/30
+                placeholder:text-[var(--brown-light)]/40 transition-colors"
+              style={{
+                fontFamily: 'var(--font-body)',
+                color: 'var(--brown)',
+                background: 'rgba(255,255,255,0.9)',
+              }}
+            />
+          </div>
+
+          {/* Attending choice */}
+          <div className="mb-4">
+            <label
+              className="block text-xs font-medium mb-2"
+              style={{ fontFamily: 'var(--font-body)', color: 'var(--brown)' }}
+            >
+              Konfirmasi Kehadiran
+            </label>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setAttending(true)}
+                className="flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 border"
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  background: attending === true
+                    ? 'linear-gradient(135deg, var(--gold-dark), var(--gold))'
+                    : 'rgba(255,255,255,0.9)',
+                  color: attending === true ? 'white' : 'var(--brown)',
+                  borderColor: attending === true ? 'var(--gold)' : 'var(--gold)/30',
+                }}
+              >
+                Hadir
+              </button>
+              <button
+                type="button"
+                onClick={() => setAttending(false)}
+                className="flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 border"
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  background: attending === false
+                    ? 'linear-gradient(135deg, var(--brown), var(--brown-light))'
+                    : 'rgba(255,255,255,0.9)',
+                  color: attending === false ? 'white' : 'var(--brown)',
+                  borderColor: attending === false ? 'var(--brown)' : 'var(--gold)/30',
+                }}
+              >
+                Tidak Hadir
+              </button>
+            </div>
+          </div>
+
+          {/* Guest count — only when attending */}
+          {attending && (
+            <div className="mb-4">
+              <label
+                className="block text-xs font-medium mb-1.5"
+                style={{ fontFamily: 'var(--font-body)', color: 'var(--brown)' }}
+              >
+                Jumlah Tamu
+              </label>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setGuests(Math.max(1, guests - 1))}
+                  className="w-9 h-9 rounded-lg border border-[var(--gold)]/30 flex items-center justify-center text-sm
+                    hover:border-[var(--gold)] transition-colors"
+                  style={{ fontFamily: 'var(--font-body)', color: 'var(--brown)', background: 'rgba(255,255,255,0.9)' }}
+                >
+                  −
+                </button>
+                <span
+                  className="w-10 text-center text-sm font-medium"
+                  style={{ fontFamily: 'var(--font-body)', color: 'var(--brown)' }}
+                >
+                  {guests}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setGuests(Math.min(10, guests + 1))}
+                  className="w-9 h-9 rounded-lg border border-[var(--gold)]/30 flex items-center justify-center text-sm
+                    hover:border-[var(--gold)] transition-colors"
+                  style={{ fontFamily: 'var(--font-body)', color: 'var(--brown)', background: 'rgba(255,255,255,0.9)' }}
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Optional message */}
+          <div className="mb-4">
+            <label
+              className="block text-xs font-medium mb-1.5"
+              style={{ fontFamily: 'var(--font-body)', color: 'var(--brown)' }}
+            >
+              Pesan <span className="opacity-50">(opsional)</span>
+            </label>
+            <input
+              type="text"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Pesan singkat untuk kedua mempelai..."
+              maxLength={200}
+              className="w-full px-4 py-2.5 rounded-lg border border-[var(--gold)]/30 text-sm
+                focus:outline-none focus:border-[var(--gold)] focus:ring-1 focus:ring-[var(--gold)]/30
+                placeholder:text-[var(--brown-light)]/40 transition-colors"
+              style={{
+                fontFamily: 'var(--font-body)',
+                color: 'var(--brown)',
+                background: 'rgba(255,255,255,0.9)',
+              }}
+            />
+          </div>
+
+          {/* Status messages */}
+          {submitStatus === 'success' && (
+            <p className="text-xs mb-3" style={{ color: '#2d6a4f', fontFamily: 'var(--font-body)' }}>
+              Terima kasih! Konfirmasi Anda telah terkirim.
+            </p>
+          )}
+          {submitStatus === 'error' && (
+            <p className="text-xs mb-3" style={{ color: '#c1121f', fontFamily: 'var(--font-body)' }}>
+              {errorMsg}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={isSubmitting || !name.trim() || attending === null}
+            className="w-full py-2.5 rounded-lg text-sm font-medium transition-all duration-300
+              disabled:opacity-40 disabled:cursor-not-allowed
+              hover:shadow-md active:scale-[0.98]"
+            style={{
+              fontFamily: 'var(--font-body)',
+              background: 'linear-gradient(135deg, var(--gold-dark), var(--gold))',
+              color: 'white',
+              border: 'none',
+            }}
+          >
+            {isSubmitting ? 'Mengirim...' : 'Kirim Konfirmasi'}
+          </button>
+        </form>
+
+        {/* ─── RSVP List ─── */}
+        {rsvpList.length > 0 && (
+          <div className="max-w-lg mx-auto">
+            <h3 className="text-lg mb-4" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
+              Daftar Hadir
+            </h3>
+            <div className="space-y-2">
+              {rsvpList.slice(0, 20).map((rsvp) => (
+                <div
+                  key={rsvp.id}
+                  className="flex items-center justify-between px-4 py-2.5 rounded-lg border border-[var(--gold)]/15"
+                  style={{ background: 'rgba(255,255,255,0.6)' }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{ background: rsvp.attending ? '#2d6a4f' : '#c1121f' }}
+                    />
+                    <span className="text-sm" style={{ fontFamily: 'var(--font-body)', color: 'var(--brown)' }}>
+                      {rsvp.name}
+                    </span>
+                  </div>
+                  <span className="text-xs" style={{ fontFamily: 'var(--font-body)', color: 'var(--brown-light)' }}>
+                    {rsvp.attending ? `${rsvp.guests} tamu` : 'Tidak hadir'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}

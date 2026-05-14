@@ -1,51 +1,57 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 
-const WISHES = [
+interface Wish {
+  id: string
+  name: string
+  message: string
+  avatar: string
+  createdAt: string
+}
+
+// Seed wishes for initial display
+const SEED_WISHES: Wish[] = [
   {
+    id: 'seed-1',
     name: 'Bp. Hadi Santoso',
     message: 'Semoga menjadi keluarga sakinah mawaddah warahmah. Mugo langgeng nganti puncake.',
     avatar: 'HS',
+    createdAt: new Date().toISOString(),
   },
   {
+    id: 'seed-2',
     name: 'Ibu Sri Rahayu',
     message: 'Kangge Mas Irwan mbak Anira, muga-muga pinaraking pangestu lan kabagyan.',
     avatar: 'SR',
+    createdAt: new Date().toISOString(),
   },
   {
+    id: 'seed-3',
     name: 'Rina & Dedi',
     message: 'Happy wedding! Semoga menjadi pasangan yang saling melengkapi.',
     avatar: 'RD',
+    createdAt: new Date().toISOString(),
   },
   {
+    id: 'seed-4',
     name: 'Mbah Darmo',
     message: 'Muga sida kalampahanipun, dados pasangan ingkang berkah.',
     avatar: 'MD',
-  },
-  {
-    name: 'Pak Wiryo',
-    message: 'Sampeyan loro gadhah jejodhoan ingkang sae, mugi langgeng.',
-    avatar: 'PW',
-  },
-  {
-    name: 'Andi & Family',
-    message: 'Doa terbaik untuk kalian berdua, semoga rumah tangga penuh keberkahan.',
-    avatar: 'AF',
+    createdAt: new Date().toISOString(),
   },
 ]
 
-function WishCard({ wish, index }: { wish: typeof WISHES[0]; index: number }) {
+function WishCard({ wish, index }: { wish: Wish; index: number }) {
   return (
     <div
-      className="wish-card flex-shrink-0 w-72 sm:w-80 rounded-xl p-5 border border-[var(--gold)]/30 shadow-md
-        hover:shadow-lg hover:border-[var(--gold)]/50 transition-all duration-300 group"
+      className="wish-card rounded-xl p-5 border border-[var(--gold)]/30 shadow-sm
+        hover:shadow-md hover:border-[var(--gold)]/50 transition-all duration-300 text-left"
       style={{
         background: 'rgba(255,255,255,0.85)',
-        animationDelay: `${index * 0.15}s`,
+        animation: `fadeInUp 0.6s ease-out ${index * 0.08}s both`,
       }}
     >
-      {/* Ornamental top border */}
       <div className="flex items-center justify-center mb-3">
         <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[var(--gold)] to-transparent" />
         <span className="mx-2 text-[var(--gold)] text-xs opacity-60">&#10047;</span>
@@ -53,10 +59,9 @@ function WishCard({ wish, index }: { wish: typeof WISHES[0]; index: number }) {
       </div>
 
       <div className="flex items-start gap-3">
-        {/* Avatar */}
         <div
           className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-medium border border-[var(--gold)]/30"
-          style={{ background: 'var(--cream-dark)', color: 'var(--gold-dark)', fontFamily: 'var(--font-body)' }}
+          style={{ background: 'var(--cream)', color: 'var(--gold-dark)', fontFamily: 'var(--font-body)' }}
         >
           {wish.avatar}
         </div>
@@ -70,7 +75,6 @@ function WishCard({ wish, index }: { wish: typeof WISHES[0]; index: number }) {
         </div>
       </div>
 
-      {/* Ornamental bottom border */}
       <div className="flex items-center justify-center mt-3">
         <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[var(--gold)]/50 to-transparent" />
       </div>
@@ -79,34 +83,76 @@ function WishCard({ wish, index }: { wish: typeof WISHES[0]; index: number }) {
 }
 
 export default function GuestWishes() {
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const [isPaused, setIsPaused] = useState(false)
-  const animFrameRef = useRef<number>(0)
-  const scrollPosRef = useRef(0)
+  const [wishes, setWishes] = useState<Wish[]>(SEED_WISHES)
+  const [name, setName] = useState('')
+  const [message, setMessage] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [errorMsg, setErrorMsg] = useState('')
+  const wishesListRef = useRef<HTMLDivElement>(null)
 
-  // Auto-scroll implementation
-  useEffect(() => {
-    const container = scrollRef.current
-    if (!container) return
-
-    const speed = 0.5 // pixels per frame
-    const animate = () => {
-      if (!isPaused && container) {
-        scrollPosRef.current += speed
-        // Reset when we've scrolled through half (since we duplicate)
-        if (scrollPosRef.current >= container.scrollWidth / 2) {
-          scrollPosRef.current = 0
+  // Fetch wishes from API on mount
+  const fetchWishes = useCallback(async () => {
+    try {
+      const res = await fetch('/api/wishes')
+      if (res.ok) {
+        const data = await res.json()
+        if (Array.isArray(data) && data.length > 0) {
+          setWishes(data)
         }
-        container.scrollLeft = scrollPosRef.current
       }
-      animFrameRef.current = requestAnimationFrame(animate)
+    } catch {
+      // Keep seed wishes on error
     }
+  }, [])
 
-    animFrameRef.current = requestAnimationFrame(animate)
-    return () => cancelAnimationFrame(animFrameRef.current)
-  }, [isPaused])
+  useEffect(() => {
+    fetchWishes()
+  }, [fetchWishes])
 
-  // Also show cards in a grid layout below
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!name.trim() || !message.trim()) return
+
+    setIsSubmitting(true)
+    setSubmitStatus('idle')
+    setErrorMsg('')
+
+    try {
+      const res = await fetch('/api/wishes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), message: message.trim() }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        setErrorMsg(data.error || 'Gagal mengirim ucapan')
+        setSubmitStatus('error')
+        return
+      }
+
+      const newWish = await res.json()
+      setWishes(prev => [newWish, ...prev])
+      setName('')
+      setMessage('')
+      setSubmitStatus('success')
+
+      // Scroll to top of wishes list to show new entry
+      setTimeout(() => {
+        wishesListRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+      }, 300)
+
+      // Clear success message after 3s
+      setTimeout(() => setSubmitStatus('idle'), 3000)
+    } catch {
+      setErrorMsg('Gagal mengirim ucapan. Silakan coba lagi.')
+      setSubmitStatus('error')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <section className="py-20 px-6" style={{ background: 'var(--cream-dark)' }}>
       <div className="max-w-4xl mx-auto text-center">
@@ -116,75 +162,112 @@ export default function GuestWishes() {
         <div className="ornament-divider max-w-xs mx-auto mb-4">
           <span className="text-[var(--gold)] text-lg">&#10047;</span>
         </div>
-        <p className="text-sm mb-10" style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}>
-          Doa dan ucapan dari keluarga dan sahabat untuk kedua mempelai
+        <p className="text-sm mb-8" style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}>
+          Berikan doa dan ucapan untuk kedua mempelai
         </p>
 
-        {/* Auto-scrolling carousel */}
-        <div
-          className="relative overflow-hidden"
-          onMouseEnter={() => setIsPaused(true)}
-          onMouseLeave={() => setIsPaused(false)}
-          onTouchStart={() => setIsPaused(true)}
-          onTouchEnd={() => setIsPaused(false)}
+        {/* ─── Input Form ─── */}
+        <form
+          onSubmit={handleSubmit}
+          className="max-w-lg mx-auto mb-10 p-6 rounded-xl border border-[var(--gold)]/20 shadow-sm text-left"
+          style={{ background: 'rgba(255,255,255,0.7)' }}
         >
-          {/* Fade edges */}
-          <div className="absolute left-0 top-0 bottom-0 w-16 z-10 pointer-events-none" style={{ background: 'linear-gradient(to right, var(--cream-dark), transparent)' }} />
-          <div className="absolute right-0 top-0 bottom-0 w-16 z-10 pointer-events-none" style={{ background: 'linear-gradient(to left, var(--cream-dark), transparent)' }} />
-
-          <div
-            ref={scrollRef}
-            className="flex gap-4 overflow-x-auto scrollbar-hide py-2 px-8"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-          >
-            {/* Duplicate items for seamless loop */}
-            {[...WISHES, ...WISHES].map((wish, index) => (
-              <WishCard key={index} wish={wish} index={index % WISHES.length} />
-            ))}
-          </div>
-        </div>
-
-        {/* Grid layout for all wishes */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-10">
-          {WISHES.map((wish, index) => (
-            <div
-              key={index}
-              className="wish-card rounded-xl p-5 border border-[var(--gold)]/30 shadow-sm
-                hover:shadow-md hover:border-[var(--gold)]/50 transition-all duration-300 text-left"
-              style={{
-                background: 'rgba(255,255,255,0.85)',
-                animation: `fadeInUp 0.6s ease-out ${index * 0.1}s both`,
-              }}
+          <div className="mb-4">
+            <label
+              className="block text-xs font-medium mb-1.5"
+              style={{ fontFamily: 'var(--font-body)', color: 'var(--brown)' }}
             >
-              <div className="flex items-center justify-center mb-3">
-                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[var(--gold)] to-transparent" />
-                <span className="mx-2 text-[var(--gold)] text-xs opacity-60">&#10047;</span>
-                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[var(--gold)] to-transparent" />
-              </div>
+              Nama
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Nama Anda"
+              required
+              maxLength={100}
+              className="w-full px-4 py-2.5 rounded-lg border border-[var(--gold)]/30 text-sm
+                focus:outline-none focus:border-[var(--gold)] focus:ring-1 focus:ring-[var(--gold)]/30
+                placeholder:text-[var(--brown-light)]/40 transition-colors"
+              style={{
+                fontFamily: 'var(--font-body)',
+                color: 'var(--brown)',
+                background: 'rgba(255,255,255,0.9)',
+              }}
+            />
+          </div>
 
-              <div className="flex items-start gap-3">
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-medium border border-[var(--gold)]/30"
-                  style={{ background: 'var(--cream)', color: 'var(--gold-dark)', fontFamily: 'var(--font-body)' }}
-                >
-                  {wish.avatar}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium mb-1" style={{ fontFamily: 'var(--font-body)', color: 'var(--brown)' }}>
-                    {wish.name}
-                  </p>
-                  <p className="text-sm leading-relaxed italic" style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}>
-                    &ldquo;{wish.message}&rdquo;
-                  </p>
-                </div>
-              </div>
+          <div className="mb-4">
+            <label
+              className="block text-xs font-medium mb-1.5"
+              style={{ fontFamily: 'var(--font-body)', color: 'var(--brown)' }}
+            >
+              Ucapan & Doa
+            </label>
+            <textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Tulis ucapan dan doa Anda untuk kedua mempelai..."
+              required
+              maxLength={1000}
+              rows={4}
+              className="w-full px-4 py-2.5 rounded-lg border border-[var(--gold)]/30 text-sm
+                focus:outline-none focus:border-[var(--gold)] focus:ring-1 focus:ring-[var(--gold)]/30
+                placeholder:text-[var(--brown-light)]/40 transition-colors resize-none"
+              style={{
+                fontFamily: 'var(--font-serif)',
+                color: 'var(--brown)',
+                background: 'rgba(255,255,255,0.9)',
+                fontStyle: 'italic',
+              }}
+            />
+          </div>
 
-              <div className="flex items-center justify-center mt-3">
-                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[var(--gold)]/50 to-transparent" />
-              </div>
-            </div>
+          {/* Status messages */}
+          {submitStatus === 'success' && (
+            <p className="text-xs mb-3" style={{ color: '#2d6a4f', fontFamily: 'var(--font-body)' }}>
+              Terima kasih! Ucapan Anda telah terkirim.
+            </p>
+          )}
+          {submitStatus === 'error' && (
+            <p className="text-xs mb-3" style={{ color: '#c1121f', fontFamily: 'var(--font-body)' }}>
+              {errorMsg}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={isSubmitting || !name.trim() || !message.trim()}
+            className="w-full py-2.5 rounded-lg text-sm font-medium transition-all duration-300
+              disabled:opacity-40 disabled:cursor-not-allowed
+              hover:shadow-md active:scale-[0.98]"
+            style={{
+              fontFamily: 'var(--font-body)',
+              background: 'linear-gradient(135deg, var(--gold-dark), var(--gold))',
+              color: 'white',
+              border: 'none',
+            }}
+          >
+            {isSubmitting ? 'Mengirim...' : 'Kirim Ucapan'}
+          </button>
+        </form>
+
+        {/* ─── Wishes List ─── */}
+        <div
+          ref={wishesListRef}
+          className="max-h-[500px] overflow-y-auto pr-2 space-y-3"
+          style={{ scrollbarWidth: 'thin', scrollbarColor: 'var(--gold) transparent' }}
+        >
+          {wishes.map((wish, index) => (
+            <WishCard key={wish.id} wish={wish} index={index} />
           ))}
         </div>
+
+        {wishes.length === 0 && (
+          <p className="text-sm italic mt-6" style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}>
+            Belum ada ucapan. Jadilah yang pertama!
+          </p>
+        )}
       </div>
     </section>
   )
