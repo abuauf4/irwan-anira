@@ -575,7 +575,7 @@ function DiaryIntroSection() {
             svgPath.style.strokeDashoffset = String(len)
             gsap.to(svgPath, {
               strokeDashoffset: 0,
-              duration: 2.5,
+              duration: 3.5,
               ease: 'power2.inOut',
               scrollTrigger: {
                 trigger: sectionRef.current!,
@@ -597,9 +597,9 @@ function DiaryIntroSection() {
             svgPath.style.strokeDashoffset = String(len)
             gsap.to(svgPath, {
               strokeDashoffset: 0,
-              duration: 2.5,
+              duration: 3.5,
               ease: 'power2.inOut',
-              delay: 0.5,
+              delay: 0.8,
               scrollTrigger: {
                 trigger: sectionRef.current!,
                 start: 'top 50%',
@@ -624,7 +624,7 @@ function DiaryIntroSection() {
               onEnter: () => {
                 if (!hasAnimated.current) {
                   hasAnimated.current = true
-                  handwritingReveal(textRef.current!, 0.022, 0.08)
+                  handwritingReveal(textRef.current!, 0.05, 0.16)
                 }
               },
             },
@@ -987,13 +987,12 @@ function DiaryStorySection() {
     )
     enterObserver.observe(section)
 
-    // ─── ScrollTrigger: PAUSE auto-scroll at top 30% ───
-    // When the diary section's top reaches 30% from top of viewport,
+    // ─── ScrollTrigger: PAUSE auto-scroll at top 0% ───
+    // When the diary section's top reaches the top of viewport (top 0%),
     // dispatch diary-sequence-start to pause auto-scroll
-    // top 30% triggers earlier than top 0% — smoother entry into diary
     ScrollTrigger.create({
       trigger: section,
-      start: 'top 30%',
+      start: 'top 0%',
       onEnter: () => {
         if (!sequenceCompleteRef.current) {
           window.dispatchEvent(new CustomEvent('diary-sequence-start'))
@@ -1013,7 +1012,7 @@ function DiaryStorySection() {
 
     const pinTrigger = ScrollTrigger.create({
       trigger: section,
-      start: 'top 30%',
+      start: 'top 0%',
       end: `+=${pinDistance}vh`,
       pin: true,
       anticipatePin: 1,
@@ -1599,7 +1598,8 @@ function GallerySection() {
 /* ═══════════════════════════════════════════════════════════
    9. CLOSING — Diary Ending
    The last page of this chapter, the first of forever
-   DUST DISSOLVE — elements emerge like ink settling on old paper
+   HANDWRITING — kata per kata terbang dari belakang
+   Like the final words writing themselves into existence
    Arabic بارك الله لكما appears immediately — no animation
    ═══════════════════════════════════════════════════════════ */
 function ClosingSection() {
@@ -1613,6 +1613,43 @@ function ClosingSection() {
   const finalLineRef = useRef<HTMLDivElement>(null)
   const dateRef = useRef<HTMLDivElement>(null)
   const shimmerRef = useRef<HTMLDivElement>(null)
+  const hasAnimated = useRef(false)
+
+  // ─── WORD FLY-IN — kata terbang dari belakang ───
+  // Each word flies in from depth (blur + scale + z-offset)
+  // Like the final words of a diary writing themselves
+  const wordFlyIn = (el: HTMLDivElement, stagger: number = 0.15, wordDuration: number = 0.6, delay: number = 0) => {
+    if (!el) return 0
+    const fullText = el.textContent || ''
+    el.innerHTML = ''
+
+    const allWords: HTMLSpanElement[] = []
+    const words = fullText.split(' ')
+    words.forEach((word, wi) => {
+      const ws = document.createElement('span')
+      ws.className = 'hw-word'
+      ws.style.cssText = 'display:inline-block;will-change:opacity,transform,filter;opacity:0;transform:translateZ(-30px) translateY(8px) scale(0.85);filter:blur(6px);margin-right:0.3em;'
+      ws.textContent = word
+      el.appendChild(ws)
+      allWords.push(ws)
+    })
+
+    // Animate each word — fly in from behind (depth → surface)
+    gsap.to(allWords, {
+      opacity: 1,
+      z: 0,
+      y: 0,
+      scale: 1,
+      filter: 'blur(0px)',
+      duration: wordDuration,
+      stagger,
+      ease: 'power3.out',
+      delay,
+    })
+
+    // Return total duration for scheduling next element
+    return delay + allWords.length * stagger + wordDuration
+  }
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -1632,101 +1669,78 @@ function ClosingSection() {
         }
       )
 
-      // ─── DUST DISSOLVE — elemen muncul seperti debu yang mengendap ───
-      // Each element dissolves in from dust — blur, opacity, slight scale
-      // Like the final page of a diary, ink slowly becoming visible
-      // EXCEPTION: Arabic بارك الله لكما appears immediately — no animation
-      const dustElements = [
-        titleRef.current,
-        subtitleRef.current,
-        footerLineRef.current,
-        finalLineRef.current,
-      ].filter(Boolean) as HTMLDivElement[]
-
-      // Set initial dust state — invisible, blurred, slightly scaled down
-      dustElements.forEach(el => {
-        gsap.set(el, {
-          opacity: 0,
-          y: isMobile ? 12 : 18,
-          scale: 0.97,
-          filter: 'blur(6px)',
-        })
-      })
-
       // Arabic text — LANGSUNG MUNCUL, tanpa animasi
       // The sacred blessing appears instantly, like it was always there
-      // doaRef container is NOT animated — only the transliteration inside it
-      // This way the Arabic بارك الله لكما is always visible
 
-      // Sequential dust dissolve — each element materializes from dust
+      // ─── HANDWRITING — kata per kata terbang dari belakang ───
+      // Starting from paragraph 1, each element's words fly in sequentially
+      // EXCEPTION: Arabic بارك الله لكما — langsung muncul
+      const wordStagger = isMobile ? 0.12 : 0.15
+      const wordDur = isMobile ? 0.5 : 0.6
+      const gapBetweenElements = isMobile ? 0.4 : 0.6
+
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: sectionRef.current!,
           start: 'top 80%',
           toggleActions: 'play none none none',
+          onEnter: () => {
+            if (!hasAnimated.current) {
+              hasAnimated.current = true
+
+              // Paragraph 1 — "Dan seperti semua cerita indah..."
+              let nextDelay = 0.3
+              const titleDur = wordFlyIn(titleRef.current!, wordStagger, wordDur, nextDelay)
+
+              // Paragraph 2 — "Terima kasih telah menjadi bagian..."
+              nextDelay = titleDur + gapBetweenElements
+              const subtitleDur = wordFlyIn(subtitleRef.current!, wordStagger, wordDur, nextDelay)
+
+              // Transliteration — "Barakallahu lakuma..."
+              const transliterationEl = doaRef.current?.querySelector('.doa-transliteration') as HTMLParagraphElement | null
+              if (transliterationEl) {
+                nextDelay = subtitleDur + gapBetweenElements
+                // Reset and re-wrap the transliteration as a fly-in element
+                const transliterationText = transliterationEl.textContent || ''
+                transliterationEl.innerHTML = ''
+                const transWords: HTMLSpanElement[] = []
+                transliterationText.split(' ').forEach(word => {
+                  const ws = document.createElement('span')
+                  ws.className = 'hw-word'
+                  ws.style.cssText = 'display:inline-block;will-change:opacity,transform,filter;opacity:0;transform:translateZ(-30px) translateY(6px) scale(0.85);filter:blur(6px);margin-right:0.25em;'
+                  ws.textContent = word
+                  transliterationEl.appendChild(ws)
+                  transWords.push(ws)
+                })
+                gsap.to(transWords, {
+                  opacity: 0.7,
+                  z: 0,
+                  y: 0,
+                  scale: 1,
+                  filter: 'blur(0px)',
+                  duration: wordDur * 0.8,
+                  stagger: wordStagger * 0.8,
+                  ease: 'power3.out',
+                  delay: nextDelay,
+                })
+              }
+
+              // Footer line — "Forever starts with Bismillah."
+              nextDelay = subtitleDur + gapBetweenElements * 2 + 0.3
+              const footerDur = wordFlyIn(footerLineRef.current!, wordStagger * 1.2, wordDur, nextDelay)
+
+              // Final emotional line — "Cerita mereka belum selesai..."
+              nextDelay = footerDur + gapBetweenElements
+              wordFlyIn(finalLineRef.current!, wordStagger * 1.5, wordDur * 1.2, nextDelay)
+            }
+          },
         },
       })
 
-      // Title — first to dissolve in
-      tl.to(titleRef.current, {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        filter: 'blur(0px)',
-        duration: isMobile ? 1.0 : 1.4,
-        ease: 'power3.out',
-      }, 0.3)
+      // Calculate approximate total time for shimmer + date scheduling
+      const totalFlyInTime = isMobile ? 8 : 10
 
-      // Subtitle — dissolves after title
-      tl.to(subtitleRef.current, {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        filter: 'blur(0px)',
-        duration: isMobile ? 1.0 : 1.4,
-        ease: 'power3.out',
-      }, isMobile ? 0.7 : 0.9)
-
-      // Transliteration text — dust dissolve (Arabic above stays visible)
-      const transliterationEl = doaRef.current?.querySelector('.doa-transliteration') as HTMLParagraphElement | null
-      if (transliterationEl) {
-        gsap.set(transliterationEl, {
-          opacity: 0,
-          y: isMobile ? 10 : 14,
-          filter: 'blur(4px)',
-        })
-        tl.to(transliterationEl, {
-          opacity: 0.7,
-          y: 0,
-          filter: 'blur(0px)',
-          duration: isMobile ? 0.8 : 1.2,
-          ease: 'power3.out',
-        }, isMobile ? 1.1 : 1.5)
-      }
-
-      // Footer line — dissolves after doa
-      tl.to(footerLineRef.current, {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        filter: 'blur(0px)',
-        duration: isMobile ? 1.0 : 1.4,
-        ease: 'power3.out',
-      }, isMobile ? 1.5 : 2.1)
-
-      // Final emotional line — last to dissolve in
-      tl.to(finalLineRef.current, {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        filter: 'blur(0px)',
-        duration: isMobile ? 1.0 : 1.4,
-        ease: 'power3.out',
-      }, isMobile ? 1.9 : 2.7)
-
-      // Golden shimmer sweeps across after all elements are visible
-      const shimmerTime = isMobile ? 2.5 : 3.5
-
+      // Golden shimmer sweeps across after all words have flown in
       tl.call(() => {
         if (shimmerRef.current) {
           gsap.fromTo(shimmerRef.current,
@@ -1739,7 +1753,7 @@ function ClosingSection() {
             }
           )
         }
-      }, undefined, shimmerTime)
+      }, undefined, totalFlyInTime)
 
       // Date appears at the end — subtle, like a signature on the last page
       if (dateRef.current) {
@@ -1748,14 +1762,14 @@ function ClosingSection() {
           opacity: 1,
           duration: 1.5,
           ease: 'power2.out',
-        }, shimmerTime + 0.5)
+        }, totalFlyInTime + 0.5)
         if (dateRef.current.querySelector('p')) {
           gsap.set(dateRef.current.querySelector('p'), { opacity: 0 })
           tl.to(dateRef.current.querySelector('p')!, {
             opacity: 0.7,
             duration: 2,
             ease: 'power2.out',
-          }, shimmerTime + 0.8)
+          }, totalFlyInTime + 0.8)
         }
       }
     })
