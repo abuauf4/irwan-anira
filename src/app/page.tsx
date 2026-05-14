@@ -579,7 +579,7 @@ function DiaryIntroSection() {
               ease: 'power2.inOut',
               scrollTrigger: {
                 trigger: sectionRef.current!,
-                start: 'top 85%',
+                start: 'top 50%',
                 toggleActions: 'play none none none',
               },
             })
@@ -602,7 +602,7 @@ function DiaryIntroSection() {
               delay: 0.5,
               scrollTrigger: {
                 trigger: sectionRef.current!,
-                start: 'top 85%',
+                start: 'top 50%',
                 toggleActions: 'play none none none',
               },
             })
@@ -1156,7 +1156,7 @@ function EventSection() {
             ease: 'power3.out',
             scrollTrigger: {
               trigger: sectionRef.current!,
-              start: 'top 85%',
+              start: 'top 65%',
               toggleActions: 'play none none none',
             },
           }
@@ -1174,7 +1174,7 @@ function EventSection() {
             ease: 'power3.out',
             scrollTrigger: {
               trigger: sectionRef.current!,
-              start: 'top 85%',
+              start: 'top 65%',
               toggleActions: 'play none none none',
             },
           }

@@ -1,6 +1,12 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger)
+}
 
 interface Wish {
   id: string
@@ -90,6 +96,29 @@ export default function GuestWishes() {
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
   const wishesListRef = useRef<HTMLDivElement>(null)
+  const sectionRef = useRef<HTMLDivElement>(null)
+
+  // Scroll-triggered entrance animation
+  useEffect(() => {
+    if (!sectionRef.current) return
+    const ctx = gsap.context(() => {
+      gsap.fromTo(sectionRef.current!,
+        { opacity: 0, y: 25 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 1.0,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: sectionRef.current!,
+            start: 'top 80%',
+            toggleActions: 'play none none none',
+          },
+        }
+      )
+    })
+    return () => ctx.revert()
+  }, [])
 
   // Fetch wishes from API on mount
   const fetchWishes = useCallback(async () => {
@@ -154,7 +183,7 @@ export default function GuestWishes() {
   }
 
   return (
-    <section className="py-20 px-6" style={{ background: 'var(--cream-dark)' }}>
+    <section ref={sectionRef} className="py-20 px-6" style={{ background: 'var(--cream-dark)', opacity: 0 }}>
       <div className="max-w-4xl mx-auto text-center">
         <h2 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
           Ucapan & Doa

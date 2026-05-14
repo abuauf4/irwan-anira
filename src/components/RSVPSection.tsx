@@ -1,6 +1,12 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger)
+}
 
 interface RSVPEntry {
   id: string
@@ -36,6 +42,28 @@ export default function RSVPSection() {
     } catch {
       // silent
     }
+  }, [])
+
+  // Scroll-triggered entrance animation
+  useEffect(() => {
+    if (!sectionRef.current) return
+    const ctx = gsap.context(() => {
+      gsap.fromTo(sectionRef.current!,
+        { opacity: 0, y: 25 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 1.0,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: sectionRef.current!,
+            start: 'top 75%',
+            toggleActions: 'play none none none',
+          },
+        }
+      )
+    })
+    return () => ctx.revert()
   }, [])
 
   useEffect(() => {
@@ -91,7 +119,7 @@ export default function RSVPSection() {
   }
 
   return (
-    <section ref={sectionRef} className="py-20 px-6 cinema-depth" style={{ background: 'var(--cream)' }}>
+    <section ref={sectionRef} className="py-20 px-6 cinema-depth" style={{ background: 'var(--cream)', opacity: 0 }}>
       <div className="max-w-4xl mx-auto text-center">
         <h2 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
           Konfirmasi Kehadiran
