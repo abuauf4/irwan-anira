@@ -1599,8 +1599,8 @@ function GallerySection() {
 /* ═══════════════════════════════════════════════════════════
    9. CLOSING — Diary Ending
    The last page of this chapter, the first of forever
-   DIRECT ENTRANCE — elements slide in smoothly, no handwriting
-   Like turning the final page and finding everything already written
+   DUST DISSOLVE — elements emerge like ink settling on old paper
+   Arabic بارك الله لكما appears immediately — no animation
    ═══════════════════════════════════════════════════════════ */
 function ClosingSection() {
   const sectionRef = useRef<HTMLDivElement>(null)
@@ -1608,6 +1608,7 @@ function ClosingSection() {
   const titleRef = useRef<HTMLDivElement>(null)
   const subtitleRef = useRef<HTMLDivElement>(null)
   const doaRef = useRef<HTMLDivElement>(null)
+  const arabicTextRef = useRef<HTMLDivElement>(null)
   const footerLineRef = useRef<HTMLDivElement>(null)
   const finalLineRef = useRef<HTMLDivElement>(null)
   const dateRef = useRef<HTMLDivElement>(null)
@@ -1631,24 +1632,33 @@ function ClosingSection() {
         }
       )
 
-      // ─── DIRECT ENTRANCE — semua elemen langsung masuk ───
-      // No handwriting, no per-letter animation
-      // Elements fade in from below with stagger — clean, cinematic, immediate
-      // Like the final page is already written, you just need to see it
-      const entranceElements = [
+      // ─── DUST DISSOLVE — elemen muncul seperti debu yang mengendap ───
+      // Each element dissolves in from dust — blur, opacity, slight scale
+      // Like the final page of a diary, ink slowly becoming visible
+      // EXCEPTION: Arabic بارك الله لكما appears immediately — no animation
+      const dustElements = [
         titleRef.current,
         subtitleRef.current,
-        doaRef.current,
         footerLineRef.current,
         finalLineRef.current,
       ].filter(Boolean) as HTMLDivElement[]
 
-      // Set initial hidden state for all elements
-      entranceElements.forEach(el => {
-        gsap.set(el, { opacity: 0, y: isMobile ? 15 : 20 })
+      // Set initial dust state — invisible, blurred, slightly scaled down
+      dustElements.forEach(el => {
+        gsap.set(el, {
+          opacity: 0,
+          y: isMobile ? 12 : 18,
+          scale: 0.97,
+          filter: 'blur(6px)',
+        })
       })
 
-      // Sequential entrance — each element slides up and fades in after the previous
+      // Arabic text — LANGSUNG MUNCUL, tanpa animasi
+      // The sacred blessing appears instantly, like it was always there
+      // doaRef container is NOT animated — only the transliteration inside it
+      // This way the Arabic بارك الله لكما is always visible
+
+      // Sequential dust dissolve — each element materializes from dust
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: sectionRef.current!,
@@ -1657,18 +1667,65 @@ function ClosingSection() {
         },
       })
 
-      entranceElements.forEach((el, i) => {
-        const staggerDelay = isMobile ? 0.4 * i : 0.5 * i
-        tl.to(el, {
-          opacity: 1,
-          y: 0,
-          duration: isMobile ? 0.8 : 1.0,
-          ease: 'power3.out',
-        }, staggerDelay + 0.3)
-      })
+      // Title — first to dissolve in
+      tl.to(titleRef.current, {
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        filter: 'blur(0px)',
+        duration: isMobile ? 1.0 : 1.4,
+        ease: 'power3.out',
+      }, 0.3)
 
-      // After all elements are visible — golden shimmer sweeps across
-      const totalEntranceTime = entranceElements.length * (isMobile ? 0.4 : 0.5) + 1.5
+      // Subtitle — dissolves after title
+      tl.to(subtitleRef.current, {
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        filter: 'blur(0px)',
+        duration: isMobile ? 1.0 : 1.4,
+        ease: 'power3.out',
+      }, isMobile ? 0.7 : 0.9)
+
+      // Transliteration text — dust dissolve (Arabic above stays visible)
+      const transliterationEl = doaRef.current?.querySelector('.doa-transliteration') as HTMLParagraphElement | null
+      if (transliterationEl) {
+        gsap.set(transliterationEl, {
+          opacity: 0,
+          y: isMobile ? 10 : 14,
+          filter: 'blur(4px)',
+        })
+        tl.to(transliterationEl, {
+          opacity: 0.7,
+          y: 0,
+          filter: 'blur(0px)',
+          duration: isMobile ? 0.8 : 1.2,
+          ease: 'power3.out',
+        }, isMobile ? 1.1 : 1.5)
+      }
+
+      // Footer line — dissolves after doa
+      tl.to(footerLineRef.current, {
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        filter: 'blur(0px)',
+        duration: isMobile ? 1.0 : 1.4,
+        ease: 'power3.out',
+      }, isMobile ? 1.5 : 2.1)
+
+      // Final emotional line — last to dissolve in
+      tl.to(finalLineRef.current, {
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        filter: 'blur(0px)',
+        duration: isMobile ? 1.0 : 1.4,
+        ease: 'power3.out',
+      }, isMobile ? 1.9 : 2.7)
+
+      // Golden shimmer sweeps across after all elements are visible
+      const shimmerTime = isMobile ? 2.5 : 3.5
 
       tl.call(() => {
         if (shimmerRef.current) {
@@ -1682,23 +1739,23 @@ function ClosingSection() {
             }
           )
         }
-      }, undefined, totalEntranceTime)
+      }, undefined, shimmerTime)
 
-      // Date appears at the end — subtle, like a signature
+      // Date appears at the end — subtle, like a signature on the last page
       if (dateRef.current) {
         gsap.set(dateRef.current, { opacity: 0 })
         tl.to(dateRef.current, {
           opacity: 1,
           duration: 1.5,
           ease: 'power2.out',
-        }, totalEntranceTime + 0.5)
+        }, shimmerTime + 0.5)
         if (dateRef.current.querySelector('p')) {
           gsap.set(dateRef.current.querySelector('p'), { opacity: 0 })
           tl.to(dateRef.current.querySelector('p')!, {
             opacity: 0.7,
             duration: 2,
             ease: 'power2.out',
-          }, totalEntranceTime + 0.8)
+          }, shimmerTime + 0.8)
         }
       }
     })
@@ -1764,18 +1821,20 @@ function ClosingSection() {
           </p>
         </div>
 
-        {/* Doa — Arabic + transliteration */}
+        {/* Doa — Arabic appears immediately, transliteration dissolves in */}
         <div ref={doaRef}>
+          <div ref={arabicTextRef}>
+            <p
+              className="text-base sm:text-lg leading-relaxed mb-6"
+              style={{ fontFamily: 'var(--font-arabic)', color: 'var(--gold-light)' }}
+              dir="rtl"
+            >
+              بارك الله لكما وبارك عليكما وجمع بينكما في خير
+            </p>
+          </div>
           <p
-            className="text-base sm:text-lg leading-relaxed mb-6"
-            style={{ fontFamily: 'var(--font-arabic)', color: 'var(--gold-light)' }}
-            dir="rtl"
-          >
-            بارك الله لكما وبارك عليكما وجمع بينكما في خير
-          </p>
-          <p
-            className="text-xs italic mb-8"
-            style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold)', opacity: 0.7 }}
+            className="doa-transliteration text-xs italic mb-8"
+            style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold)' }}
           >
             Barakallahu lakuma wa baraka &lsquo;alaikuma wa jama&lsquo;a bainakuma fi khair.
           </p>
