@@ -708,8 +708,12 @@ function DiaryStorySection() {
   const hasEnteredRef = useRef(false)
   const isTransitioningRef = useRef(false)
 
-  // Handwriting reveal that actually works — builds character spans and animates them
-  const doHandwritingReveal = (el: HTMLDivElement, text: string, stagger: number = 0.025, charDuration: number = 0.08, delay: number = 0) => {
+  // Detect mobile for performance-tuned animation
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
+
+  // Handwriting reveal — mobile-optimized, no heavy filters
+  // Timing synchronized with reading speed: ~200ms per word average
+  const doHandwritingReveal = (el: HTMLDivElement, text: string, stagger: number = 0.018, charDuration: number = 0.06, delay: number = 0) => {
     if (!el) return
     el.innerHTML = ''
 
@@ -721,7 +725,10 @@ function DiaryStorySection() {
       for (let j = 0; j < word.length; j++) {
         const cs = document.createElement('span')
         cs.className = 'hw-char'
-        cs.style.cssText = `display:inline-block;will-change:opacity,transform;opacity:0;transform:translateY(4px) rotate(-2deg);min-width:0.08em;font-family:var(--font-serif);font-style:italic;`
+        // Mobile: no will-change to reduce compositing, simpler initial transform
+        cs.style.cssText = isMobile
+          ? `display:inline-block;opacity:0;transform:translateY(2px);min-width:0.08em;font-family:var(--font-serif);font-style:italic;`
+          : `display:inline-block;will-change:opacity,transform;opacity:0;transform:translateY(3px) rotate(-1deg);min-width:0.08em;font-family:var(--font-serif);font-style:italic;`
         cs.textContent = word[j]
         ws.appendChild(cs)
         allChars.push(cs)
@@ -735,12 +742,16 @@ function DiaryStorySection() {
       }
     })
 
+    // Mobile: faster stagger and duration for snappier feel
+    const mobileStagger = isMobile ? stagger * 0.75 : stagger
+    const mobileDuration = isMobile ? charDuration * 0.8 : charDuration
+
     gsap.to(allChars, {
       opacity: 1,
       y: 0,
       rotation: 0,
-      duration: charDuration,
-      stagger,
+      duration: mobileDuration,
+      stagger: mobileStagger,
       ease: 'power2.out',
       delay,
     })
@@ -761,6 +772,11 @@ function DiaryStorySection() {
     // Set initial states
     if (progressBar) gsap.set(progressBar, { scaleX: 0, transformOrigin: 'left center' })
 
+    // Calculate handwriting duration for a given text (for timing sync)
+    const calcWriteDuration = (text: string, stagger: number, charDuration: number) => {
+      return text.length * stagger + charDuration
+    }
+
     // Show story item with handwriting reveal
     const showStoryItem = (index: number) => {
       const item = WEDDING.timeline[index]
@@ -769,18 +785,23 @@ function DiaryStorySection() {
       // Update year badge
       if (yearBadge) {
         yearBadge.textContent = item.year
-        gsap.fromTo(yearBadge, { opacity: 0, y: -5 }, { opacity: 0.6, y: 0, duration: 0.5, ease: 'power2.out' })
+        gsap.fromTo(yearBadge, { opacity: 0, y: isMobile ? -3 : -5 }, { opacity: 0.6, y: 0, duration: 0.4, ease: 'power2.out' })
       }
 
       // Title — handwriting reveal, serif italic
-      doHandwritingReveal(titleEl, item.title, 0.03, 0.09)
+      const titleStagger = isMobile ? 0.025 : 0.03
+      const titleCharDur = isMobile ? 0.07 : 0.09
+      doHandwritingReveal(titleEl, item.title, titleStagger, titleCharDur)
 
-      // Description — handwriting reveal with delay, serif italic
-      const descDelay = item.title.length * 0.03 + 0.15
-      doHandwritingReveal(descEl, item.description, 0.018, 0.06, descDelay)
+      // Description — handwriting reveal, delayed until title is mostly done
+      const descStagger = isMobile ? 0.013 : 0.018
+      const descCharDur = isMobile ? 0.05 : 0.06
+      const titleWriteTime = calcWriteDuration(item.title, titleStagger, titleCharDur)
+      const descDelay = titleWriteTime * 0.6 // overlap: start desc before title fully done
+      doHandwritingReveal(descEl, item.description, descStagger, descCharDur, descDelay)
     }
 
-    // Dissolve current text, then show next
+    // Dissolve current text, then show next — mobile-optimized
     const transitionToNext = (nextIndex: number) => {
       if (isTransitioningRef.current) return
       isTransitioningRef.current = true
@@ -794,26 +815,26 @@ function DiaryStorySection() {
         }
       })
 
-      // Dissolve like disappearing ink
+      // Mobile: dissolve without blur filter (expensive on mobile GPUs)
       tl.to([titleEl, descEl], {
         opacity: 0,
-        filter: 'blur(2px)',
-        duration: 0.6,
+        ...(isMobile ? {} : { filter: 'blur(1.5px)' }),
+        duration: isMobile ? 0.4 : 0.5,
         ease: 'power2.inOut',
-        stagger: 0.05,
+        stagger: 0.03,
       })
 
       // Year badge fades
       if (yearBadge) {
         tl.to(yearBadge, {
           opacity: 0,
-          duration: 0.3,
+          duration: 0.25,
           ease: 'power2.in',
-        }, '-=0.4')
+        }, '-=0.3')
       }
 
-      // Brief pause — the space between thoughts
-      tl.to({}, { duration: 0.2 })
+      // Very brief pause — the space between thoughts (shorter on mobile)
+      tl.to({}, { duration: isMobile ? 0.1 : 0.15 })
 
       // Reset and reveal next paragraph
       tl.call(() => {
@@ -825,17 +846,15 @@ function DiaryStorySection() {
       })
     }
 
-    // ScrollTrigger: fade in section + card when entering viewport
-    // Using IntersectionObserver for more reliable enter detection
+    // IntersectionObserver for enter detection
     const enterObserver = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting && !hasEnteredRef.current) {
             hasEnteredRef.current = true
-            gsap.to(section, { opacity: 1, duration: 0.6, ease: 'power2.out' })
-            gsap.to(card, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out', delay: 0.15,
+            gsap.to(section, { opacity: 1, duration: 0.5, ease: 'power2.out' })
+            gsap.to(card, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out', delay: 0.1,
               onComplete: () => {
-                // Show first story item after card is visible
                 currentIndexRef.current = 0
                 showStoryItem(0)
               }
@@ -844,13 +863,14 @@ function DiaryStorySection() {
           }
         })
       },
-      { threshold: 0.15 }
+      { threshold: 0.1 }
     )
     enterObserver.observe(section)
 
-    // Pinned scroll-driven progression using ScrollTrigger scrub
+    // Pinned scroll-driven progression — mobile-optimized scroll distance
     const totalItems = WEDDING.timeline.length
-    const scrollDistance = totalItems * 80
+    // Mobile: shorter pin distance = faster transitions, no dead space
+    const scrollDistance = isMobile ? totalItems * 50 : totalItems * 80
 
     const pinTrigger = ScrollTrigger.create({
       trigger: section,
@@ -858,7 +878,7 @@ function DiaryStorySection() {
       end: `+=${scrollDistance}%`,
       pin: true,
       anticipatePin: 1,
-      scrub: 0.8,
+      scrub: isMobile ? 0.5 : 0.8, // Mobile: more responsive scrub
       onUpdate: (self) => {
         // Update progress bar
         if (progressBar) {
@@ -1456,18 +1476,20 @@ function ClosingSection() {
       }
 
       // Final handwriting sentence — the emotional peak
-      // Then each word drifts away from its position like memories floating off the page
+      // Then words dissolve from the back like dust carried by warm wind
+      // Each word fades softly, drifts gently, turning into golden particles
       const observer = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
             if (entry.isIntersecting && !hasFinalAnimated.current) {
               hasFinalAnimated.current = true
-              // Handwriting reveal for the final line — slow, emotional, like the last sentence ever written
+              const isMobile = window.innerWidth < 768
+
               setTimeout(() => {
                 if (finalLineRef.current) {
                   gsap.set(finalLineRef.current, { opacity: 1 })
 
-                  // Custom handwriting reveal for closing — build word spans for later drift-away
+                  // Custom handwriting reveal for closing — build word spans for later dust dissolve
                   const fullText = finalLineRef.current.textContent || ''
                   finalLineRef.current.innerHTML = ''
 
@@ -1475,13 +1497,15 @@ function ClosingSection() {
                   const words = fullText.split(' ')
                   words.forEach((word, wi) => {
                     const ws = document.createElement('span')
-                    ws.style.cssText = 'display:inline-block;will-change:opacity,transform;white-space:nowrap;'
+                    ws.style.cssText = 'display:inline-block;white-space:nowrap;position:relative;'
                     // Build chars inside word span
                     const charSpans: HTMLSpanElement[] = []
                     for (let j = 0; j < word.length; j++) {
                       const cs = document.createElement('span')
                       cs.className = 'hw-char'
-                      cs.style.cssText = 'display:inline-block;will-change:opacity,transform;opacity:0;transform:translateY(4px) rotate(-2deg);min-width:0.08em;'
+                      cs.style.cssText = isMobile
+                        ? `display:inline-block;opacity:0;transform:translateY(2px);min-width:0.08em;`
+                        : `display:inline-block;will-change:opacity,transform;opacity:0;transform:translateY(3px) rotate(-1deg);min-width:0.08em;`
                       cs.textContent = word[j]
                       ws.appendChild(cs)
                       charSpans.push(cs)
@@ -1497,104 +1521,141 @@ function ClosingSection() {
                       finalLineRef.current!.appendChild(sp)
                     }
 
-                    // Handwriting animation for chars in this word
+                    // Handwriting animation for chars in this word — slow, emotional
                     gsap.to(charSpans, {
                       opacity: 1,
                       y: 0,
                       rotation: 0,
                       duration: 0.2,
-                      stagger: 0.06,
+                      stagger: isMobile ? 0.045 : 0.06,
                       ease: 'power2.out',
-                      delay: wi * 0.35 + 0.5, // word-by-word delay
+                      delay: wi * 0.3 + 0.5,
                     })
                   })
 
-                  // After handwriting completes — words drift away one by one
-                  const writingDuration = words.length * 0.35 + words.reduce((a, w) => a + w.length * 0.06, 0) + 1.5
+                  // After handwriting completes — dust dissolve from back to front
+                  // Words disappear one by one from the LAST word, like memories fading
+                  const writingDuration = words.length * 0.3 + words.reduce((a, w) => a + w.length * 0.06, 0) + 2.0
                   setTimeout(() => {
-                    wordSpans.forEach((ws, i) => {
-                      // Each word leaves its position — floating upward and fading
-                      const randomX = (Math.random() - 0.5) * 80
-                      const randomY = -(30 + Math.random() * 60)
-                      const randomRotate = (Math.random() - 0.5) * 15
+                    // Reverse order: last word first, like the sentence is being blown away
+                    const reversedWords = [...wordSpans].reverse()
+                    reversedWords.forEach((ws, ri) => {
+                      // Create tiny particle spans for dust effect
+                      const chars = ws.querySelectorAll('.hw-char')
+                      const particleCount = isMobile ? 2 : 3
+
+                      // Main word dissolve — soft opacity fade with gentle drift
+                      const driftX = (Math.random() - 0.3) * 30 // drift right-ish, like wind
+                      const driftY = -(8 + Math.random() * 15) // gentle upward
 
                       gsap.to(ws, {
                         opacity: 0,
-                        x: randomX,
-                        y: randomY,
-                        rotation: randomRotate,
-                        scale: 0.85,
-                        filter: 'blur(1.5px)',
-                        duration: 1.8,
-                        ease: 'power2.inOut',
-                        delay: i * 0.25, // word by word, staggered
-                      })
-                    })
-                  }, writingDuration * 1000)
-                }
-
-                // Golden shimmer sweep — like the last light of golden hour
-                setTimeout(() => {
-                  if (shimmerRef.current) {
-                    gsap.fromTo(shimmerRef.current,
-                      { opacity: 0, x: -100 },
-                      {
-                        opacity: 0.12,
-                        x: window.innerWidth,
-                        duration: 2.5,
+                        x: driftX,
+                        y: driftY,
+                        duration: isMobile ? 1.2 : 1.5,
                         ease: 'power1.inOut',
-                        onComplete: () => {
-                          gsap.set(shimmerRef.current!, { opacity: 0 })
-                          // Soft focus blur — content softly blurs like eyes closing
-                          const contentEl = sectionRef.current?.querySelector('.relative.z-10') as HTMLDivElement | null
-                          if (contentEl) {
-                            gsap.to(contentEl, {
-                              filter: 'blur(2px)',
-                              duration: 4,
-                              ease: 'power2.inOut',
-                            })
-                          }
-                          // Diary page settling — subtle scale-down like closing
-                          if (contentEl) {
-                            gsap.to(contentEl, {
-                              scale: 0.98,
-                              duration: 4,
-                              ease: 'power2.inOut',
-                            })
-                          }
-                          // After the shimmer, wait 1.5s then begin fade-to-warm-darkness (slower: 8s)
-                          setTimeout(() => {
-                            const fadeOverlay = sectionRef.current?.querySelector('.ending-fade-overlay') as HTMLDivElement | null
-                            if (fadeOverlay) {
-                              gsap.to(fadeOverlay, {
-                                opacity: 0.85,
-                                duration: 8,
-                                ease: 'power2.inOut',
-                              })
-                            }
-                            // After the darkness settles (5s after darkness starts), fade in the date
-                            // The last thing you see — the beginning of forever
-                            setTimeout(() => {
-                              if (dateRef.current) {
-                                gsap.set(dateRef.current, { opacity: 1 })
-                                gsap.to(dateRef.current.querySelector('p'), {
-                                  opacity: 0.7,
-                                  duration: 3,
-                                  ease: 'power2.out',
+                        delay: ri * 0.4, // slow, emotional silence between disappearances
+                        onStart: () => {
+                          // Spawn tiny golden dust particles from each character
+                          if (!isMobile) {
+                            chars.forEach((ch) => {
+                              for (let p = 0; p < particleCount; p++) {
+                                const particle = document.createElement('span')
+                                particle.style.cssText = `
+                                  position:absolute;
+                                  width:${1.5 + Math.random() * 2}px;
+                                  height:${1.5 + Math.random() * 2}px;
+                                  border-radius:50%;
+                                  background:rgba(201,169,110,${0.3 + Math.random() * 0.3});
+                                  pointer-events:none;
+                                  top:${ws.offsetTop + (ch as HTMLElement).offsetTop}px;
+                                  left:${ws.offsetLeft + (ch as HTMLElement).offsetLeft + Math.random() * 10}px;
+                                `
+                                finalLineRef.current!.appendChild(particle)
+
+                                gsap.to(particle, {
+                                  opacity: 0,
+                                  x: (Math.random() - 0.3) * 40,
+                                  y: -(15 + Math.random() * 30),
+                                  duration: 1.5 + Math.random(),
+                                  ease: 'power1.out',
+                                  delay: ri * 0.4 + Math.random() * 0.3,
+                                  onComplete: () => particle.remove(),
                                 })
                               }
-                            }, 5000)
-                          }, 1500)
+                            })
+                          }
                         },
+                      })
+                    })
+
+                    // After all words have dissolved — warm empty moment, then fade
+                    const dissolveDuration = reversedWords.length * 0.4 + 1.5 + 1.0
+                    setTimeout(() => {
+                      // Golden shimmer sweep — last light of golden hour
+                      if (shimmerRef.current) {
+                        gsap.fromTo(shimmerRef.current,
+                          { opacity: 0, x: -100 },
+                          {
+                            opacity: 0.08,
+                            x: window.innerWidth,
+                            duration: 2,
+                            ease: 'power1.inOut',
+                            onComplete: () => {
+                              gsap.set(shimmerRef.current!, { opacity: 0 })
+
+                              // Warm empty moment — brief silence before darkness
+                              setTimeout(() => {
+                                // Soft focus — content gently blurs like eyes closing
+                                const contentEl = sectionRef.current?.querySelector('.relative.z-10') as HTMLDivElement | null
+                                if (contentEl) {
+                                  gsap.to(contentEl, {
+                                    ...(isMobile ? {} : { filter: 'blur(2px)' }),
+                                    opacity: 0.7,
+                                    duration: isMobile ? 3 : 4,
+                                    ease: 'power2.inOut',
+                                  })
+                                  gsap.to(contentEl, {
+                                    scale: 0.98,
+                                    duration: isMobile ? 3 : 4,
+                                    ease: 'power2.inOut',
+                                  })
+                                }
+
+                                // Fade to warm darkness
+                                const fadeOverlay = sectionRef.current?.querySelector('.ending-fade-overlay') as HTMLDivElement | null
+                                if (fadeOverlay) {
+                                  gsap.to(fadeOverlay, {
+                                    opacity: 0.85,
+                                    duration: isMobile ? 5 : 6,
+                                    ease: 'power2.inOut',
+                                  })
+                                }
+
+                                // Date appears — the beginning of forever
+                                setTimeout(() => {
+                                  if (dateRef.current) {
+                                    gsap.set(dateRef.current, { opacity: 1 })
+                                    gsap.to(dateRef.current.querySelector('p'), {
+                                      opacity: 0.7,
+                                      duration: 2.5,
+                                      ease: 'power2.out',
+                                    })
+                                  }
+                                }, isMobile ? 3000 : 4000)
+                              }, 800) // warm empty moment before darkness
+                            },
+                          }
+                        )
                       }
-                    )
-                  }
-                }, 3000)
+                    }, dissolveDuration * 1000)
+                  }, writingDuration * 1000)
+                }
               }, 500)
             }
           })
         },
-        { threshold: 0.4 }
+        { threshold: 0.3 }
       )
 
       if (sectionRef.current) {
@@ -1810,28 +1871,47 @@ export default function Home() {
     }
   }, [isPlaying])
 
-  // Auto-scroll — cinematic breathing rhythm like music
-  // Slow at emotional peaks, flowing through transitions, reading-speed in content
+  // Auto-scroll — cinematic breathing rhythm, mobile-first
+  // Emotional synchronization: scroll speed matches reading speed + animation timing
   useEffect(() => {
     if (!isOpen) return
 
     let animationId: number
     let resumeTimeout: ReturnType<typeof setTimeout>
 
-    // Speed zones based on scroll position — like a conductor's tempo markings
+    const isMobile = window.innerWidth < 768
+
+    // Speed zones — mobile-optimized, no dead emotional space
+    // Mobile base speeds are higher because: smaller viewport = less scroll distance needed
     const getSpeedForPosition = (scrollY: number, docHeight: number) => {
       const progress = scrollY / docHeight
-      if (progress < 0.05) return 1.4    // Cover — 2x
-      if (progress < 0.12) return 3.6    // Transition — 2x
-      if (progress < 0.20) return 1.6    // Bismillah — 2x
-      if (progress < 0.30) return 3.0    // Transition — 2x
-      if (progress < 0.40) return 2.0    // Couple — 2x
-      if (progress < 0.50) return 3.6    // Transitions — 2x
-      if (progress < 0.60) return 2.4    // Diary/story — 2x
-      if (progress < 0.70) return 3.0    // Countdown/events — 2x
-      if (progress < 0.80) return 3.0    // Gallery — 2x
-      if (progress < 0.90) return 2.0    // Wishes — 2x
-      return 1.0                          // Closing — 2x
+      if (isMobile) {
+        // Mobile: faster, tighter, more responsive
+        if (progress < 0.05) return 2.0    // Cover
+        if (progress < 0.12) return 4.5    // Transition
+        if (progress < 0.20) return 2.2    // Bismillah
+        if (progress < 0.30) return 4.0    // Transition
+        if (progress < 0.40) return 2.8    // Couple
+        if (progress < 0.50) return 4.5    // Transitions
+        if (progress < 0.60) return 3.2    // Diary/story — synced with handwriting
+        if (progress < 0.70) return 4.0    // Countdown/events
+        if (progress < 0.80) return 4.0    // Gallery
+        if (progress < 0.90) return 2.8    // Wishes
+        return 1.5                          // Closing — slow, emotional
+      } else {
+        // Desktop: same 2x speeds from before
+        if (progress < 0.05) return 1.4
+        if (progress < 0.12) return 3.6
+        if (progress < 0.20) return 1.6
+        if (progress < 0.30) return 3.0
+        if (progress < 0.40) return 2.0
+        if (progress < 0.50) return 3.6
+        if (progress < 0.60) return 2.4
+        if (progress < 0.70) return 3.0
+        if (progress < 0.80) return 3.0
+        if (progress < 0.90) return 2.0
+        return 1.0
+      }
     }
 
     const state = autoScrollState.current
@@ -1849,9 +1929,9 @@ export default function Home() {
       // Calculate target speed based on current position in the story
       state.targetSpeed = getSpeedForPosition(window.scrollY, document.documentElement.scrollHeight)
 
-      // Smooth acceleration — ease into new speed, never snap
-      // Lerp factor 0.05 means ~20 frames to reach target (more responsive)
-      const lerpFactor = 0.05
+      // Mobile: faster lerp for more responsive speed changes
+      // Desktop: smooth lerp for cinematic feel
+      const lerpFactor = isMobile ? 0.08 : 0.05
       state.currentSpeed += (state.targetSpeed - state.currentSpeed) * lerpFactor
 
       // Only scroll if we've built up enough speed to avoid jerky starts
@@ -1863,31 +1943,29 @@ export default function Home() {
       animationId = requestAnimationFrame(autoScroll)
     }
 
-    // Start after the story breathes in — 1.2s delay
+    // Start after the story breathes in
     const startTimeout = setTimeout(() => {
-      state.currentSpeed = 1.0 // Faster start to match 2x speeds
+      state.currentSpeed = isMobile ? 1.5 : 1.0
       animationId = requestAnimationFrame(autoScroll)
-    }, 800) // Shorter delay too
+    }, isMobile ? 600 : 800) // Mobile: shorter delay
 
-    // User takes control — story pauses respectfully, then resumes smoothly
+    // User takes control — story pauses, then resumes
     const pauseAndResume = () => {
       userScrollingRef.current = true
       state.paused = true
       cancelAnimationFrame(animationId)
       clearTimeout(resumeTimeout)
 
-      // Resume after 2.5s — story gently continues from where we are
+      // Mobile: shorter pause before resume (1.5s vs 2.5s)
       resumeTimeout = setTimeout(() => {
         userScrollingRef.current = false
         state.paused = false
         const atBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 1)
         if (!atBottom) {
-          // Don't reset speed — keep current speed for smooth continuation
-          // Just slow down slightly to signal "I'm back"
           state.currentSpeed *= 0.5
           animationId = requestAnimationFrame(autoScroll)
         }
-      }, 2500)
+      }, isMobile ? 1500 : 2500)
     }
 
     const onWheel = () => pauseAndResume()
