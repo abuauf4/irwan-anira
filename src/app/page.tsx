@@ -707,9 +707,18 @@ function DiaryStorySection() {
   const currentIndexRef = useRef(-1)
   const hasEnteredRef = useRef(false)
   const isTransitioningRef = useRef(false)
+  const sequenceCompleteRef = useRef(false)
+  const pinTriggerRef = useRef<ScrollTrigger | null>(null)
 
   // Detect mobile for performance-tuned animation
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
+
+  // ═══════════════════════════════════════════════════════════
+  // HYBRID TIMING: Time-based story progression
+  // ScrollTrigger ONLY pins the section and detects enter/leave
+  // Story progression is driven by animation completion, NOT scroll position
+  // This eliminates the dead space between stories
+  // ═══════════════════════════════════════════════════════════
 
   // Handwriting reveal — SLOW, EMOTIONAL, CINEMATIC
   // Like someone writing memories slowly in a journal
@@ -717,7 +726,7 @@ function DiaryStorySection() {
   // Word boundaries get extra pause — the pen lifts between words
   // Sentence boundaries get breathing space — the writer pauses, thinks, continues
   const doHandwritingReveal = (el: HTMLDivElement, text: string, stagger: number = 0.05, charDuration: number = 0.18, delay: number = 0) => {
-    if (!el) return
+    if (!el) return 0
     el.innerHTML = ''
 
     const allChars: HTMLSpanElement[] = []
@@ -754,18 +763,13 @@ function DiaryStorySection() {
     })
 
     // Build stagger array with word-boundary pauses AND sentence breathing pauses
-    // Each word boundary: pen lifts briefly between words
-    // Each sentence boundary: writer pauses, breathes, then continues
     const staggerValues: number[] = allChars.map((_, i) => {
       const isWordStart = wordBoundaries.includes(i)
       const isAfterSentence = sentenceBoundaryIndices.includes(i)
       if (isAfterSentence) {
-        // After punctuation: longer breathing pause — the writer gathers thought
-        // Periods get longer than commas
         const prevChar = i > 0 ? allChars[i - 1]?.textContent : ''
         return prevChar === '.' ? stagger * 5 : stagger * 3
       }
-      // Word start: pen lifts, breathes, then writes again
       return isWordStart ? stagger * 2.2 : stagger
     })
 
@@ -789,7 +793,7 @@ function DiaryStorySection() {
       })
     })
 
-    // Return total duration so we can sync other animations
+    // Return total duration so we can schedule the next story
     return cumulativeDelay + charDuration
   }
 
@@ -808,15 +812,31 @@ function DiaryStorySection() {
     // Set initial states
     if (progressBar) gsap.set(progressBar, { scaleX: 0, transformOrigin: 'left center' })
 
-    // Calculate handwriting duration for a given text (for timing sync)
-    const calcWriteDuration = (text: string, stagger: number, charDuration: number) => {
-      return text.length * stagger + charDuration
+    const totalItems = WEDDING.timeline.length
+
+    // ─── Calculate total handwriting duration for a text ───
+    // Used to predict when handwriting finishes so we can schedule transitions
+    const calcWriteDuration = (text: string, stagger: number, charDuration: number, delay: number = 0) => {
+      // Rough approximation matching doHandwritingReveal's timing logic
+      // Count word boundaries and sentence boundaries for realistic estimate
+      const words = text.split(' ')
+      let totalStagger = 0
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i]
+        const prevCh = i > 0 ? text[i - 1] : ''
+        if (prevCh === '.') totalStagger += stagger * 5
+        else if (prevCh === ',' || prevCh === ';') totalStagger += stagger * 3
+        else if (ch === ' ') totalStagger += stagger * 2.2
+        else totalStagger += stagger
+      }
+      return delay + totalStagger + text.length * (charDuration * 0.25) + charDuration
     }
 
-    // Show story item with handwriting reveal
-    const showStoryItem = (index: number) => {
+    // ─── Show story item with handwriting reveal ───
+    // Returns the total duration from start until description handwriting completes
+    const showStoryItem = (index: number): number => {
       const item = WEDDING.timeline[index]
-      if (!item) return
+      if (!item) return 0
 
       // Update year badge
       if (yearBadge) {
@@ -824,126 +844,174 @@ function DiaryStorySection() {
         gsap.fromTo(yearBadge, { opacity: 0, y: isMobile ? -3 : -5 }, { opacity: 0.6, y: 0, duration: 0.4, ease: 'power2.out' })
       }
 
-      // Title — slow, emotional handwriting reveal, serif italic
-      // Like the chapter heading being written first
+      // Title handwriting
       const titleStagger = isMobile ? 0.05 : 0.07
       const titleCharDur = isMobile ? 0.14 : 0.2
-      const titleWriteTime = doHandwritingReveal(titleEl, item.title, titleStagger, titleCharDur) ?? calcWriteDuration(item.title, titleStagger, titleCharDur)
+      const titleWriteTime = doHandwritingReveal(titleEl, item.title, titleStagger, titleCharDur)
+        || calcWriteDuration(item.title, titleStagger, titleCharDur)
 
-      // Description — slower still, each word breathes, each sentence pauses
-      // Delayed: let the title finish, then breathe, then the story begins
+      // Description handwriting — starts after title + breathing pause
       const descStagger = isMobile ? 0.035 : 0.05
       const descCharDur = isMobile ? 0.1 : 0.16
-      // Emotional pause after title before description begins — breathing space
-      // The pen rests. The writer looks up. Then continues.
-      const descDelay = titleWriteTime + (isMobile ? 0.8 : 1.2)
-      doHandwritingReveal(descEl, item.description, descStagger, descCharDur, descDelay)
+      const breathingPause = isMobile ? 0.8 : 1.2
+      const descDelay = titleWriteTime + breathingPause
+      const descWriteTime = doHandwritingReveal(descEl, item.description, descStagger, descCharDur, descDelay)
+        || calcWriteDuration(item.description, descStagger, descCharDur, descDelay)
+
+      // Total duration: from start of this story until description finishes writing
+      return descWriteTime
     }
 
-    // Dissolve current text, then show next — mobile-optimized
-    const transitionToNext = (nextIndex: number) => {
-      if (isTransitioningRef.current) return
-      isTransitioningRef.current = true
+    // ─── Ink dissolve transition ───
+    // Returns a Promise that resolves when dissolve is complete
+    const inkDissolve = (): Promise<void> => {
+      return new Promise((resolve) => {
+        gsap.killTweensOf([titleEl, descEl, yearBadge])
 
-      // Kill any running GSAP animations on these elements
-      gsap.killTweensOf([titleEl, descEl, yearBadge])
+        const tl = gsap.timeline({ onComplete: resolve })
 
-      const tl = gsap.timeline({
-        onComplete: () => {
-          isTransitioningRef.current = false
+        // Ink dissolve — text fades like disappearing ink on old paper
+        tl.to([titleEl, descEl], {
+          opacity: 0,
+          ...(isMobile ? {} : { filter: 'blur(2px)' }),
+          duration: isMobile ? 0.6 : 0.8,
+          ease: 'power2.inOut',
+          stagger: 0.05,
+        })
+
+        // Year badge fades softly
+        if (yearBadge) {
+          tl.to(yearBadge, {
+            opacity: 0,
+            duration: 0.4,
+            ease: 'power2.in',
+          }, '-=0.5')
         }
       })
+    }
 
-      // Ink dissolve — text fades like disappearing ink on old paper
-      // Softer, more emotional than abrupt cut
-      tl.to([titleEl, descEl], {
-        opacity: 0,
-        ...(isMobile ? {} : { filter: 'blur(2px)' }),
-        duration: isMobile ? 0.6 : 0.8,
-        ease: 'power2.inOut',
-        stagger: 0.05,
-      })
+    // ─── TIME-BASED STORY SEQUENCE ───
+    // Each story starts based on when the previous one FINISHES
+    // No dead space — the emotional rhythm is controlled by timing, not scroll
+    const runStorySequence = async () => {
+      for (let i = 0; i < totalItems; i++) {
+        // Update progress bar
+        const progress = (i + 0.5) / totalItems
+        if (progressBar) {
+          gsap.to(progressBar, { scaleX: progress, duration: 0.4, ease: 'power2.out' })
+        }
 
-      // Year badge fades softly
-      if (yearBadge) {
-        tl.to(yearBadge, {
-          opacity: 0,
-          duration: 0.4,
-          ease: 'power2.in',
-        }, '-=0.5')
-      }
+        // Show this story — returns duration of handwriting
+        currentIndexRef.current = i
+        const writeDuration = showStoryItem(i)
 
-      // The space between thoughts — a breath before the next memory
-      // Longer pause: let the old memory fade before the new one arrives
-      tl.to({}, { duration: isMobile ? 0.5 : 0.8 })
+        // Wait for handwriting to complete
+        await new Promise<void>((resolve) => {
+          setTimeout(resolve, writeDuration * 1000)
+        })
 
-      // Reset and reveal next paragraph
-      tl.call(() => {
+        // After handwriting completes, hold briefly — let the reader absorb
+        // Max 1.2s hold — keeps momentum, no dead space
+        const holdTime = isMobile ? 0.9 : 1.2
+        await new Promise<void>((resolve) => {
+          setTimeout(resolve, holdTime * 1000)
+        })
+
+        // If this is the last story, skip dissolve — we'll do a final hold
+        if (i === totalItems - 1) break
+
+        // Ink dissolve 0.6–0.8s
+        await inkDissolve()
+
+        // Clear and reset for next story — minimal gap
         titleEl.innerHTML = ''
         descEl.innerHTML = ''
         gsap.set([titleEl, descEl], { opacity: 1, filter: 'blur(0px)' })
-        currentIndexRef.current = nextIndex
-        showStoryItem(nextIndex)
+      }
+
+      // ─── Final story complete ───
+      // Update progress bar to full
+      if (progressBar) {
+        gsap.to(progressBar, { scaleX: 1, duration: 0.4, ease: 'power2.out' })
+      }
+
+      // Hold 1.5s max on final story — let the last words sink in
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, isMobile ? 1200 : 1500)
       })
+
+      // Mark sequence as complete — signal auto-scroll to resume
+      sequenceCompleteRef.current = true
+
+      // Kill the ScrollTrigger pin so the section returns to normal flow
+      // This removes the extra scroll space created by pinning
+      if (pinTriggerRef.current) {
+        pinTriggerRef.current.kill()
+        pinTriggerRef.current = null
+        // Refresh all ScrollTriggers to recalculate positions after pin removal
+        ScrollTrigger.refresh()
+      }
+
+      // Signal that diary section is done — auto-scroll can resume smoothly
+      // Small delay to let the DOM settle after pin removal
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('diary-sequence-complete'))
+      }, 100)
     }
 
-    // IntersectionObserver for enter detection
+    // ─── IntersectionObserver: detect entry ───
+    // When the diary section enters the viewport, start the time-based sequence
     const enterObserver = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting && !hasEnteredRef.current) {
             hasEnteredRef.current = true
+
+            // Signal auto-scroll to pause — diary controls its own rhythm
+            window.dispatchEvent(new CustomEvent('diary-sequence-start'))
+
             gsap.to(section, { opacity: 1, duration: 0.5, ease: 'power2.out' })
             gsap.to(card, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out', delay: 0.1,
               onComplete: () => {
-                currentIndexRef.current = 0
-                showStoryItem(0)
+                // Start the time-based story sequence
+                runStorySequence()
               }
             })
             enterObserver.disconnect()
           }
         })
       },
-      { threshold: 0.1 }
+      { threshold: 0.15 }
     )
     enterObserver.observe(section)
 
-    // Pinned scroll-driven progression — mobile-optimized scroll distance
-    const totalItems = WEDDING.timeline.length
-    // Longer pin distance = more time to read each story, more emotional breathing room
-    // Slower handwriting means we need more scroll distance per story
-    const scrollDistance = isMobile ? totalItems * 70 : totalItems * 120
+    // ─── ScrollTrigger: PIN ONLY, no story progression logic ───
+    // Pin the section while the time-based sequence plays
+    // Calculate a reasonable pin duration based on estimated total sequence time
+    // Story 1 handwriting + hold + dissolve ~15-20s, similar for others
+    // Total ~45-60s of pinned time
+    // We use a generous scroll distance to ensure the pin doesn't end prematurely
+    const estimatedDuration = isMobile ? 40 : 50 // seconds of pinned time
+    // Convert seconds to scroll distance (approximate: 1s ≈ 2vh at typical scroll speed)
+    const pinDistance = estimatedDuration * (isMobile ? 3 : 2.5)
 
     const pinTrigger = ScrollTrigger.create({
       trigger: section,
       start: 'top 10%',
-      end: `+=${scrollDistance}%`,
+      end: `+=${pinDistance}vh`,
       pin: true,
       anticipatePin: 1,
-      scrub: isMobile ? 0.5 : 0.8, // Mobile: more responsive scrub
-      onUpdate: (self) => {
-        // Update progress bar
-        if (progressBar) {
-          gsap.set(progressBar, { scaleX: self.progress })
-        }
-
-        // Calculate which story index should be shown based on scroll progress
-        const progress = self.progress
-        const targetIndex = Math.min(
-          Math.floor(progress * totalItems),
-          totalItems - 1
-        )
-
-        // Only transition if index actually changed and we're not already transitioning
-        if (targetIndex !== currentIndexRef.current && hasEnteredRef.current && !isTransitioningRef.current) {
-          transitionToNext(targetIndex)
-        }
-      },
+      // NO scrub — time-based progression, not scroll-linked
+      // NO onUpdate — story changes are driven by animation completion
     })
+    pinTriggerRef.current = pinTrigger
 
     return () => {
       enterObserver.disconnect()
-      pinTrigger.kill()
+      if (pinTriggerRef.current) {
+        pinTriggerRef.current.kill()
+        pinTriggerRef.current = null
+      }
     }
   }, [])
 
@@ -2133,12 +2201,39 @@ export default function Home() {
     window.addEventListener('wheel', onWheel, { passive: true })
     window.addEventListener('touchstart', onTouchStart, { passive: true })
 
+    // ─── Diary section integration ───
+    // When diary story sequence starts, pause auto-scroll — diary controls its own rhythm
+    // When diary sequence completes, resume auto-scroll smoothly
+    const onDiaryStart = () => {
+      userScrollingRef.current = true
+      state.paused = true
+      state.currentSpeed = 0
+      cancelAnimationFrame(animationId)
+      clearTimeout(resumeTimeout)
+    }
+
+    const onDiaryComplete = () => {
+      userScrollingRef.current = false
+      state.paused = false
+      // Gentle ramp-up instead of sudden resume — feels cinematic
+      state.currentSpeed = isMobile ? 0.8 : 0.5
+      const atBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 1)
+      if (!atBottom) {
+        animationId = requestAnimationFrame(autoScroll)
+      }
+    }
+
+    window.addEventListener('diary-sequence-start', onDiaryStart)
+    window.addEventListener('diary-sequence-complete', onDiaryComplete)
+
     return () => {
       clearTimeout(startTimeout)
       cancelAnimationFrame(animationId)
       clearTimeout(resumeTimeout)
       window.removeEventListener('wheel', onWheel)
       window.removeEventListener('touchstart', onTouchStart)
+      window.removeEventListener('diary-sequence-start', onDiaryStart)
+      window.removeEventListener('diary-sequence-complete', onDiaryComplete)
     }
   }, [isOpen])
 
