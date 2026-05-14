@@ -17,21 +17,18 @@ export default function Preloader({ onComplete, groomName, brideName }: Preloade
   const ampersandRef = useRef<HTMLSpanElement>(null)
   const progressRef = useRef<HTMLDivElement>(null)
   const ornamentRef = useRef<HTMLDivElement>(null)
+  const inkDropRef = useRef<HTMLDivElement>(null)
 
   const groomFirst = groomName.split(' ')[0]
   const brideFirst = brideName.split(' ')[0]
 
   const onCompleteRef = useRef(onComplete)
-  
-  useEffect(() => {
-    onCompleteRef.current = onComplete
-  }, [onComplete])
+  useEffect(() => { onCompleteRef.current = onComplete }, [onComplete])
 
   useEffect(() => {
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
     if (prefersReduced) {
-      // Use requestAnimationFrame to avoid synchronous setState in effect
       requestAnimationFrame(() => {
         setProgress(100)
         setTimeout(() => onCompleteRef.current(), 500)
@@ -41,20 +38,29 @@ export default function Preloader({ onComplete, groomName, brideName }: Preloade
 
     const tl = gsap.timeline({
       onComplete: () => {
-        // Fade out preloader
+        // Cinematic fade out — like closing the diary cover
         gsap.to(containerRef.current, {
           opacity: 0,
-          duration: 0.8,
+          duration: 1.2,
           ease: 'power2.inOut',
           onComplete: () => onCompleteRef.current(),
         })
       },
     })
 
-    // Progress bar animation
+    // Ink drop — a single dot that expands softly
+    if (inkDropRef.current) {
+      tl.fromTo(inkDropRef.current,
+        { scale: 0, opacity: 0 },
+        { scale: 1, opacity: 0.3, duration: 1.5, ease: 'power2.out' },
+        0
+      )
+    }
+
+    // Progress bar — thin, elegant
     tl.to(progressRef.current, {
       width: '100%',
-      duration: 3,
+      duration: 3.5,
       ease: 'power1.inOut',
       onUpdate: () => {
         if (progressRef.current) {
@@ -62,72 +68,70 @@ export default function Preloader({ onComplete, groomName, brideName }: Preloade
           setProgress(Math.min(100, parseInt(width) || 0))
         }
       },
-    }, 0)
+    }, 0.5)
 
-    // Animate groom name letters
+    // Animate groom name — slow, letter by letter, like being written
     tl.fromTo(
       groomCharsRef.current,
-      { opacity: 0, y: 30, rotateX: -90 },
+      { opacity: 0, y: 15, filter: 'blur(4px)' },
       {
         opacity: 1,
         y: 0,
-        rotateX: 0,
-        duration: 0.4,
-        stagger: 0.08,
-        ease: 'back.out(1.7)',
+        filter: 'blur(0px)',
+        duration: 0.5,
+        stagger: 0.1,
+        ease: 'power2.out',
       },
-      0.3
+      0.8
     )
 
-    // Animate ampersand
+    // Ampersand — gentle fade, no wild spin
     tl.fromTo(
       ampersandRef.current,
-      { opacity: 0, scale: 0, rotation: -180 },
+      { opacity: 0, scale: 0.8, filter: 'blur(4px)' },
       {
         opacity: 1,
         scale: 1,
-        rotation: 0,
-        duration: 0.6,
-        ease: 'back.out(2)',
+        filter: 'blur(0px)',
+        duration: 0.8,
+        ease: 'power2.out',
       },
-      1.0
+      1.5
     )
 
-    // Animate bride name letters
+    // Animate bride name
     tl.fromTo(
       brideCharsRef.current,
-      { opacity: 0, y: 30, rotateX: -90 },
+      { opacity: 0, y: 15, filter: 'blur(4px)' },
       {
         opacity: 1,
         y: 0,
-        rotateX: 0,
-        duration: 0.4,
-        stagger: 0.08,
-        ease: 'back.out(1.7)',
-      },
-      1.2
-    )
-
-    // Ornament scale in
-    tl.fromTo(
-      ornamentRef.current,
-      { opacity: 0, scale: 0.5 },
-      {
-        opacity: 1,
-        scale: 1,
-        duration: 0.6,
-        ease: 'elastic.out(1, 0.5)',
+        filter: 'blur(0px)',
+        duration: 0.5,
+        stagger: 0.1,
+        ease: 'power2.out',
       },
       1.8
     )
 
-    // Hold for a moment
-    tl.to({}, { duration: 0.5 })
+    // Ornament — subtle breath in
+    tl.fromTo(
+      ornamentRef.current,
+      { opacity: 0, scaleX: 0 },
+      {
+        opacity: 0.4,
+        scaleX: 1,
+        duration: 1,
+        ease: 'power2.out',
+      },
+      2.5
+    )
 
-    return () => {
-      tl.kill()
-    }
-  }, []) // onComplete is accessed via ref, no need in deps
+    // Hold — let the names breathe
+    tl.to({}, { duration: 0.8 })
+
+    return () => { tl.kill() }
+  }, [])
 
   return (
     <div
@@ -135,22 +139,34 @@ export default function Preloader({ onComplete, groomName, brideName }: Preloade
       className="fixed inset-0 z-[9999] flex flex-col items-center justify-center"
       style={{ background: 'var(--cream)' }}
     >
-      {/* Decorative corner borders */}
-      <div className="absolute top-8 left-8 w-20 h-20 border-t-2 border-l-2 opacity-40" style={{ borderColor: 'var(--gold)' }} />
-      <div className="absolute top-8 right-8 w-20 h-20 border-t-2 border-r-2 opacity-40" style={{ borderColor: 'var(--gold)' }} />
-      <div className="absolute bottom-8 left-8 w-20 h-20 border-b-2 border-l-2 opacity-40" style={{ borderColor: 'var(--gold)' }} />
-      <div className="absolute bottom-8 right-8 w-20 h-20 border-b-2 border-r-2 opacity-40" style={{ borderColor: 'var(--gold)' }} />
+      {/* Ink drop — subtle circle that spreads */}
+      <div
+        ref={inkDropRef}
+        className="absolute rounded-full pointer-events-none"
+        style={{
+          width: '300px',
+          height: '300px',
+          background: 'radial-gradient(circle, rgba(201,169,110,0.06) 0%, transparent 70%)',
+          opacity: 0,
+        }}
+      />
 
-      {/* Bismillah */}
+      {/* Corner borders — minimal, thin */}
+      <div className="absolute top-10 left-10 w-16 h-16 border-t border-l opacity-20" style={{ borderColor: 'var(--gold)' }} />
+      <div className="absolute top-10 right-10 w-16 h-16 border-t border-r opacity-20" style={{ borderColor: 'var(--gold)' }} />
+      <div className="absolute bottom-10 left-10 w-16 h-16 border-b border-l opacity-20" style={{ borderColor: 'var(--gold)' }} />
+      <div className="absolute bottom-10 right-10 w-16 h-16 border-b border-r opacity-20" style={{ borderColor: 'var(--gold)' }} />
+
+      {/* Bismillah — quiet, reverent */}
       <p
-        className="text-lg sm:text-xl mb-8 opacity-60"
-        style={{ fontFamily: 'var(--font-arabic)', color: 'var(--brown)' }}
+        className="text-lg sm:text-xl mb-10 opacity-50"
+        style={{ fontFamily: 'var(--font-arabic)', color: 'var(--brown-light)' }}
       >
         بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
       </p>
 
-      {/* Groom Name */}
-      <div className="flex mb-2" style={{ perspective: '600px' }}>
+      {/* Groom Name — slow reveal */}
+      <div className="flex mb-1">
         {groomFirst.split('').map((char, i) => (
           <span
             key={`g-${i}`}
@@ -159,7 +175,7 @@ export default function Preloader({ onComplete, groomName, brideName }: Preloade
             style={{
               fontFamily: 'var(--font-script)',
               color: 'var(--gold-dark)',
-              willChange: 'transform, opacity',
+              willChange: 'transform, opacity, filter',
               display: 'inline-block',
               opacity: 0,
             }}
@@ -170,14 +186,23 @@ export default function Preloader({ onComplete, groomName, brideName }: Preloade
       </div>
 
       {/* Ampersand */}
-      <div className="my-3 flex items-center justify-center">
-        <span ref={ampersandRef} className="text-3xl sm:text-4xl" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold)', opacity: 0, willChange: 'transform, opacity' }}>
+      <div className="my-2 flex items-center justify-center">
+        <span
+          ref={ampersandRef}
+          className="text-2xl sm:text-3xl"
+          style={{
+            fontFamily: 'var(--font-script)',
+            color: 'var(--gold)',
+            opacity: 0,
+            willChange: 'transform, opacity, filter',
+          }}
+        >
           &amp;
         </span>
       </div>
 
       {/* Bride Name */}
-      <div className="flex mb-6" style={{ perspective: '600px' }}>
+      <div className="flex mb-6">
         {brideFirst.split('').map((char, i) => (
           <span
             key={`b-${i}`}
@@ -186,7 +211,7 @@ export default function Preloader({ onComplete, groomName, brideName }: Preloade
             style={{
               fontFamily: 'var(--font-script)',
               color: 'var(--gold-dark)',
-              willChange: 'transform, opacity',
+              willChange: 'transform, opacity, filter',
               display: 'inline-block',
               opacity: 0,
             }}
@@ -196,24 +221,28 @@ export default function Preloader({ onComplete, groomName, brideName }: Preloade
         ))}
       </div>
 
-      {/* Ornament */}
-      <div ref={ornamentRef} className="ornament-divider max-w-[200px] mb-8" style={{ opacity: 0, willChange: 'transform, opacity' }}>
-        <span className="text-[var(--gold)] text-lg">&#10047;</span>
+      {/* Ornament divider */}
+      <div
+        ref={ornamentRef}
+        className="max-w-[160px] w-full mb-10"
+        style={{ opacity: 0, willChange: 'transform, opacity' }}
+      >
+        <div className="h-px w-full" style={{ background: 'linear-gradient(90deg, transparent, var(--gold), transparent)' }} />
       </div>
 
-      {/* Progress bar */}
-      <div className="w-48 sm:w-64 relative">
-        <div className="h-[2px] w-full rounded-full" style={{ background: 'var(--gold)' }} />
+      {/* Progress bar — thin, barely there */}
+      <div className="w-40 sm:w-52 relative">
+        <div className="h-px w-full" style={{ background: 'var(--gold)', opacity: 0.2 }} />
         <div
           ref={progressRef}
-          className="h-[2px] absolute top-0 left-0 rounded-full"
-          style={{ background: 'var(--gold)', width: '0%', willChange: 'width' }}
+          className="h-px absolute top-0 left-0"
+          style={{ background: 'var(--gold)', width: '0%', willChange: 'width', opacity: 0.6 }}
         />
         <p
-          className="text-center mt-3 text-xs tracking-[0.3em] uppercase"
-          style={{ fontFamily: 'var(--font-body)', color: 'var(--brown-light)' }}
+          className="text-center mt-4 text-[10px] tracking-[0.4em] uppercase"
+          style={{ fontFamily: 'var(--font-body)', color: 'var(--brown-soft)', opacity: 0.5 }}
         >
-          {progress < 100 ? 'Memuat...' : 'Siap'}
+          {progress < 100 ? 'membuka kenangan...' : 'siap'}
         </p>
       </div>
     </div>

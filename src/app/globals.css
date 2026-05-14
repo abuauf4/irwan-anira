@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Amiri:ital@0;1&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Great+Vibes&family=Inter:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Amiri:ital@0;1&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Great+Vibes&family=Inter:wght@300;400;500&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -50,44 +50,40 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(0.98 0.005 80);
-  --foreground: oklch(0.20 0.02 60);
-  --card: oklch(0.98 0.005 80);
-  --card-foreground: oklch(0.20 0.02 60);
-  --popover: oklch(0.98 0.005 80);
-  --popover-foreground: oklch(0.20 0.02 60);
-  --primary: oklch(0.35 0.06 60);
-  --primary-foreground: oklch(0.98 0.005 80);
-  --secondary: oklch(0.95 0.01 80);
-  --secondary-foreground: oklch(0.30 0.04 60);
-  --muted: oklch(0.93 0.01 80);
-  --muted-foreground: oklch(0.50 0.03 60);
-  --accent: oklch(0.90 0.02 80);
-  --accent-foreground: oklch(0.30 0.04 60);
+  /* Warm ivory paper base */
+  --background: #FBF7F0;
+  --foreground: #3D3225;
+  --card: #FAF5EC;
+  --card-foreground: #3D3225;
+  --popover: #FAF5EC;
+  --popover-foreground: #3D3225;
+  --primary: #8B7355;
+  --primary-foreground: #FAF5EC;
+  --secondary: #F0E8DA;
+  --secondary-foreground: #5C4A32;
+  --muted: #EDE5D8;
+  --muted-foreground: #8B7B6A;
+  --accent: #E8DDD0;
+  --accent-foreground: #5C4A32;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.88 0.015 80);
-  --input: oklch(0.88 0.015 80);
-  --ring: oklch(0.50 0.06 60);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --border: #D9CFC0;
+  --input: #D9CFC0;
+  --ring: #A67B3D;
+
+  /* Love Diary Palette — warm, intimate, cinematic */
   --gold: #C9A96E;
   --gold-light: #D4B87A;
   --gold-dark: #A8874E;
-  --cream: #FDF8F0;
-  --cream-dark: #F5EDE0;
+  --cream: #FBF7F0;
+  --cream-dark: #F0E8DA;
   --brown: #5C4A32;
   --brown-light: #8B7355;
+  --brown-soft: #7A6B56;
+  --ivory: #FFFFF0;
+  --ink: #2C2218;
+  --ink-light: #4A3D30;
+  --paper: #FAF5EC;
+  --paper-aged: #F5EDDF;
 
   /* Javanese traditional color palette */
   --java-batik-brown: #6B4226;
@@ -104,27 +100,34 @@
   }
   body {
     @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
-/* Custom scrollbar */
+/* ========================================
+   CINEMATIC DIARY — CUSTOM SCROLLBAR
+   Thin, warm, barely there
+   ======================================== */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--cream);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: var(--gold);
-  border-radius: 3px;
+  border-radius: 2px;
+  opacity: 0.5;
 }
 
-/* Smooth scroll - handled by Lenis now, but keep as fallback */
 html {
   scroll-behavior: smooth;
 }
 
-/* Reduced motion preferences */
+/* ========================================
+   REDUCED MOTION — respect the preference
+   ======================================== */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -134,35 +137,16 @@ html {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  .envelope-open {
-    opacity: 1 !important;
-    animation: none !important;
-  }
-  .animate-fade-in-up,
-  .animate-fade-in,
-  .animate-scale-in,
-  .animate-slide-in-left,
-  .animate-slide-in-right,
-  .animate-float,
-  .animate-heartbeat,
-  .animate-rotate-slow,
-  .animate-gold-pulse {
-    animation: none !important;
-    opacity: 1 !important;
-    transform: none !important;
-  }
 }
 
-/* Animations */
+/* ========================================
+   CINEMATIC ANIMATIONS — slow, purposeful
+   Every animation earns its place
+   ======================================== */
+
 @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes fadeIn {
@@ -170,42 +154,14 @@ html {
   to { opacity: 1; }
 }
 
-@keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+@keyframes slowReveal {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes slideInLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-50px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes slideInRight {
-  from {
-    opacity: 0;
-    transform: translateX(50px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
+@keyframes breathe {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
 }
 
 @keyframes shimmer {
@@ -213,11 +169,19 @@ html {
   100% { background-position: 200% center; }
 }
 
-@keyframes heartbeat {
-  0%, 100% { transform: scale(1); }
-  25% { transform: scale(1.1); }
-  50% { transform: scale(1); }
-  75% { transform: scale(1.1); }
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes typewriterBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes gentlePulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
 }
 
 @keyframes rotateSlow {
@@ -225,54 +189,86 @@ html {
   to { transform: rotate(360deg); }
 }
 
+@keyframes lightLeakPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes visualizerBar {
+  0% { height: 20%; }
+  50% { height: 90%; }
+  100% { height: 30%; }
+}
+
+@keyframes envelopeOpen {
+  0% { transform: scale(0.98); opacity: 0.8; }
+  50% { transform: scale(1.01); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes diaryPageTurn {
+  0% { transform: perspective(1200px) rotateY(0deg); opacity: 1; }
+  100% { transform: perspective(1200px) rotateY(-90deg); opacity: 0; }
+}
+
+@keyframes inkSpread {
+  0% { transform: scale(0); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes petalDrift {
+  0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.6; }
+  90% { opacity: 0.3; }
+  100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+}
+
+/* Animation utility classes — cinematic pacing */
 .animate-fade-in-up {
-  animation: fadeInUp 0.8s ease-out forwards;
+  animation: fadeInUp 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.6s ease-out forwards;
+  animation: fadeIn 0.8s ease-out forwards;
 }
 
-.animate-scale-in {
-  animation: scaleIn 0.6s ease-out forwards;
-}
-
-.animate-slide-in-left {
-  animation: slideInLeft 0.8s ease-out forwards;
-}
-
-.animate-slide-in-right {
-  animation: slideInRight 0.8s ease-out forwards;
+.animate-slow-reveal {
+  animation: slowReveal 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 
 .animate-float {
-  animation: float 3s ease-in-out infinite;
-}
-
-.animate-heartbeat {
-  animation: heartbeat 2s ease-in-out infinite;
+  animation: float 4s ease-in-out infinite;
 }
 
 .animate-rotate-slow {
-  animation: rotateSlow 20s linear infinite;
+  animation: rotateSlow 30s linear infinite;
 }
 
-/* Gold shimmer text */
+.animate-breathe {
+  animation: breathe 6s ease-in-out infinite;
+}
+
+/* ========================================
+   GOLD SHIMMER — luxury but subtle
+   ======================================== */
 .gold-shimmer {
   background: linear-gradient(90deg, var(--gold-dark), var(--gold-light), var(--gold), var(--gold-light), var(--gold-dark));
   background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  animation: shimmer 3s linear infinite;
+  animation: shimmer 4s linear infinite;
 }
 
-/* Decorative divider */
+/* ========================================
+   ORNAMENTAL DIVIDERS — minimal, elegant
+   ======================================== */
 .ornament-divider {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .ornament-divider::before,
@@ -281,13 +277,130 @@ html {
   flex: 1;
   height: 1px;
   background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  opacity: 0.4;
 }
 
-/* Section reveal - now handled by GSAP ScrollTrigger, kept as fallback */
+/* ========================================
+   DIARY PAPER TEXTURES
+   Warm aged paper, like opening an old journal
+   ======================================== */
+.diary-paper-bg {
+  background-color: var(--paper);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.02'/%3E%3C/svg%3E"),
+    linear-gradient(135deg, rgba(166, 123, 61, 0.03) 0%, transparent 50%, rgba(166, 123, 61, 0.02) 100%);
+  background-repeat: repeat;
+  background-size: 300px 300px, 100% 100%;
+  position: relative;
+}
+
+.diary-paper-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(251, 247, 240, 0.6), transparent 15%, transparent 85%, rgba(251, 247, 240, 0.6));
+  pointer-events: none;
+}
+
+/* Diary note card — like a handwritten note tucked in the journal */
+.diary-note-card {
+  background: linear-gradient(145deg, #fffcf5, #f8f0e0);
+  box-shadow:
+    1px 2px 6px rgba(92, 74, 50, 0.08),
+    0 1px 2px rgba(92, 74, 50, 0.04),
+    inset 0 0 0 1px rgba(201, 169, 110, 0.06);
+  transform: rotate(-0.3deg);
+  transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.5s ease;
+  position: relative;
+}
+
+.diary-note-card::after {
+  content: '';
+  position: absolute;
+  top: -3px;
+  right: 10px;
+  width: 16px;
+  height: 16px;
+  background: linear-gradient(135deg, rgba(201, 169, 110, 0.2), rgba(201, 169, 110, 0.08));
+  border-radius: 1px;
+  transform: rotate(12deg);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.diary-note-card:hover {
+  transform: rotate(0deg) translateY(-1px);
+  box-shadow:
+    2px 4px 12px rgba(92, 74, 50, 0.1),
+    0 1px 4px rgba(92, 74, 50, 0.06),
+    inset 0 0 0 1px rgba(201, 169, 110, 0.1);
+}
+
+/* ========================================
+   POLAROID FRAME — memory captured
+   ======================================== */
+.polaroid-frame {
+  background: white;
+  padding: 6px 6px 24px 6px;
+  border-radius: 1px;
+  box-shadow:
+    1px 2px 8px rgba(0, 0, 0, 0.08),
+    0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.6s ease;
+}
+
+.polaroid-frame:hover {
+  box-shadow:
+    2px 4px 16px rgba(0, 0, 0, 0.12),
+    0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+/* ========================================
+   GOLD LIGHT LEAK — cinematic warmth
+   ======================================== */
+.gold-light-leak {
+  background:
+    radial-gradient(ellipse at 20% 20%, rgba(201, 169, 110, 0.1) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(212, 184, 122, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 0%, rgba(201, 169, 110, 0.06) 0%, transparent 60%);
+  animation: lightLeakPulse 10s ease-in-out infinite;
+}
+
+/* ========================================
+   HANDWRITING ANIMATION BASE
+   ======================================== */
+.hw-char {
+  display: inline-block;
+  will-change: opacity, transform;
+}
+
+.typewriter-cursor {
+  animation: typewriterBlink 0.8s step-end infinite;
+}
+
+/* ========================================
+   SVG STROKE ANIMATION
+   ======================================== */
+.svg-corner-flourish {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+}
+
+.timeline-dot-ring {
+  will-change: stroke-dashoffset;
+  transition: none;
+}
+
+.ink-stroke-line svg path {
+  will-change: stroke-dashoffset;
+}
+
+/* ========================================
+   SECTION REVEAL — gentle, not aggressive
+   ======================================== */
 .reveal {
   opacity: 0;
-  transform: translateY(30px);
-  transition: all 0.8s ease-out;
+  transform: translateY(15px);
+  transition: all 1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .reveal.visible {
@@ -295,32 +408,33 @@ html {
   transform: translateY(0);
 }
 
-/* GSAP-animated sections start hidden, fallback for non-JS */
 .gsap-hidden {
   opacity: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .gsap-hidden {
-    opacity: 1 !important;
-  }
+  .gsap-hidden { opacity: 1 !important; }
 }
 
-/* Hero parallax overlay */
+/* ========================================
+   HERO / COVER
+   ======================================== */
 .hero-overlay {
   background: linear-gradient(
     to bottom,
-    rgba(92, 74, 50, 0.3) 0%,
-    rgba(92, 74, 50, 0.5) 50%,
-    rgba(92, 74, 50, 0.7) 100%
+    rgba(44, 34, 24, 0.4) 0%,
+    rgba(44, 34, 24, 0.55) 50%,
+    rgba(44, 34, 24, 0.75) 100%
   );
 }
 
-/* Gallery grid */
+/* ========================================
+   GALLERY GRID
+   ======================================== */
 .gallery-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 @media (min-width: 640px) {
@@ -330,60 +444,20 @@ html {
   }
 }
 
-/* Music button pulse */
-.music-pulse {
-  position: relative;
-}
-
-.music-pulse::after {
-  content: '';
-  position: absolute;
-  inset: -4px;
-  border-radius: 50%;
-  border: 2px solid var(--gold);
-  animation: heartbeat 2s ease-in-out infinite;
-  opacity: 0;
-}
-
-.music-pulse.playing::after {
-  opacity: 1;
-}
-
-/* Timeline */
-.timeline-line {
-  position: absolute;
-  left: 50%;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: linear-gradient(to bottom, transparent, var(--gold), transparent);
-  transform: translateX(-50%);
-}
-
-@media (max-width: 640px) {
-  .timeline-line {
-    left: 20px;
-  }
-}
-
-/* Envelope animation */
-.envelope-open {
-  animation: fadeInUp 1s ease-out 0.5s forwards;
-  opacity: 0;
-}
-
-/* Lightbox */
+/* ========================================
+   LIGHTBOX
+   ======================================== */
 .lightbox-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.9);
+  background: rgba(0, 0, 0, 0.92);
   z-index: 100;
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.5s ease;
 }
 
 .lightbox-overlay.active {
@@ -391,234 +465,57 @@ html {
   pointer-events: all;
 }
 
-/* Visualizer bar animation for music player */
-@keyframes visualizerBar {
-  0% { height: 20%; }
-  50% { height: 90%; }
-  100% { height: 30%; }
-}
-
-/* Confetti burst animation - goes up and fades */
-@keyframes confettiBurst {
-  0% {
-    transform: translateY(0) scale(0) rotate(0deg);
-    opacity: 1;
-  }
-  30% {
-    opacity: 1;
-    transform: translateY(-100px) scale(1) rotate(180deg);
-  }
-  100% {
-    transform: translateY(-300px) scale(0.5) rotate(720deg);
-    opacity: 0;
-  }
-}
-
-/* Petal burst animation - floats up and fades */
-@keyframes petalBurst {
-  0% {
-    transform: translateY(0) scale(0) rotate(0deg);
-    opacity: 1;
-  }
-  40% {
-    opacity: 0.9;
-    transform: translateY(-150px) scale(1.2) rotate(180deg);
-  }
-  100% {
-    transform: translateY(-400px) scale(0.8) rotate(360deg);
-    opacity: 0;
-  }
-}
-
-/* Envelope open animation */
-@keyframes envelopeOpen {
-  0% {
-    transform: scale(0.95);
-    opacity: 0.8;
-  }
-  50% {
-    transform: scale(1.02);
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-/* Hide scrollbar utility */
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
-
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-/* Lightbox image transition */
-.lightbox-image-enter {
-  animation: lightboxImageIn 0.3s ease-out forwards;
-}
-
-@keyframes lightboxImageIn {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
 /* ========================================
-   JAVANESE CULTURAL PATTERNS & ORNAMENTS
+   MUSIC PLAYER PULSE
    ======================================== */
+.music-pulse { position: relative; }
 
-/* Batik Kawung - Overlapping circles forming a cross pattern
-   Kawung is one of the oldest batik motifs, representing hope for justice */
-.batik-kawung {
-  background-color: var(--cream);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Ccircle cx='30' cy='15' r='8' fill='none' stroke='%23A67B3D' stroke-width='0.8' opacity='0.15'/%3E%3Ccircle cx='30' cy='45' r='8' fill='none' stroke='%23A67B3D' stroke-width='0.8' opacity='0.15'/%3E%3Ccircle cx='15' cy='30' r='8' fill='none' stroke='%23A67B3D' stroke-width='0.8' opacity='0.15'/%3E%3Ccircle cx='45' cy='30' r='8' fill='none' stroke='%23A67B3D' stroke-width='0.8' opacity='0.15'/%3E%3Ccircle cx='30' cy='30' r='5' fill='none' stroke='%23A67B3D' stroke-width='0.6' opacity='0.1'/%3E%3C/svg%3E");
-  background-repeat: repeat;
-  background-size: 60px 60px;
-}
-
-/* Batik Kawung variant with darker background */
-.batik-kawung-dark {
-  background-color: var(--brown);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Ccircle cx='30' cy='15' r='8' fill='none' stroke='%23C9A96E' stroke-width='0.8' opacity='0.2'/%3E%3Ccircle cx='30' cy='45' r='8' fill='none' stroke='%23C9A96E' stroke-width='0.8' opacity='0.2'/%3E%3Ccircle cx='15' cy='30' r='8' fill='none' stroke='%23C9A96E' stroke-width='0.8' opacity='0.2'/%3E%3Ccircle cx='45' cy='30' r='8' fill='none' stroke='%23C9A96E' stroke-width='0.8' opacity='0.2'/%3E%3Ccircle cx='30' cy='30' r='5' fill='none' stroke='%23C9A96E' stroke-width='0.6' opacity='0.12'/%3E%3C/svg%3E");
-  background-repeat: repeat;
-  background-size: 60px 60px;
-}
-
-/* Batik Parang - Diagonal repeating S-curves
-   Parang represents strength, perseverance and the ocean's power */
-.batik-parang {
-  background-color: var(--cream-dark);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cpath d='M0 20 Q20 0 40 20 Q60 40 80 20' fill='none' stroke='%23A67B3D' stroke-width='0.8' opacity='0.12'/%3E%3Cpath d='M0 60 Q20 40 40 60 Q60 80 80 60' fill='none' stroke='%23A67B3D' stroke-width='0.8' opacity='0.12'/%3E%3Cpath d='M0 40 Q20 20 40 40 Q60 60 80 40' fill='none' stroke='%23A67B3D' stroke-width='0.5' opacity='0.08'/%3E%3C/svg%3E");
-  background-repeat: repeat;
-  background-size: 80px 80px;
-}
-
-/* Javanese Border Ornament - Traditional motif border */
-.ornament-javanese-border {
-  position: relative;
-}
-
-.ornament-javanese-border::before {
+.music-pulse::after {
   content: '';
   position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1px solid var(--gold);
+  animation: gentlePulse 3s ease-in-out infinite;
+  opacity: 0;
+}
+
+.music-pulse.playing::after { opacity: 1; }
+
+/* ========================================
+   TIMELINE
+   ======================================== */
+.timeline-line {
+  position: absolute;
+  left: 50%;
   top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80%;
-  height: 3px;
-  background: linear-gradient(90deg, transparent, var(--java-soga), var(--gold), var(--java-soga), transparent);
-  opacity: 0.6;
-}
-
-.ornament-javanese-border::after {
-  content: '';
-  position: absolute;
   bottom: 0;
-  left: 50%;
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, var(--gold), transparent);
   transform: translateX(-50%);
-  width: 80%;
-  height: 3px;
-  background: linear-gradient(90deg, transparent, var(--java-soga), var(--gold), var(--java-soga), transparent);
-  opacity: 0.6;
+  opacity: 0.4;
 }
 
-/* Wayang Shadow - Shadow puppet silhouette effect */
-.wayang-shadow {
-  filter: drop-shadow(2px 4px 6px rgba(44, 22, 84, 0.15));
-  position: relative;
-}
-
-.wayang-shadow::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(44, 22, 84, 0.05), transparent 60%);
-  pointer-events: none;
-}
-
-/* Java Floral - Javanese floral decorative element styling */
-.java-floral {
-  background-color: var(--cream);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M50 20 Q55 30 50 40 Q45 30 50 20Z' fill='none' stroke='%23A67B3D' stroke-width='0.6' opacity='0.12'/%3E%3Cpath d='M50 60 Q55 70 50 80 Q45 70 50 60Z' fill='none' stroke='%23A67B3D' stroke-width='0.6' opacity='0.12'/%3E%3Cpath d='M20 50 Q30 45 40 50 Q30 55 20 50Z' fill='none' stroke='%23A67B3D' stroke-width='0.6' opacity='0.12'/%3E%3Cpath d='M60 50 Q70 45 80 50 Q70 55 60 50Z' fill='none' stroke='%23A67B3D' stroke-width='0.6' opacity='0.12'/%3E%3Ccircle cx='50' cy='50' r='6' fill='none' stroke='%23A67B3D' stroke-width='0.5' opacity='0.1'/%3E%3C/svg%3E");
-  background-repeat: repeat;
-  background-size: 100px 100px;
-}
-
-/* Javanese Divider - More ornate section divider with traditional motifs */
-.javanese-divider {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  position: relative;
-  padding: 0.5rem 0;
-}
-
-.javanese-divider::before,
-.javanese-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--java-soga), var(--gold), var(--java-soga), transparent);
-}
-
-/* Kris Pattern - Kris blade wavy pattern for decorative elements */
-.kris-pattern {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='20' viewBox='0 0 120 20'%3E%3Cpath d='M0 10 Q15 2 30 10 Q45 18 60 10 Q75 2 90 10 Q105 18 120 10' fill='none' stroke='%23C9A96E' stroke-width='0.7' opacity='0.25'/%3E%3Cpath d='M0 10 Q15 18 30 10 Q45 2 60 10 Q75 18 90 10 Q105 2 120 10' fill='none' stroke='%23C9A96E' stroke-width='0.5' opacity='0.15'/%3E%3C/svg%3E");
-  background-repeat: repeat-x;
-  background-size: 120px 20px;
-  background-position: center;
-  height: 20px;
-}
-
-/* Sidomukti Pattern - Important Javanese wedding motif
-   Sidomukti symbolizes the wish for a prosperous, happy marriage */
-.sidomukti-pattern {
-  background-color: var(--cream);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='70' height='70' viewBox='0 0 70 70'%3E%3Cpath d='M35 5 L45 20 L35 15 L25 20 Z' fill='none' stroke='%23A67B3D' stroke-width='0.7' opacity='0.13'/%3E%3Cpath d='M35 65 L45 50 L35 55 L25 50 Z' fill='none' stroke='%23A67B3D' stroke-width='0.7' opacity='0.13'/%3E%3Cpath d='M5 35 L20 25 L15 35 L20 45 Z' fill='none' stroke='%23A67B3D' stroke-width='0.7' opacity='0.13'/%3E%3Cpath d='M65 35 L50 25 L55 35 L50 45 Z' fill='none' stroke='%23A67B3D' stroke-width='0.7' opacity='0.13'/%3E%3Crect x='25' y='25' width='20' height='20' transform='rotate(45 35 35)' fill='none' stroke='%23A67B3D' stroke-width='0.5' opacity='0.08'/%3E%3C/svg%3E");
-  background-repeat: repeat;
-  background-size: 70px 70px;
-}
-
-/* Sidomukti pattern on dark background */
-.sidomukti-pattern-dark {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='70' height='70' viewBox='0 0 70 70'%3E%3Cpath d='M35 5 L45 20 L35 15 L25 20 Z' fill='none' stroke='%23C9A96E' stroke-width='0.7' opacity='0.15'/%3E%3Cpath d='M35 65 L45 50 L35 55 L25 50 Z' fill='none' stroke='%23C9A96E' stroke-width='0.7' opacity='0.15'/%3E%3Cpath d='M5 35 L20 25 L15 35 L20 45 Z' fill='none' stroke='%23C9A96E' stroke-width='0.7' opacity='0.15'/%3E%3Cpath d='M65 35 L50 25 L55 35 L50 45 Z' fill='none' stroke='%23C9A96E' stroke-width='0.7' opacity='0.15'/%3E%3Crect x='25' y='25' width='20' height='20' transform='rotate(45 35 35)' fill='none' stroke='%23C9A96E' stroke-width='0.5' opacity='0.1'/%3E%3C/svg%3E");
-  background-repeat: repeat;
-  background-size: 70px 70px;
-}
-
-/* Subtle gold shimmer animation for Javanese ornaments */
-@keyframes goldPulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
-}
-
-.animate-gold-pulse {
-  animation: goldPulse 4s ease-in-out infinite;
+@media (max-width: 640px) {
+  .timeline-line { left: 20px; }
 }
 
 /* ========================================
-   ANIMATION ENHANCEMENTS
+   UTILITY CLASSES
    ======================================== */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Cursor follower - hidden on mobile, shown on desktop */
+/* Cursor follower */
 .cursor-follower {
   position: fixed;
   top: 0;
   left: 0;
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: var(--gold);
-  opacity: 0.5;
+  opacity: 0.4;
   pointer-events: none;
   z-index: 9998;
   mix-blend-mode: difference;
@@ -626,36 +523,19 @@ html {
   transition: opacity 0.3s ease;
 }
 
-.cursor-follower:hover {
-  opacity: 0.8;
-  transform: scale(1.5);
-}
-
-/* Preloader animation helpers */
-.preloader-char {
-  display: inline-block;
-  will-change: transform, opacity;
-}
-
-/* Countdown number transition */
+/* Countdown */
 .countdown-number {
   display: inline-block;
   will-change: transform, opacity;
-  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
 }
 
-/* Hero animate elements */
-.hero-animate {
-  will-change: transform, opacity;
-}
+/* Hero */
+.hero-animate { will-change: transform, opacity; }
 
-/* Magnetic hover effect on buttons */
-.magnetic-btn {
-  will-change: transform;
-  transition: transform 0.4s ease-out;
-}
+/* Magnetic button */
+.magnetic-btn { will-change: transform; transition: transform 0.5s ease-out; }
 
-/* Smooth image reveal */
+/* Image reveal */
 .image-reveal {
   will-change: clip-path, opacity;
   clip-path: inset(100% 0% 0% 0%);
@@ -665,190 +545,177 @@ html {
   clip-path: inset(0% 0% 0% 0%);
 }
 
-/* Flip card effect */
-.flip-card {
-  perspective: 800px;
-  will-change: transform, opacity;
+/* Preloader character */
+.preloader-char { display: inline-block; will-change: transform, opacity; }
+
+/* Jasmine petal */
+.jasmine-petal { pointer-events: none; will-change: transform, opacity; }
+
+/* ========================================
+   LENIS SMOOTH SCROLL
+   ======================================== */
+html.lenis, html.lenis body { height: auto; }
+
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: hidden; }
+.lenis.lenis-smooth iframe { pointer-events: none; }
+
+/* ========================================
+   JAVANESE CULTURAL PATTERNS — subtle
+   Used sparingly, like whispers of tradition
+   ======================================== */
+
+.batik-kawung {
+  background-color: var(--cream);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Ccircle cx='30' cy='15' r='8' fill='none' stroke='%23A67B3D' stroke-width='0.6' opacity='0.08'/%3E%3Ccircle cx='30' cy='45' r='8' fill='none' stroke='%23A67B3D' stroke-width='0.6' opacity='0.08'/%3E%3Ccircle cx='15' cy='30' r='8' fill='none' stroke='%23A67B3D' stroke-width='0.6' opacity='0.08'/%3E%3Ccircle cx='45' cy='30' r='8' fill='none' stroke='%23A67B3D' stroke-width='0.6' opacity='0.08'/%3E%3Ccircle cx='30' cy='30' r='5' fill='none' stroke='%23A67B3D' stroke-width='0.4' opacity='0.05'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 60px 60px;
 }
 
-/* Parallax background container */
-.parallax-bg {
-  will-change: transform;
+.batik-kawung-dark {
+  background-color: var(--brown);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Ccircle cx='30' cy='15' r='8' fill='none' stroke='%23C9A96E' stroke-width='0.6' opacity='0.1'/%3E%3Ccircle cx='30' cy='45' r='8' fill='none' stroke='%23C9A96E' stroke-width='0.6' opacity='0.1'/%3E%3Ccircle cx='15' cy='30' r='8' fill='none' stroke='%23C9A96E' stroke-width='0.6' opacity='0.1'/%3E%3Ccircle cx='45' cy='30' r='8' fill='none' stroke='%23C9A96E' stroke-width='0.6' opacity='0.1'/%3E%3Ccircle cx='30' cy='30' r='5' fill='none' stroke='%23C9A96E' stroke-width='0.4' opacity='0.06'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 60px 60px;
 }
 
-/* Jasmine petal base styles */
-.jasmine-petal {
-  pointer-events: none;
-  will-change: transform, opacity;
+.ornament-javanese-border { position: relative; }
+
+.ornament-javanese-border::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--java-soga), var(--gold), var(--java-soga), transparent);
+  opacity: 0.3;
 }
 
-/* Lenis smooth scroll overrides */
-html.lenis, html.lenis body {
-  height: auto;
+.ornament-javanese-border::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--java-soga), var(--gold), var(--java-soga), transparent);
+  opacity: 0.3;
 }
 
-/* Typewriter cursor blinking animation */
-@keyframes typewriterBlink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+.javanese-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  position: relative;
+  padding: 0.25rem 0;
 }
 
-/* Handwriting character base style */
-.hw-char {
-  display: inline-block;
-  will-change: opacity, transform;
+.javanese-divider::before,
+.javanese-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--java-soga), var(--gold), var(--java-soga), transparent);
+  opacity: 0.3;
 }
 
-/* SVG stroke animation for timeline borders */
-.svg-corner-flourish {
-  stroke-dasharray: 100;
-  stroke-dashoffset: 100;
-}
-
-/* Timeline dot SVG ring */
-.timeline-dot-ring {
-  will-change: stroke-dashoffset;
-  transition: none;
-}
-
-.lenis.lenis-smooth {
-  scroll-behavior: auto !important;
-}
-
-.lenis.lenis-smooth [data-lenis-prevent] {
-  overscroll-behavior: contain;
-}
-
-.lenis.lenis-stopped {
-  overflow: hidden;
-}
-
-.lenis.lenis-smooth iframe {
-  pointer-events: none;
+.sidomukti-pattern {
+  background-color: var(--cream);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='70' height='70' viewBox='0 0 70 70'%3E%3Cpath d='M35 5 L45 20 L35 15 L25 20 Z' fill='none' stroke='%23A67B3D' stroke-width='0.5' opacity='0.07'/%3E%3Cpath d='M35 65 L45 50 L35 55 L25 50 Z' fill='none' stroke='%23A67B3D' stroke-width='0.5' opacity='0.07'/%3E%3Cpath d='M5 35 L20 25 L15 35 L20 45 Z' fill='none' stroke='%23A67B3D' stroke-width='0.5' opacity='0.07'/%3E%3Cpath d='M65 35 L50 25 L55 35 L50 45 Z' fill='none' stroke='%23A67B3D' stroke-width='0.5' opacity='0.07'/%3E%3Crect x='25' y='25' width='20' height='20' transform='rotate(45 35 35)' fill='none' stroke='%23A67B3D' stroke-width='0.3' opacity='0.04'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 70px 70px;
 }
 
 /* ========================================
-   LOVE DIARY CINEMATIC STYLES
+   CINEMATIC SECTION TRANSITIONS
+   Each section breathes with space
    ======================================== */
+.cinema-section {
+  position: relative;
+  overflow: hidden;
+}
 
-/* Diary paper background - warm aged paper texture */
-.diary-paper-bg {
-  background-color: var(--cream-dark);
-  background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E"),
-    linear-gradient(135deg, rgba(166, 123, 61, 0.05) 0%, transparent 50%, rgba(166, 123, 61, 0.03) 100%);
-  background-repeat: repeat;
-  background-size: 200px 200px, 100% 100%;
+/* Fade between sections — like film dissolves */
+.section-fade-top {
   position: relative;
 }
 
-.diary-paper-bg::before {
+.section-fade-top::before {
   content: '';
   position: absolute;
-  inset: 0;
-  background: linear-gradient(to bottom, rgba(253, 248, 240, 0.5), transparent 20%, transparent 80%, rgba(253, 248, 240, 0.5));
+  top: -1px;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: linear-gradient(to bottom, var(--cream), transparent);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.section-fade-bottom {
+  position: relative;
+}
+
+.section-fade-bottom::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: linear-gradient(to top, var(--cream), transparent);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ========================================
+   DIARY PAGE LINES
+   Subtle ruled lines like journal paper
+   ======================================== */
+.diary-lines {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 31px,
+    rgba(166, 123, 61, 0.06) 31px,
+    rgba(166, 123, 61, 0.06) 32px
+  );
+  background-size: 100% 32px;
+}
+
+/* ========================================
+   DIARY MARGIN LINE
+   The red margin line of a journal
+   ======================================== */
+.diary-margin::before {
+  content: '';
+  position: absolute;
+  left: 60px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(196, 98, 58, 0.1);
   pointer-events: none;
 }
 
-/* Diary note card - paper note effect with subtle shadow & rotation */
-.diary-note-card {
-  background: linear-gradient(145deg, #fffcf5, #f8f0e0);
-  box-shadow:
-    2px 3px 8px rgba(92, 74, 50, 0.1),
-    0 1px 3px rgba(92, 74, 50, 0.06),
-    inset 0 0 0 1px rgba(201, 169, 110, 0.08);
-  transform: rotate(-0.5deg);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  position: relative;
-}
-
-.diary-note-card::after {
-  content: '';
-  position: absolute;
-  top: -4px;
-  right: 12px;
-  width: 20px;
-  height: 20px;
-  background: linear-gradient(135deg, rgba(201, 169, 110, 0.3), rgba(201, 169, 110, 0.1));
-  border-radius: 2px;
-  transform: rotate(15deg);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-.diary-note-card:hover {
-  transform: rotate(0deg) translateY(-2px);
-  box-shadow:
-    4px 6px 16px rgba(92, 74, 50, 0.15),
-    0 2px 6px rgba(92, 74, 50, 0.08),
-    inset 0 0 0 1px rgba(201, 169, 110, 0.12);
-}
-
-/* Polaroid frame - photo frame with white border & shadow */
-.polaroid-frame {
-  background: white;
-  padding: 8px 8px 28px 8px;
-  border-radius: 2px;
-  box-shadow:
-    2px 4px 12px rgba(0, 0, 0, 0.12),
-    0 1px 4px rgba(0, 0, 0, 0.06);
-  transition: transform 0.4s ease, box-shadow 0.4s ease;
-}
-
-.polaroid-frame:hover {
-  box-shadow:
-    4px 8px 24px rgba(0, 0, 0, 0.18),
-    0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-/* Gold light leak overlay effect */
-.gold-light-leak {
-  background:
-    radial-gradient(ellipse at 20% 20%, rgba(201, 169, 110, 0.15) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 80%, rgba(212, 184, 122, 0.1) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 0%, rgba(201, 169, 110, 0.08) 0%, transparent 60%);
-  animation: lightLeakPulse 8s ease-in-out infinite;
-}
-
-@keyframes lightLeakPulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
-}
-
-/* Ink stroke line - decorative ink stroke decoration */
-.ink-stroke-line {
-  position: relative;
-}
-
-.ink-stroke-line svg path {
-  will-change: stroke-dashoffset;
-}
-
-/* Diary page close - closing animation for diary */
-.diary-page-close {
-  position: relative;
-}
-
-@keyframes diaryClose {
-  0% {
-    opacity: 1;
-    transform: scale(1) perspective(800px);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(0.95) perspective(800px) rotateX(2deg);
+@media (max-width: 640px) {
+  .diary-margin::before {
+    left: 30px;
   }
 }
 
-/* Reduced motion overrides for new diary classes */
+/* ========================================
+   REDUCED MOTION OVERRIDES
+   ======================================== */
 @media (prefers-reduced-motion: reduce) {
-  .diary-note-card {
-    transform: none !important;
-  }
-  .polaroid-frame {
-    transform: none !important;
-  }
-  .gold-light-leak {
-    animation: none !important;
-    opacity: 0.8 !important;
-  }
+  .diary-note-card { transform: none !important; }
+  .polaroid-frame { transform: none !important; }
+  .gold-light-leak { animation: none !important; opacity: 0.6 !important; }
+  .animate-float { animation: none !important; }
+  .animate-breathe { animation: none !important; }
 }
