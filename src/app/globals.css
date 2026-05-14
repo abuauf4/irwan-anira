@@ -88,6 +88,14 @@
   --cream-dark: #F5EDE0;
   --brown: #5C4A32;
   --brown-light: #8B7355;
+
+  /* Javanese traditional color palette */
+  --java-batik-brown: #6B4226;
+  --java-gold-deep: #8B6914;
+  --java-ivory: #FFFFF0;
+  --java-indigo: #2C1654;
+  --java-terracotta: #C4623A;
+  --java-soga: #A67B3D;
 }
 
 @layer base {
@@ -111,9 +119,38 @@
   border-radius: 3px;
 }
 
-/* Smooth scroll */
+/* Smooth scroll - handled by Lenis now, but keep as fallback */
 html {
   scroll-behavior: smooth;
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .envelope-open {
+    opacity: 1 !important;
+    animation: none !important;
+  }
+  .animate-fade-in-up,
+  .animate-fade-in,
+  .animate-scale-in,
+  .animate-slide-in-left,
+  .animate-slide-in-right,
+  .animate-float,
+  .animate-heartbeat,
+  .animate-rotate-slow,
+  .animate-gold-pulse {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }
 
 /* Animations */
@@ -246,7 +283,7 @@ html {
   background: linear-gradient(90deg, transparent, var(--gold), transparent);
 }
 
-/* Section reveal */
+/* Section reveal - now handled by GSAP ScrollTrigger, kept as fallback */
 .reveal {
   opacity: 0;
   transform: translateY(30px);
@@ -256,6 +293,17 @@ html {
 .reveal.visible {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* GSAP-animated sections start hidden, fallback for non-JS */
+.gsap-hidden {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gsap-hidden {
+    opacity: 1 !important;
+  }
 }
 
 /* Hero parallax overlay */
@@ -341,4 +389,316 @@ html {
 .lightbox-overlay.active {
   opacity: 1;
   pointer-events: all;
+}
+
+/* Visualizer bar animation for music player */
+@keyframes visualizerBar {
+  0% { height: 20%; }
+  50% { height: 90%; }
+  100% { height: 30%; }
+}
+
+/* Confetti burst animation - goes up and fades */
+@keyframes confettiBurst {
+  0% {
+    transform: translateY(0) scale(0) rotate(0deg);
+    opacity: 1;
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-100px) scale(1) rotate(180deg);
+  }
+  100% {
+    transform: translateY(-300px) scale(0.5) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+/* Petal burst animation - floats up and fades */
+@keyframes petalBurst {
+  0% {
+    transform: translateY(0) scale(0) rotate(0deg);
+    opacity: 1;
+  }
+  40% {
+    opacity: 0.9;
+    transform: translateY(-150px) scale(1.2) rotate(180deg);
+  }
+  100% {
+    transform: translateY(-400px) scale(0.8) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* Envelope open animation */
+@keyframes envelopeOpen {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Hide scrollbar utility */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Lightbox image transition */
+.lightbox-image-enter {
+  animation: lightboxImageIn 0.3s ease-out forwards;
+}
+
+@keyframes lightboxImageIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ========================================
+   JAVANESE CULTURAL PATTERNS & ORNAMENTS
+   ======================================== */
+
+/* Batik Kawung - Overlapping circles forming a cross pattern
+   Kawung is one of the oldest batik motifs, representing hope for justice */
+.batik-kawung {
+  background-color: var(--cream);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Ccircle cx='30' cy='15' r='8' fill='none' stroke='%23A67B3D' stroke-width='0.8' opacity='0.15'/%3E%3Ccircle cx='30' cy='45' r='8' fill='none' stroke='%23A67B3D' stroke-width='0.8' opacity='0.15'/%3E%3Ccircle cx='15' cy='30' r='8' fill='none' stroke='%23A67B3D' stroke-width='0.8' opacity='0.15'/%3E%3Ccircle cx='45' cy='30' r='8' fill='none' stroke='%23A67B3D' stroke-width='0.8' opacity='0.15'/%3E%3Ccircle cx='30' cy='30' r='5' fill='none' stroke='%23A67B3D' stroke-width='0.6' opacity='0.1'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 60px 60px;
+}
+
+/* Batik Kawung variant with darker background */
+.batik-kawung-dark {
+  background-color: var(--brown);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Ccircle cx='30' cy='15' r='8' fill='none' stroke='%23C9A96E' stroke-width='0.8' opacity='0.2'/%3E%3Ccircle cx='30' cy='45' r='8' fill='none' stroke='%23C9A96E' stroke-width='0.8' opacity='0.2'/%3E%3Ccircle cx='15' cy='30' r='8' fill='none' stroke='%23C9A96E' stroke-width='0.8' opacity='0.2'/%3E%3Ccircle cx='45' cy='30' r='8' fill='none' stroke='%23C9A96E' stroke-width='0.8' opacity='0.2'/%3E%3Ccircle cx='30' cy='30' r='5' fill='none' stroke='%23C9A96E' stroke-width='0.6' opacity='0.12'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 60px 60px;
+}
+
+/* Batik Parang - Diagonal repeating S-curves
+   Parang represents strength, perseverance and the ocean's power */
+.batik-parang {
+  background-color: var(--cream-dark);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cpath d='M0 20 Q20 0 40 20 Q60 40 80 20' fill='none' stroke='%23A67B3D' stroke-width='0.8' opacity='0.12'/%3E%3Cpath d='M0 60 Q20 40 40 60 Q60 80 80 60' fill='none' stroke='%23A67B3D' stroke-width='0.8' opacity='0.12'/%3E%3Cpath d='M0 40 Q20 20 40 40 Q60 60 80 40' fill='none' stroke='%23A67B3D' stroke-width='0.5' opacity='0.08'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 80px 80px;
+}
+
+/* Javanese Border Ornament - Traditional motif border */
+.ornament-javanese-border {
+  position: relative;
+}
+
+.ornament-javanese-border::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--java-soga), var(--gold), var(--java-soga), transparent);
+  opacity: 0.6;
+}
+
+.ornament-javanese-border::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--java-soga), var(--gold), var(--java-soga), transparent);
+  opacity: 0.6;
+}
+
+/* Wayang Shadow - Shadow puppet silhouette effect */
+.wayang-shadow {
+  filter: drop-shadow(2px 4px 6px rgba(44, 22, 84, 0.15));
+  position: relative;
+}
+
+.wayang-shadow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(44, 22, 84, 0.05), transparent 60%);
+  pointer-events: none;
+}
+
+/* Java Floral - Javanese floral decorative element styling */
+.java-floral {
+  background-color: var(--cream);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M50 20 Q55 30 50 40 Q45 30 50 20Z' fill='none' stroke='%23A67B3D' stroke-width='0.6' opacity='0.12'/%3E%3Cpath d='M50 60 Q55 70 50 80 Q45 70 50 60Z' fill='none' stroke='%23A67B3D' stroke-width='0.6' opacity='0.12'/%3E%3Cpath d='M20 50 Q30 45 40 50 Q30 55 20 50Z' fill='none' stroke='%23A67B3D' stroke-width='0.6' opacity='0.12'/%3E%3Cpath d='M60 50 Q70 45 80 50 Q70 55 60 50Z' fill='none' stroke='%23A67B3D' stroke-width='0.6' opacity='0.12'/%3E%3Ccircle cx='50' cy='50' r='6' fill='none' stroke='%23A67B3D' stroke-width='0.5' opacity='0.1'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 100px 100px;
+}
+
+/* Javanese Divider - More ornate section divider with traditional motifs */
+.javanese-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  position: relative;
+  padding: 0.5rem 0;
+}
+
+.javanese-divider::before,
+.javanese-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--java-soga), var(--gold), var(--java-soga), transparent);
+}
+
+/* Kris Pattern - Kris blade wavy pattern for decorative elements */
+.kris-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='20' viewBox='0 0 120 20'%3E%3Cpath d='M0 10 Q15 2 30 10 Q45 18 60 10 Q75 2 90 10 Q105 18 120 10' fill='none' stroke='%23C9A96E' stroke-width='0.7' opacity='0.25'/%3E%3Cpath d='M0 10 Q15 18 30 10 Q45 2 60 10 Q75 18 90 10 Q105 2 120 10' fill='none' stroke='%23C9A96E' stroke-width='0.5' opacity='0.15'/%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  background-size: 120px 20px;
+  background-position: center;
+  height: 20px;
+}
+
+/* Sidomukti Pattern - Important Javanese wedding motif
+   Sidomukti symbolizes the wish for a prosperous, happy marriage */
+.sidomukti-pattern {
+  background-color: var(--cream);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='70' height='70' viewBox='0 0 70 70'%3E%3Cpath d='M35 5 L45 20 L35 15 L25 20 Z' fill='none' stroke='%23A67B3D' stroke-width='0.7' opacity='0.13'/%3E%3Cpath d='M35 65 L45 50 L35 55 L25 50 Z' fill='none' stroke='%23A67B3D' stroke-width='0.7' opacity='0.13'/%3E%3Cpath d='M5 35 L20 25 L15 35 L20 45 Z' fill='none' stroke='%23A67B3D' stroke-width='0.7' opacity='0.13'/%3E%3Cpath d='M65 35 L50 25 L55 35 L50 45 Z' fill='none' stroke='%23A67B3D' stroke-width='0.7' opacity='0.13'/%3E%3Crect x='25' y='25' width='20' height='20' transform='rotate(45 35 35)' fill='none' stroke='%23A67B3D' stroke-width='0.5' opacity='0.08'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 70px 70px;
+}
+
+/* Sidomukti pattern on dark background */
+.sidomukti-pattern-dark {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='70' height='70' viewBox='0 0 70 70'%3E%3Cpath d='M35 5 L45 20 L35 15 L25 20 Z' fill='none' stroke='%23C9A96E' stroke-width='0.7' opacity='0.15'/%3E%3Cpath d='M35 65 L45 50 L35 55 L25 50 Z' fill='none' stroke='%23C9A96E' stroke-width='0.7' opacity='0.15'/%3E%3Cpath d='M5 35 L20 25 L15 35 L20 45 Z' fill='none' stroke='%23C9A96E' stroke-width='0.7' opacity='0.15'/%3E%3Cpath d='M65 35 L50 25 L55 35 L50 45 Z' fill='none' stroke='%23C9A96E' stroke-width='0.7' opacity='0.15'/%3E%3Crect x='25' y='25' width='20' height='20' transform='rotate(45 35 35)' fill='none' stroke='%23C9A96E' stroke-width='0.5' opacity='0.1'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 70px 70px;
+}
+
+/* Subtle gold shimmer animation for Javanese ornaments */
+@keyframes goldPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.animate-gold-pulse {
+  animation: goldPulse 4s ease-in-out infinite;
+}
+
+/* ========================================
+   ANIMATION ENHANCEMENTS
+   ======================================== */
+
+/* Cursor follower - hidden on mobile, shown on desktop */
+.cursor-follower {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--gold);
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 9998;
+  mix-blend-mode: difference;
+  will-change: transform;
+  transition: opacity 0.3s ease;
+}
+
+.cursor-follower:hover {
+  opacity: 0.8;
+  transform: scale(1.5);
+}
+
+/* Preloader animation helpers */
+.preloader-char {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+/* Countdown number transition */
+.countdown-number {
+  display: inline-block;
+  will-change: transform, opacity;
+  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+/* Hero animate elements */
+.hero-animate {
+  will-change: transform, opacity;
+}
+
+/* Magnetic hover effect on buttons */
+.magnetic-btn {
+  will-change: transform;
+  transition: transform 0.4s ease-out;
+}
+
+/* Smooth image reveal */
+.image-reveal {
+  will-change: clip-path, opacity;
+  clip-path: inset(100% 0% 0% 0%);
+}
+
+.image-reveal.revealed {
+  clip-path: inset(0% 0% 0% 0%);
+}
+
+/* Flip card effect */
+.flip-card {
+  perspective: 800px;
+  will-change: transform, opacity;
+}
+
+/* Parallax background container */
+.parallax-bg {
+  will-change: transform;
+}
+
+/* Jasmine petal base styles */
+.jasmine-petal {
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+/* Lenis smooth scroll overrides */
+html.lenis, html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
 }

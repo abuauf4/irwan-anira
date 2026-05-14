@@ -1,6 +1,34 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import JasmineParticles from '@/components/JasmineParticles'
+import Preloader from '@/components/Preloader'
+import SmoothScroll from '@/components/SmoothScroll'
+import CoverSectionComponent from '@/components/CoverSection'
+import MusicPlayerComponent from '@/components/MusicPlayer'
+import GuestWishes from '@/components/GuestWishes'
+import ScrollToTop from '@/components/ScrollToTop'
+import {
+  fadeIn,
+  slideIn,
+  scaleIn,
+  staggerReveal,
+  parallaxScroll,
+  textReveal,
+  imageReveal,
+  counterAnimation,
+  flipIn,
+  magneticHover,
+  sectionOpacityFade,
+  initCursorFollower,
+  prefersReducedMotion,
+} from '@/lib/animations'
+
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger)
+}
 
 /* ===================== WEDDING DATA ===================== */
 const WEDDING = {
@@ -82,92 +110,105 @@ function useCountdown(targetDate: string) {
   return timeLeft
 }
 
-/* ===================== INTERSECTION OBSERVER ===================== */
-function useReveal() {
-  const ref = useRef<HTMLDivElement>(null)
+/* ===================== CURSOR FOLLOWER ===================== */
+function CursorFollower() {
+  const cursorRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          el.classList.add('visible')
-        }
-      },
-      { threshold: 0.15 }
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
+    if (!cursorRef.current) return
+    const cleanup = initCursorFollower(cursorRef.current)
+    return () => { cleanup?.() }
   }, [])
-  return ref
+
+  // Don't render on touch devices - use memo to avoid re-render
+  const isTouchDevice = useRef(true)
+  useEffect(() => {
+    isTouchDevice.current = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+  }, [])
+
+  // Will be true on first render (SSR-safe), then update
+  // Since we use hidden sm:block, touch devices won't see it anyway
+  if (typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0)) return null
+
+  return (
+    <div
+      ref={cursorRef}
+      className="fixed top-0 left-0 w-3 h-3 rounded-full pointer-events-none z-[9998] hidden sm:block"
+      style={{
+        background: 'var(--gold)',
+        opacity: 0.6,
+        mixBlendMode: 'difference',
+        willChange: 'transform',
+      }}
+      aria-hidden="true"
+    />
+  )
 }
 
 /* ===================== COMPONENTS ===================== */
 
-// Cover / Hero Section
-function CoverSection({ onOpen }: { onOpen: () => void }) {
-  return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background Image */}
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url('/images/hero-poster.jpg')" }}
-      />
-      <div className="hero-overlay absolute inset-0" />
+// Cover / Hero Section - using enhanced CoverSection component
+// The CoverSectionComponent is imported and used directly in the Home component
 
-      {/* Decorative corners */}
-      <div className="absolute top-6 left-6 w-16 h-16 border-t-2 border-l-2 border-[var(--gold)] opacity-60" />
-      <div className="absolute top-6 right-6 w-16 h-16 border-t-2 border-r-2 border-[var(--gold)] opacity-60" />
-      <div className="absolute bottom-6 left-6 w-16 h-16 border-b-2 border-l-2 border-[var(--gold)] opacity-60" />
-      <div className="absolute bottom-6 right-6 w-16 h-16 border-b-2 border-r-2 border-[var(--gold)] opacity-60" />
-
-      {/* Content */}
-      <div className="relative z-10 text-center px-6 envelope-open">
-        <p className="text-[var(--gold-light)] tracking-[0.3em] uppercase text-xs sm:text-sm mb-4 animate-fade-in" style={{ fontFamily: 'var(--font-body)' }}>
-          The Wedding of
-        </p>
-        <h1 className="text-5xl sm:text-7xl md:text-8xl mb-2 animate-fade-in-up" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-light)' }}>
-          Irwan
-        </h1>
-        <p className="text-2xl sm:text-3xl text-[var(--gold)] my-2 animate-fade-in" style={{ fontFamily: 'var(--font-script)' }}>
-          &
-        </p>
-        <h1 className="text-5xl sm:text-7xl md:text-8xl mb-6 animate-fade-in-up" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-light)' }}>
-          Anira
-        </h1>
-        <div className="ornament-divider max-w-xs mx-auto mb-6">
-          <span className="text-[var(--gold)] text-lg">&#10047;</span>
-        </div>
-        <p className="text-[var(--cream)] tracking-widest text-sm sm:text-base mb-2 animate-fade-in" style={{ fontFamily: 'var(--font-serif)' }}>
-          05 . 07 . 2026
-        </p>
-
-        <button
-          onClick={onOpen}
-          className="mt-8 px-8 py-3 border-2 border-[var(--gold)] text-[var(--gold-light)] tracking-[0.2em] uppercase text-xs sm:text-sm
-            hover:bg-[var(--gold)] hover:text-[var(--brown)] transition-all duration-500 animate-fade-in-up cursor-pointer"
-          style={{ fontFamily: 'var(--font-body)' }}
-        >
-          Buka Undangan
-        </button>
-      </div>
-    </section>
-  )
-}
-
-// Bismillah Section
+// Bismillah Section with text reveal
 function BismillahSection() {
-  const ref = useReveal()
+  const sectionRef = useRef<HTMLDivElement>(null)
+  const arabicRef = useRef<HTMLDivElement>(null)
+  const quoteRef = useRef<HTMLDivElement>(null)
+  const sourceRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      // Fade in the section
+      fadeIn(sectionRef.current!, { y: 30 })
+
+      // Text reveal for Arabic
+      if (arabicRef.current && !prefersReducedMotion()) {
+        const text = arabicRef.current.textContent || ''
+        arabicRef.current.innerHTML = ''
+        const chars: HTMLSpanElement[] = []
+        for (const char of text) {
+          const span = document.createElement('span')
+          span.className = 'char'
+          span.style.display = 'inline-block'
+          span.style.willChange = 'transform, opacity'
+          span.style.opacity = '0'
+          span.style.transform = 'translateY(20px)'
+          span.textContent = char === ' ' ? '\u00A0' : char
+          arabicRef.current.appendChild(span)
+          chars.push(span)
+        }
+        gsap.to(chars, {
+          opacity: 1,
+          y: 0,
+          duration: 0.04,
+          stagger: 0.02,
+          ease: 'power2.out',
+          scrollTrigger: {
+            trigger: sectionRef.current!,
+            start: 'top 80%',
+            toggleActions: 'play none none none',
+          },
+        })
+      }
+
+      fadeIn(quoteRef.current!, { delay: 0.5, y: 20 })
+      fadeIn(sourceRef.current!, { delay: 0.8, y: 15 })
+    })
+
+    return () => ctx.revert()
+  }, [])
+
   return (
-    <section ref={ref} className="reveal py-20 px-6 text-center" style={{ background: 'var(--cream)' }}>
+    <section ref={sectionRef} className="py-20 px-6 text-center" style={{ background: 'var(--cream)', opacity: 0 }}>
       <div className="max-w-2xl mx-auto">
-        <p className="text-3xl sm:text-4xl mb-4" style={{ fontFamily: 'var(--font-arabic)', color: 'var(--brown)' }}>
+        <p ref={arabicRef} className="text-3xl sm:text-4xl mb-4" style={{ fontFamily: 'var(--font-arabic)', color: 'var(--brown)' }}>
           بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
         </p>
-        <p className="text-base sm:text-lg italic leading-relaxed" style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}>
+        <p ref={quoteRef} className="text-base sm:text-lg italic leading-relaxed" style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}>
           &ldquo;Dan di antara tanda-tanda kekuasaan-Nya ialah Dia menciptakan untukmu pasangan hidup dari jenismu sendiri, supaya kamu merasa tenteram kepadanya, dan dijadikan-Nya di antaramu rasa kasih dan sayang.&rdquo;
         </p>
-        <p className="mt-4 text-sm" style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}>
+        <p ref={sourceRef} className="mt-4 text-sm" style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}>
           — QS. Ar-Rum: 21
         </p>
       </div>
@@ -175,11 +216,36 @@ function BismillahSection() {
   )
 }
 
-// Bride & Groom Section
+// Bride & Groom Section with slide-in animations
 function CoupleSection() {
-  const ref = useReveal()
+  const sectionRef = useRef<HTMLDivElement>(null)
+  const groomRef = useRef<HTMLDivElement>(null)
+  const brideRef = useRef<HTMLDivElement>(null)
+  const heartRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      fadeIn(sectionRef.current!, { y: 30 })
+
+      // Groom slides in from left with scale
+      if (groomRef.current) {
+        slideIn(groomRef.current, 'left', { distance: 100, delay: 0.3 })
+      }
+
+      // Heart beats in
+      scaleIn(heartRef.current!, { delay: 0.6, fromScale: 0 })
+
+      // Bride slides in from right with scale
+      if (brideRef.current) {
+        slideIn(brideRef.current, 'right', { distance: 100, delay: 0.3 })
+      }
+    })
+
+    return () => ctx.revert()
+  }, [])
+
   return (
-    <section ref={ref} className="reveal py-20 px-6" style={{ background: 'var(--cream-dark)' }}>
+    <section ref={sectionRef} className="py-20 px-6" style={{ background: 'var(--cream-dark)', opacity: 0 }}>
       <div className="max-w-4xl mx-auto text-center">
         <h2 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
           Mempelai
@@ -190,7 +256,7 @@ function CoupleSection() {
 
         <div className="flex flex-col md:flex-row items-center justify-center gap-12 md:gap-20">
           {/* Groom */}
-          <div className="text-center">
+          <div ref={groomRef} className="text-center" style={{ opacity: 0 }}>
             <div className="w-40 h-40 sm:w-48 sm:h-48 rounded-full overflow-hidden mx-auto mb-6 border-4 border-[var(--gold)] shadow-lg">
               <img src="/images/groom.jpg" alt={WEDDING.groom} className="w-full h-full object-cover" />
             </div>
@@ -207,12 +273,12 @@ function CoupleSection() {
           </div>
 
           {/* Heart Divider */}
-          <div className="text-4xl animate-heartbeat" style={{ color: 'var(--gold)' }}>
+          <div ref={heartRef} className="text-4xl animate-heartbeat" style={{ color: 'var(--gold)', opacity: 0 }}>
             &#10084;
           </div>
 
           {/* Bride */}
-          <div className="text-center">
+          <div ref={brideRef} className="text-center" style={{ opacity: 0 }}>
             <div className="w-40 h-40 sm:w-48 sm:h-48 rounded-full overflow-hidden mx-auto mb-6 border-4 border-[var(--gold)] shadow-lg">
               <img src="/images/bride.jpg" alt={WEDDING.bride} className="w-full h-full object-cover" />
             </div>
@@ -233,21 +299,42 @@ function CoupleSection() {
   )
 }
 
-// Quote Section
+// Quote Section with parallax
 function QuoteSection() {
-  const ref = useReveal()
+  const sectionRef = useRef<HTMLDivElement>(null)
+  const bgRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      // Parallax on background
+      if (bgRef.current) {
+        parallaxScroll(bgRef.current, { speed: 0.2 })
+      }
+
+      // Fade in content
+      fadeIn(contentRef.current!, { y: 40 })
+    })
+
+    return () => ctx.revert()
+  }, [])
+
   return (
     <section
-      ref={ref}
-      className="reveal relative py-24 px-6 text-center bg-cover bg-center bg-fixed"
-      style={{ backgroundImage: "url('/images/quote-bg.jpg')" }}
+      ref={sectionRef}
+      className="relative py-24 px-6 text-center bg-cover bg-center overflow-hidden"
     >
+      <div
+        ref={bgRef}
+        className="absolute inset-[-20%] bg-cover bg-center"
+        style={{ backgroundImage: "url('/images/quote-bg.jpg')" }}
+      />
       <div className="absolute inset-0 bg-[var(--brown)]/70" />
-      <div className="relative z-10 max-w-2xl mx-auto">
+      <div ref={contentRef} className="relative z-10 max-w-2xl mx-auto" style={{ opacity: 0 }}>
         <p className="text-2xl sm:text-3xl md:text-4xl italic leading-relaxed mb-6" style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold-light)' }}>
           &ldquo;Apa yang menjadi takdirmu akan menemukan jalannya untuk menemukanmu.&rdquo;
         </p>
-        <p className="text-sm tracking-widest uppercase" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold)]' }}>
+        <p className="text-sm tracking-widest uppercase" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold-light)]' }}>
           — Sayidina Ali bin Abi Thalib
         </p>
       </div>
@@ -255,11 +342,35 @@ function QuoteSection() {
   )
 }
 
-// Timeline Section
+// Timeline Section with stagger from alternating sides
 function TimelineSection() {
-  const ref = useReveal()
+  const sectionRef = useRef<HTMLDivElement>(null)
+  const itemsRef = useRef<HTMLDivElement[]>([])
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      fadeIn(sectionRef.current!, { y: 30 })
+
+      itemsRef.current.forEach((item, index) => {
+        if (!item) return
+        const direction = index % 2 === 0 ? 'left' : 'right'
+        slideIn(item, direction, {
+          distance: 60,
+          delay: index * 0.1,
+          scrollTrigger: {
+            trigger: item,
+            start: 'top 85%',
+            toggleActions: 'play none none none',
+          },
+        })
+      })
+    })
+
+    return () => ctx.revert()
+  }, [])
+
   return (
-    <section ref={ref} className="reveal py-20 px-6" style={{ background: 'var(--cream)' }}>
+    <section ref={sectionRef} className="py-20 px-6" style={{ background: 'var(--cream)', opacity: 0 }}>
       <div className="max-w-4xl mx-auto text-center">
         <h2 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
           Cerita Kami
@@ -275,9 +386,11 @@ function TimelineSection() {
           {WEDDING.timeline.map((item, index) => (
             <div
               key={item.year}
+              ref={(el) => { if (el) itemsRef.current[index] = el }}
               className={`relative flex flex-col sm:flex-row items-center mb-16 last:mb-0 ${
                 index % 2 === 0 ? 'sm:flex-row' : 'sm:flex-row-reverse'
               }`}
+              style={{ opacity: 0 }}
             >
               {/* Timeline dot */}
               <div className="hidden sm:flex absolute left-1/2 -translate-x-1/2 w-12 h-12 rounded-full border-2 border-[var(--gold)] items-center justify-center z-10"
@@ -317,10 +430,58 @@ function TimelineSection() {
   )
 }
 
-// Countdown Section
+// Countdown Section with animated numbers
 function CountdownSection() {
   const { days, hours, minutes, seconds } = useCountdown(WEDDING.akadDate)
-  const ref = useReveal()
+  const sectionRef = useRef<HTMLDivElement>(null)
+  const bgRef = useRef<HTMLDivElement>(null)
+  const numbersRef = useRef<HTMLDivElement[]>([])
+  const hasAnimated = useRef(false)
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      fadeIn(sectionRef.current!, { y: 30 })
+
+      // Parallax on background
+      if (bgRef.current) {
+        parallaxScroll(bgRef.current, { speed: 0.15 })
+      }
+
+      // Animate each countdown number with a scale + counter effect on first view
+      numbersRef.current.forEach((el, i) => {
+        if (!el) return
+        scaleIn(el, {
+          delay: i * 0.15,
+          fromScale: 0.5,
+          scrollTrigger: {
+            trigger: sectionRef.current!,
+            start: 'top 80%',
+            toggleActions: 'play none none none',
+          },
+        })
+      })
+    })
+
+    return () => ctx.revert()
+  }, [])
+
+  // GSAP animation on number changes
+  useEffect(() => {
+    if (!hasAnimated.current && days > 0) {
+      hasAnimated.current = true
+    }
+
+    if (hasAnimated.current) {
+      numbersRef.current.forEach((el) => {
+        if (!el) return
+        gsap.fromTo(
+          el.querySelector('.countdown-number'),
+          { scale: 1.2, opacity: 0.7 },
+          { scale: 1, opacity: 1, duration: 0.3, ease: 'power2.out' }
+        )
+      })
+    }
+  }, [days, hours, minutes, seconds])
 
   const countdownItems = [
     { label: 'Hari', value: days },
@@ -331,10 +492,15 @@ function CountdownSection() {
 
   return (
     <section
-      ref={ref}
-      className="reveal relative py-24 px-6 text-center bg-cover bg-center bg-fixed"
-      style={{ backgroundImage: "url('/images/countdown-bg.jpg')" }}
+      ref={sectionRef}
+      className="relative py-24 px-6 text-center overflow-hidden"
+      style={{ opacity: 0 }}
     >
+      <div
+        ref={bgRef}
+        className="absolute inset-[-20%] bg-cover bg-center"
+        style={{ backgroundImage: "url('/images/countdown-bg.jpg')" }}
+      />
       <div className="absolute inset-0 bg-[var(--brown)]/75" />
       <div className="relative z-10 max-w-3xl mx-auto">
         <h2 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-light)' }}>
@@ -345,15 +511,20 @@ function CountdownSection() {
         </div>
 
         <div className="flex justify-center gap-4 sm:gap-8">
-          {countdownItems.map((item) => (
-            <div key={item.label} className="text-center">
+          {countdownItems.map((item, i) => (
+            <div
+              key={item.label}
+              ref={(el) => { if (el) numbersRef.current[i] = el }}
+              className="text-center"
+              style={{ opacity: 0 }}
+            >
               <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-lg border-2 border-[var(--gold)] flex items-center justify-center mb-2 mx-auto"
                 style={{ background: 'rgba(201, 169, 110, 0.1)' }}>
-                <span className="text-2xl sm:text-4xl font-light" style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold-light)' }}>
+                <span className="countdown-number text-2xl sm:text-4xl font-light" style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold-light)' }}>
                   {String(item.value).padStart(2, '0')}
                 </span>
               </div>
-              <span className="text-xs sm:text-sm tracking-wider uppercase" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold)]' }}>
+              <span className="text-xs sm:text-sm tracking-wider uppercase" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold-light)]' }}>
                 {item.label}
               </span>
             </div>
@@ -364,11 +535,42 @@ function CountdownSection() {
   )
 }
 
-// Event Detail Section
+// Event Detail Section with flip-in cards
 function EventSection() {
-  const ref = useReveal()
+  const sectionRef = useRef<HTMLDivElement>(null)
+  const cardRefs = useRef<HTMLDivElement[]>([])
+  const addressRef = useRef<HTMLDivElement>(null)
+  const mapBtnRef = useRef<HTMLAnchorElement>(null)
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      fadeIn(sectionRef.current!, { y: 30 })
+
+      cardRefs.current.forEach((card, i) => {
+        if (!card) return
+        flipIn(card, {
+          delay: i * 0.2,
+          scrollTrigger: {
+            trigger: sectionRef.current!,
+            start: 'top 75%',
+            toggleActions: 'play none none none',
+          },
+        })
+      })
+
+      fadeIn(addressRef.current!, { delay: 0.5, y: 20 })
+
+      if (mapBtnRef.current) {
+        const cleanup = magneticHover(mapBtnRef.current, 0.15)
+        return () => { cleanup?.() }
+      }
+    })
+
+    return () => ctx.revert()
+  }, [])
+
   return (
-    <section ref={ref} className="reveal py-20 px-6" style={{ background: 'var(--cream-dark)' }}>
+    <section ref={sectionRef} className="py-20 px-6" style={{ background: 'var(--cream-dark)', opacity: 0 }}>
       <div className="max-w-4xl mx-auto text-center">
         <h2 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
           Resepsi Pernikahan
@@ -379,7 +581,11 @@ function EventSection() {
 
         <div className="flex flex-col md:flex-row gap-8 justify-center">
           {/* Akad */}
-          <div className="flex-1 max-w-sm mx-auto bg-white/80 backdrop-blur-sm rounded-lg p-8 shadow-md border border-[var(--gold)]/20">
+          <div
+            ref={(el) => { if (el) cardRefs.current[0] = el }}
+            className="flex-1 max-w-sm mx-auto bg-white/80 backdrop-blur-sm rounded-lg p-8 shadow-md border border-[var(--gold)]/20"
+            style={{ opacity: 0, perspective: '800px' }}
+          >
             <h3 className="text-2xl sm:text-3xl mb-4" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
               Akad Nikah
             </h3>
@@ -407,7 +613,11 @@ function EventSection() {
           </div>
 
           {/* Resepsi */}
-          <div className="flex-1 max-w-sm mx-auto bg-white/80 backdrop-blur-sm rounded-lg p-8 shadow-md border border-[var(--gold)]/20">
+          <div
+            ref={(el) => { if (el) cardRefs.current[1] = el }}
+            className="flex-1 max-w-sm mx-auto bg-white/80 backdrop-blur-sm rounded-lg p-8 shadow-md border border-[var(--gold)]/20"
+            style={{ opacity: 0, perspective: '800px' }}
+          >
             <h3 className="text-2xl sm:text-3xl mb-4" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
               Resepsi
             </h3>
@@ -436,11 +646,12 @@ function EventSection() {
         </div>
 
         {/* Address */}
-        <div className="mt-8 max-w-lg mx-auto bg-white/60 backdrop-blur-sm rounded-lg p-6 border border-[var(--gold)]/20">
+        <div ref={addressRef} className="mt-8 max-w-lg mx-auto bg-white/60 backdrop-blur-sm rounded-lg p-6 border border-[var(--gold)]/20" style={{ opacity: 0 }}>
           <p className="text-sm leading-relaxed" style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}>
             {WEDDING.address}
           </p>
           <a
+            ref={mapBtnRef}
             href="https://maps.google.com/?q=Villa+Mutiara+Bogor+2+Blok+C2+No.36+Bojonggede+Bogor"
             target="_blank"
             rel="noopener noreferrer"
@@ -459,13 +670,107 @@ function EventSection() {
   )
 }
 
-// Gallery Section
+// Gallery Section with cascade stagger and enhanced lightbox
 function GallerySection() {
   const [lightbox, setLightbox] = useState<number | null>(null)
-  const ref = useReveal()
+  const [slideshow, setSlideshow] = useState(false)
+  const [imageKey, setImageKey] = useState(0)
+  const sectionRef = useRef<HTMLDivElement>(null)
+  const imagesRef = useRef<HTMLDivElement[]>([])
+  const touchStartRef = useRef<number | null>(null)
+  const totalImages = WEDDING.galleryImages.length
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      fadeIn(sectionRef.current!, { y: 30 })
+
+      // Stagger reveal for gallery images
+      const validImages = imagesRef.current.filter(Boolean)
+      staggerReveal(validImages, {
+        y: 40,
+        stagger: 0.08,
+        scrollTrigger: {
+          trigger: sectionRef.current!,
+          start: 'top 75%',
+          toggleActions: 'play none none none',
+        },
+      })
+    })
+
+    return () => ctx.revert()
+  }, [])
+
+  // Slideshow auto-advance
+  useEffect(() => {
+    if (!slideshow || lightbox === null) return
+    const timer = setInterval(() => {
+      setLightbox(prev => prev !== null ? (prev + 1) % totalImages : null)
+      setImageKey(k => k + 1)
+    }, 3000)
+    return () => clearInterval(timer)
+  }, [slideshow, lightbox, totalImages])
+
+  // Keyboard navigation
+  useEffect(() => {
+    if (lightbox === null) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') {
+        setLightbox(prev => prev !== null ? Math.max(0, prev - 1) : null)
+        setImageKey(k => k + 1)
+      } else if (e.key === 'ArrowRight') {
+        setLightbox(prev => prev !== null ? Math.min(totalImages - 1, prev + 1) : null)
+        setImageKey(k => k + 1)
+      } else if (e.key === 'Escape') {
+        setLightbox(null)
+        setSlideshow(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [lightbox, totalImages])
+
+  // Touch/swipe handling
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartRef.current = e.touches[0].clientX
+  }
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartRef.current === null || lightbox === null) return
+    const diff = touchStartRef.current - e.changedTouches[0].clientX
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) {
+        setLightbox(prev => prev !== null ? Math.min(totalImages - 1, prev + 1) : null)
+      } else {
+        setLightbox(prev => prev !== null ? Math.max(0, prev - 1) : null)
+      }
+      setImageKey(k => k + 1)
+    }
+    touchStartRef.current = null
+  }
+
+  const openLightbox = (index: number) => {
+    setLightbox(index)
+    setSlideshow(false)
+    setImageKey(k => k + 1)
+  }
+
+  const closeLightbox = () => {
+    setLightbox(null)
+    setSlideshow(false)
+  }
+
+  const goToPrev = () => {
+    setLightbox(prev => prev !== null ? Math.max(0, prev - 1) : null)
+    setImageKey(k => k + 1)
+  }
+
+  const goToNext = () => {
+    setLightbox(prev => prev !== null ? Math.min(totalImages - 1, prev + 1) : null)
+    setImageKey(k => k + 1)
+  }
 
   return (
-    <section ref={ref} className="reveal py-20 px-6" style={{ background: 'var(--cream)' }}>
+    <section ref={sectionRef} className="py-20 px-6" style={{ background: 'var(--cream)', opacity: 0 }}>
       <div className="max-w-4xl mx-auto text-center">
         <h2 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
           Galeri
@@ -478,8 +783,10 @@ function GallerySection() {
           {WEDDING.galleryImages.map((src, index) => (
             <div
               key={index}
+              ref={(el) => { if (el) imagesRef.current[index] = el }}
               className="relative aspect-square overflow-hidden rounded-lg cursor-pointer group border border-[var(--gold)]/20"
-              onClick={() => setLightbox(index)}
+              onClick={() => openLightbox(index)}
+              style={{ opacity: 0 }}
             >
               <img
                 src={src}
@@ -496,39 +803,99 @@ function GallerySection() {
         </div>
       </div>
 
-      {/* Lightbox */}
+      {/* Enhanced Lightbox */}
       <div
         className={`lightbox-overlay ${lightbox !== null ? 'active' : ''}`}
-        onClick={() => setLightbox(null)}
+        onClick={closeLightbox}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
         {lightbox !== null && (
-          <div className="relative max-w-4xl max-h-[90vh] px-4">
-            <img
-              src={WEDDING.galleryImages[lightbox]}
-              alt={`Gallery ${lightbox + 1}`}
-              className="max-w-full max-h-[85vh] object-contain rounded-lg"
-              onClick={(e) => e.stopPropagation()}
-            />
+          <div className="relative max-w-4xl max-h-[90vh] px-4 w-full flex flex-col items-center">
+            {/* Close button */}
             <button
-              onClick={() => setLightbox(null)}
-              className="absolute -top-2 -right-2 w-10 h-10 rounded-full bg-white/90 text-[var(--brown)] flex items-center justify-center hover:bg-white transition-colors cursor-pointer"
+              onClick={closeLightbox}
+              className="absolute -top-1 right-2 sm:right-4 w-10 h-10 rounded-full bg-white/90 text-[var(--brown)] flex items-center justify-center
+                hover:bg-white hover:scale-110 transition-all duration-200 cursor-pointer z-20"
             >
               ✕
             </button>
-            <div className="flex justify-center gap-4 mt-4">
+
+            {/* Image counter */}
+            <div className="mb-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-white text-sm z-10">
+              {lightbox + 1} / {totalImages}
+            </div>
+
+            {/* Main image with transition */}
+            <div className="relative flex-1 flex items-center justify-center w-full">
+              <img
+                key={imageKey}
+                src={WEDDING.galleryImages[lightbox]}
+                alt={`Gallery ${lightbox + 1}`}
+                className="lightbox-image-enter max-w-full max-h-[70vh] sm:max-h-[75vh] object-contain rounded-lg"
+                onClick={(e) => e.stopPropagation()}
+              />
+
+              {/* Previous arrow */}
               <button
-                onClick={(e) => { e.stopPropagation(); setLightbox(Math.max(0, lightbox - 1)) }}
-                className="px-4 py-2 bg-white/90 rounded text-[var(--brown)] hover:bg-white transition-colors cursor-pointer"
+                onClick={(e) => { e.stopPropagation(); goToPrev() }}
+                className={`absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 rounded-full
+                  bg-white/80 backdrop-blur-sm text-[var(--brown)] flex items-center justify-center
+                  hover:bg-white hover:scale-110 transition-all duration-200 cursor-pointer
+                  ${lightbox === 0 ? 'opacity-30 pointer-events-none' : 'opacity-90'}`}
+              >
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+
+              {/* Next arrow */}
+              <button
+                onClick={(e) => { e.stopPropagation(); goToNext() }}
+                className={`absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 rounded-full
+                  bg-white/80 backdrop-blur-sm text-[var(--brown)] flex items-center justify-center
+                  hover:bg-white hover:scale-110 transition-all duration-200 cursor-pointer
+                  ${lightbox === totalImages - 1 ? 'opacity-30 pointer-events-none' : 'opacity-90'}`}
+              >
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Controls bar */}
+            <div className="flex items-center justify-center gap-4 mt-4">
+              <button
+                onClick={(e) => { e.stopPropagation(); goToPrev() }}
+                className="px-4 py-2 bg-white/80 backdrop-blur-sm rounded-lg text-[var(--brown)] text-sm
+                  hover:bg-white transition-colors cursor-pointer"
               >
                 ← Prev
               </button>
+
+              {/* Slideshow toggle */}
               <button
-                onClick={(e) => { e.stopPropagation(); setLightbox(Math.min(WEDDING.galleryImages.length - 1, lightbox + 1)) }}
-                className="px-4 py-2 bg-white/90 rounded text-[var(--brown)] hover:bg-white transition-colors cursor-pointer"
+                onClick={(e) => { e.stopPropagation(); setSlideshow(!slideshow) }}
+                className={`px-4 py-2 rounded-lg text-sm cursor-pointer transition-all duration-300 ${
+                  slideshow
+                    ? 'bg-[var(--gold)] text-white'
+                    : 'bg-white/80 backdrop-blur-sm text-[var(--brown)] hover:bg-white'
+                }`}
+              >
+                {slideshow ? '⏸ Stop' : '▶ Slideshow'}
+              </button>
+
+              <button
+                onClick={(e) => { e.stopPropagation(); goToNext() }}
+                className="px-4 py-2 bg-white/80 backdrop-blur-sm rounded-lg text-[var(--brown)] text-sm
+                  hover:bg-white transition-colors cursor-pointer"
               >
                 Next →
               </button>
             </div>
+
+            {/* Swipe hint for mobile */}
+            <p className="text-white/40 text-xs mt-2 sm:hidden">← Swipe untuk navigasi →</p>
           </div>
         )}
       </div>
@@ -538,7 +905,8 @@ function GallerySection() {
 
 // RSVP Section
 function RSVPSection() {
-  const ref = useReveal()
+  const sectionRef = useRef<HTMLDivElement>(null)
+  const formRef = useRef<HTMLFormElement>(null)
   const [formData, setFormData] = useState({ name: '', attendance: '', guests: '1', message: '' })
   const [submitted, setSubmitted] = useState(false)
 
@@ -547,8 +915,17 @@ function RSVPSection() {
     setSubmitted(true)
   }
 
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      fadeIn(sectionRef.current!, { y: 30 })
+      fadeIn(formRef.current!, { delay: 0.3, y: 20 })
+    })
+
+    return () => ctx.revert()
+  }, [])
+
   return (
-    <section ref={ref} className="reveal py-20 px-6" style={{ background: 'var(--cream-dark)' }}>
+    <section ref={sectionRef} className="py-20 px-6" style={{ background: 'var(--cream-dark)', opacity: 0 }}>
       <div className="max-w-lg mx-auto text-center">
         <h2 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
           Konfirmasi Kehadiran
@@ -561,7 +938,7 @@ function RSVPSection() {
         </p>
 
         {submitted ? (
-          <div className="bg-white/80 rounded-lg p-8 border border-[var(--gold)]/20">
+          <div ref={formRef} className="bg-white/80 rounded-lg p-8 border border-[var(--gold)]/20">
             <div className="text-4xl mb-4">&#10084;</div>
             <h3 className="text-2xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
               Terima Kasih!
@@ -571,7 +948,7 @@ function RSVPSection() {
             </p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="bg-white/80 backdrop-blur-sm rounded-lg p-8 shadow-md border border-[var(--gold)]/20 text-left">
+          <form ref={formRef} onSubmit={handleSubmit} className="bg-white/80 backdrop-blur-sm rounded-lg p-8 shadow-md border border-[var(--gold)]/20 text-left" style={{ opacity: 0 }}>
             <div className="mb-4">
               <label className="block text-sm mb-1 font-medium" style={{ fontFamily: 'var(--font-body)', color: 'var(--brown)' }}>
                 Nama
@@ -648,11 +1025,19 @@ function RSVPSection() {
 
 // Gift Section
 function GiftSection() {
-  const ref = useReveal()
+  const sectionRef = useRef<HTMLDivElement>(null)
   const [showBank, setShowBank] = useState<string | null>(null)
 
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      fadeIn(sectionRef.current!, { y: 30 })
+    })
+
+    return () => ctx.revert()
+  }, [])
+
   return (
-    <section ref={ref} className="reveal py-20 px-6" style={{ background: 'var(--cream)' }}>
+    <section ref={sectionRef} className="py-20 px-6" style={{ background: 'var(--cream)', opacity: 0 }}>
       <div className="max-w-lg mx-auto text-center">
         <h2 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
           Amplop Digital
@@ -716,14 +1101,34 @@ function GiftSection() {
 
 // Footer Section
 function FooterSection() {
+  const sectionRef = useRef<HTMLDivElement>(null)
+  const bgRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      if (bgRef.current) {
+        parallaxScroll(bgRef.current, { speed: 0.15 })
+      }
+      fadeIn(contentRef.current!, { y: 30 })
+    })
+
+    return () => ctx.revert()
+  }, [])
+
   return (
     <section
-      className="relative py-20 px-6 text-center bg-cover bg-center"
-      style={{ backgroundImage: "url('/images/footer-bg.jpg')" }}
+      ref={sectionRef}
+      className="relative py-20 px-6 text-center overflow-hidden"
     >
+      <div
+        ref={bgRef}
+        className="absolute inset-[-20%] bg-cover bg-center"
+        style={{ backgroundImage: "url('/images/footer-bg.jpg')" }}
+      />
       <div className="absolute inset-0 bg-[var(--brown)]/80" />
-      <div className="relative z-10 max-w-2xl mx-auto">
-        <p className="text-sm tracking-[0.3em] uppercase mb-4" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold)]' }}>
+      <div ref={contentRef} className="relative z-10 max-w-2xl mx-auto" style={{ opacity: 0 }}>
+        <p className="text-sm tracking-[0.3em] uppercase mb-4" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold-light)]' }}>
           Terima Kasih
         </p>
         <h2 className="text-4xl sm:text-5xl md:text-6xl mb-4" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-light)' }}>
@@ -732,7 +1137,7 @@ function FooterSection() {
         <div className="ornament-divider max-w-xs mx-auto mb-6">
           <span className="text-[var(--gold)] text-lg">&#10047;</span>
         </div>
-        <p className="text-sm leading-relaxed" style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold)]' }}>
+        <p className="text-sm leading-relaxed" style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold-light)]' }}>
           Atas kehadiran dan doa restu yang kalian berikan,<br />
           kami mengucapkan terima kasih.<br />
           Semoga Allah membalas kebaikan kalian.
@@ -745,34 +1150,20 @@ function FooterSection() {
   )
 }
 
-// Music Player
-function MusicPlayer({ isPlaying, onToggle }: { isPlaying: boolean; onToggle: () => void }) {
-  return (
-    <button
-      onClick={onToggle}
-      className={`fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full border-2 border-[var(--gold)] flex items-center justify-center
-        shadow-lg transition-all duration-300 cursor-pointer music-pulse ${isPlaying ? 'playing' : ''}`}
-      style={{ background: 'var(--cream)', color: 'var(--gold-dark)' }}
-      title={isPlaying ? 'Matikan Musik' : 'Putar Musik'}
-    >
-      {isPlaying ? (
-        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
-        </svg>
-      ) : (
-        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-        </svg>
-      )}
-    </button>
-  )
-}
+// Music Player - using enhanced MusicPlayerComponent
+// The MusicPlayerComponent is imported and used directly in the Home component
 
 /* ===================== MAIN PAGE ===================== */
 export default function Home() {
   const [isOpen, setIsOpen] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const mainContentRef = useRef<HTMLDivElement>(null)
+
+  const handlePreloaderComplete = useCallback(() => {
+    setIsLoading(false)
+  }, [])
 
   const handleOpen = useCallback(() => {
     setIsOpen(true)
@@ -792,54 +1183,110 @@ export default function Home() {
     }
   }, [isPlaying])
 
+  // Hero section animation after opening
+  const heroRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!isOpen || !heroRef.current) return
+
+    const ctx = gsap.context(() => {
+      // Animate hero content in
+      const hero = heroRef.current!
+      const children = hero.querySelectorAll('.hero-animate')
+
+      gsap.fromTo(
+        children,
+        { opacity: 0, y: 40 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.8,
+          stagger: 0.15,
+          ease: 'power3.out',
+          delay: 0.3,
+        }
+      )
+
+      // Parallax on hero background
+      const heroBg = hero.querySelector('.hero-bg-parallax')
+      if (heroBg) {
+        parallaxScroll(heroBg, { speed: 0.2 })
+      }
+    })
+
+    return () => ctx.revert()
+  }, [isOpen])
+
   return (
     <main className="overflow-x-hidden" style={{ background: 'var(--cream)' }}>
       {/* Audio element */}
       <audio ref={audioRef} src="/music/gamelan-bg.mp3" loop preload="none" />
 
-      {/* Cover - always visible first */}
-      {!isOpen && <CoverSection onOpen={handleOpen} />}
+      {/* Preloader */}
+      {isLoading && (
+        <Preloader
+          onComplete={handlePreloaderComplete}
+          groomName={WEDDING.groom}
+          brideName={WEDDING.bride}
+        />
+      )}
+
+      {/* Cursor follower (desktop only) */}
+      {!isLoading && <CursorFollower />}
+
+      {/* Cover - always visible first - using enhanced envelope CoverSection */}
+      {!isOpen && !isLoading && (
+        <CoverSectionComponent onOpen={handleOpen} />
+      )}
 
       {/* Main content after opening */}
       {isOpen && (
-        <>
+        <SmoothScroll>
+          <JasmineParticles />
+
           {/* Hero with names */}
-          <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden">
+          <section ref={heroRef} className="relative min-h-[60vh] flex items-center justify-center overflow-hidden">
             <div
-              className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+              className="hero-bg-parallax absolute inset-0 bg-cover bg-center bg-no-repeat"
               style={{ backgroundImage: "url('/images/hero-poster.jpg')" }}
             />
             <div className="hero-overlay absolute inset-0" />
-            <div className="relative z-10 text-center px-6 py-20 animate-fade-in-up">
-              <p className="tracking-[0.3em] uppercase text-xs sm:text-sm mb-4" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold-light)' }}>
+            <div className="relative z-10 text-center px-6 py-20">
+              <p className="hero-animate tracking-[0.3em] uppercase text-xs sm:text-sm mb-4" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold-light)', opacity: 0 }}>
                 The Wedding of
               </p>
-              <h1 className="text-5xl sm:text-7xl md:text-8xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-light)' }}>
+              <h1 className="hero-animate text-5xl sm:text-7xl md:text-8xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-light)', opacity: 0 }}>
                 Irwan & Anira
               </h1>
-              <div className="ornament-divider max-w-xs mx-auto my-4">
+              <div className="ornament-divider hero-animate max-w-xs mx-auto my-4" style={{ opacity: 0 }}>
                 <span className="text-[var(--gold)] text-lg">&#10047;</span>
               </div>
-              <p className="tracking-widest text-sm sm:text-base" style={{ fontFamily: 'var(--font-serif)', color: 'var(--cream)' }}>
+              <p className="hero-animate tracking-widest text-sm sm:text-base" style={{ fontFamily: 'var(--font-serif)', color: 'var(--cream)', opacity: 0 }}>
                 05 . 07 . 2026
               </p>
             </div>
           </section>
 
-          <BismillahSection />
-          <CoupleSection />
-          <QuoteSection />
-          <TimelineSection />
-          <CountdownSection />
-          <EventSection />
-          <GallerySection />
-          <RSVPSection />
-          <GiftSection />
-          <FooterSection />
+          <div ref={mainContentRef}>
+            <BismillahSection />
+            <CoupleSection />
+            <QuoteSection />
+            <TimelineSection />
+            <CountdownSection />
+            <EventSection />
+            <GallerySection />
+            <RSVPSection />
+            <GuestWishes />
+            <GiftSection />
+            <FooterSection />
+          </div>
 
-          {/* Music player */}
-          <MusicPlayer isPlaying={isPlaying} onToggle={toggleMusic} />
-        </>
+          {/* Enhanced Music player with vinyl and visualizer */}
+          <MusicPlayerComponent isPlaying={isPlaying} onToggle={toggleMusic} audioRef={audioRef} />
+
+          {/* Scroll to top button */}
+          <ScrollToTop />
+        </SmoothScroll>
       )}
     </main>
   )
