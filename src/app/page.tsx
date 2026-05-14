@@ -704,117 +704,140 @@ function DiaryStorySection() {
   const titleRef = useRef<HTMLDivElement>(null)
   const descriptionRef = useRef<HTMLDivElement>(null)
   const progressRef = useRef<HTMLDivElement>(null)
+  const currentIndexRef = useRef(0)
+  const hasEnteredRef = useRef(false)
 
   useEffect(() => {
     if (!sectionRef.current) return
 
-    const ctx = gsap.context(() => {
-      const section = sectionRef.current!
-      const progressBar = progressRef.current
-      const yearBadge = yearBadgeRef.current
-      const titleEl = titleRef.current
-      const descEl = descriptionRef.current
-      const card = cardRef.current
+    const section = sectionRef.current
+    const progressBar = progressRef.current
+    const yearBadge = yearBadgeRef.current
+    const titleEl = titleRef.current
+    const descEl = descriptionRef.current
+    const card = cardRef.current
 
-      if (!titleEl || !descEl || !yearBadge || !card) return
+    if (!titleEl || !descEl || !yearBadge || !card) return
 
-      // Set initial states
-      if (progressBar) gsap.set(progressBar, { scaleX: 0, transformOrigin: 'left center' })
-      gsap.set(card, { opacity: 0, y: 15 })
+    // Set initial states
+    if (progressBar) gsap.set(progressBar, { scaleX: 0, transformOrigin: 'left center' })
 
-      // The master timeline — pinned, scroll-driven diary
-      const masterTl = gsap.timeline({
-        scrollTrigger: {
-          trigger: section,
-          start: 'top 10%',
-          end: `+=${WEDDING.timeline.length * 100}%`,
-          pin: true,
-          scrub: 0.6,
-          anticipatePin: 1,
-          onUpdate: (self) => {
-            if (progressBar) {
-              gsap.set(progressBar, { scaleX: self.progress })
-            }
-          },
-        },
+    // Fade in the section when it enters viewport
+    const enterCtx = gsap.context(() => {
+      gsap.to(section, { opacity: 1, duration: 0.8, ease: 'power2.out' })
+      gsap.to(card, { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out', delay: 0.2 })
+    }, section)
+
+    // Write the first story paragraph immediately on enter
+    const showStoryItem = (index: number) => {
+      const item = WEDDING.timeline[index]
+      if (!item) return
+
+      // Update year badge
+      if (yearBadge) {
+        yearBadge.textContent = item.year
+        gsap.fromTo(yearBadge, { opacity: 0, y: -5 }, { opacity: 0.6, y: 0, duration: 0.5, ease: 'power2.out' })
+      }
+
+      // Write title with handwriting reveal
+      if (titleEl) {
+        titleEl.textContent = item.title
+        handwritingReveal(titleEl, 0.02, 0.07)
+      }
+
+      // Write description with handwriting reveal (slightly delayed)
+      if (descEl) {
+        descEl.textContent = item.description
+        const descDelay = item.title.length * 0.02 + 0.1 // wait for title to finish
+        handwritingReveal(descEl, 0.016, 0.06, descDelay)
+      }
+    }
+
+    // Show first story after card fades in
+    const initTimer = setTimeout(() => {
+      showStoryItem(0)
+    }, 800)
+
+    // Dissolve current text, then show next
+    const transitionToNext = (nextIndex: number) => {
+      const tl = gsap.timeline()
+
+      // Dissolve like disappearing ink
+      tl.to([titleEl, descEl], {
+        opacity: 0,
+        filter: 'blur(2px)',
+        duration: 0.8,
+        ease: 'power2.inOut',
+        stagger: 0.1,
       })
 
-      // Card fades in
-      masterTl.to(card, {
-        opacity: 1,
-        y: 0,
-        duration: 0.5,
-        ease: 'power2.out',
-      })
+      // Year badge fades
+      if (yearBadge) {
+        tl.to(yearBadge, {
+          opacity: 0,
+          duration: 0.4,
+          ease: 'power2.in',
+        }, '-=0.5')
+      }
 
-      // Build the story — write, dissolve, write, dissolve...
-      WEDDING.timeline.forEach((item, index) => {
-        // Write title — handwriting reveal
-        masterTl.call(() => {
-          if (yearBadge) {
-            yearBadge.textContent = item.year
-            gsap.fromTo(yearBadge, { opacity: 0, y: -5 }, { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' })
-          }
-          if (titleEl) {
-            titleEl.textContent = item.title
-            handwritingReveal(titleEl, 0.018, 0.06)
-          }
-        })
+      // Brief pause — the space between thoughts
+      tl.to({}, { duration: 0.3 })
 
-        // Hold for writing to complete (title is short)
-        masterTl.to({}, { duration: 0.6 })
-
-        // Write description — handwriting reveal
-        masterTl.call(() => {
-          if (descEl) {
-            descEl.textContent = item.description
-            handwritingReveal(descEl, 0.018, 0.06)
-          }
-        })
-
-        // Hold for emotional reading (~1.5s worth of scroll)
-        masterTl.to({}, { duration: 2.0 })
-
-        // Dissolve — text fades like disappearing ink
-        if (index < WEDDING.timeline.length - 1) {
-          masterTl.to([titleEl, descEl], {
-            opacity: 0,
-            filter: 'blur(2px)',
-            duration: 0.6,
-            ease: 'power2.inOut',
-          })
-
-          // Year badge fades
-          if (yearBadge) {
-            masterTl.to(yearBadge, {
-              opacity: 0,
-              duration: 0.3,
-              ease: 'power2.in',
-            }, '-=0.4')
-          }
-
-          // Brief pause — the space between thoughts
-          masterTl.to({}, { duration: 0.3 })
-
-          // Reset for next paragraph
-          masterTl.call(() => {
-            if (titleEl) {
-              titleEl.innerHTML = ''
-              gsap.set(titleEl, { opacity: 1, filter: 'blur(0px)' })
-            }
-            if (descEl) {
-              descEl.innerHTML = ''
-              gsap.set(descEl, { opacity: 1, filter: 'blur(0px)' })
-            }
-          })
+      // Reset and reveal next paragraph
+      tl.call(() => {
+        if (titleEl) {
+          titleEl.innerHTML = ''
+          gsap.set(titleEl, { opacity: 1, filter: 'blur(0px)' })
         }
+        if (descEl) {
+          descEl.innerHTML = ''
+          gsap.set(descEl, { opacity: 1, filter: 'blur(0px)' })
+        }
+        currentIndexRef.current = nextIndex
+        showStoryItem(nextIndex)
       })
+    }
 
-      // Final breath — the diary page settles
-      masterTl.to({}, { duration: 0.5 })
+    // Pinned scroll-driven progression using ScrollTrigger scrub
+    // Each story item occupies an equal portion of the scroll distance
+    const totalItems = WEDDING.timeline.length
+    const scrollDistance = totalItems * 80 // 80vh per story item
+
+    const pinTrigger = ScrollTrigger.create({
+      trigger: section,
+      start: 'top 10%',
+      end: `+=${scrollDistance}%`,
+      pin: true,
+      anticipatePin: 1,
+      scrub: 0.8,
+      onUpdate: (self) => {
+        // Update progress bar
+        if (progressBar) {
+          gsap.set(progressBar, { scaleX: self.progress })
+        }
+
+        // Calculate which story index should be shown based on scroll progress
+        const progress = self.progress
+        const targetIndex = Math.min(
+          Math.floor(progress * totalItems),
+          totalItems - 1
+        )
+
+        // Only transition if index actually changed
+        if (targetIndex !== currentIndexRef.current && hasEnteredRef.current) {
+          transitionToNext(targetIndex)
+        }
+      },
+      onEnter: () => {
+        hasEnteredRef.current = true
+      },
     })
 
-    return () => ctx.revert()
+    return () => {
+      clearTimeout(initTimer)
+      enterCtx.revert()
+      pinTrigger.kill()
+    }
   }, [])
 
   return (
@@ -827,17 +850,22 @@ function DiaryStorySection() {
       />
 
       <div className="max-w-lg mx-auto">
+        {/* Section heading */}
+        <h2 className="text-3xl sm:text-4xl text-center mb-12" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
+          Cerita Kami
+        </h2>
+
         {/* The diary card — one page, one story */}
         <div
           ref={cardRef}
           className="diary-note-card diary-note-card-vignette relative p-8 sm:p-10 rounded-lg bg-white/80 backdrop-blur-sm shadow-lg overflow-hidden"
-          style={{ minHeight: '320px' }}
+          style={{ minHeight: '340px', opacity: 0, transform: 'translateY(15px)' }}
         >
           {/* Year badge — fixed at top-left like a diary date */}
           <div
             ref={yearBadgeRef}
             className="text-sm tracking-wider mb-6"
-            style={{ fontFamily: 'var(--font-body)', color: 'var(--gold)', opacity: 0.6 }}
+            style={{ fontFamily: 'var(--font-body)', color: 'var(--gold)', opacity: 0 }}
           >
             {WEDDING.timeline[0]?.year}
           </div>
