@@ -68,32 +68,36 @@ export default function CoverSection({ onOpen }: CoverSectionProps) {
     // Phase 1: Lean in — content draws closer, like leaning toward a door (300ms)
     setPhase('leaning')
 
-    // Phase 2: Golden bloom — warm light blooms from center, candle being lit (500ms — more time to feel the light)
-    setTimeout(() => setPhase('blooming'), 300)
+    // Phase 2: Golden bloom — warm light blooms from center, candle being lit
+    setTimeout(() => setPhase('blooming'), 250)
 
-    // Phase 2b: Breathe — the world responds to your touch, a subtle pulse of life (300ms)
-    setTimeout(() => setPhase('breathing'), 800)
+    // Phase 2b: Breathe — the world responds to your touch, a subtle pulse of life
+    setTimeout(() => setPhase('breathing'), 700)
 
-    // Phase 3: Dissolve — the cover softly melts away, not a hard cut (900ms — slower, more cinematic)
-    setTimeout(() => setPhase('dissolving'), 1100)
+    // Phase 3: Dissolve — the cover softly melts away, not a hard cut
+    setTimeout(() => setPhase('dissolving'), 1000)
 
-    // Phase 4: Brief darkness — the breath before the story begins (400ms — slightly longer breath)
-    setTimeout(() => setPhase('darkness'), 2000)
+    // Phase 4: Brief darkness — the breath before the story begins
+    setTimeout(() => setPhase('darkness'), 1800)
 
     // Phase 5: Enter the story
-    setTimeout(() => onOpen(), 2400)
+    setTimeout(() => onOpen(), 2200)
   }, [isOpening, onOpen])
 
-  // Petal configurations — 8 petals with varied timing
+  // Petal configurations — 12 petals with varied timing
   const petalConfigs = [
-    { left: 12, size: 10, duration: 10, delay: 0, opacity: 0.25 },
-    { left: 25, size: 14, duration: 12, delay: 1.2, opacity: 0.35 },
-    { left: 38, size: 8, duration: 9, delay: 0.5, opacity: 0.2 },
-    { left: 50, size: 16, duration: 11, delay: 2, opacity: 0.4 },
-    { left: 62, size: 6, duration: 10.5, delay: 0.8, opacity: 0.15 },
-    { left: 72, size: 12, duration: 11.5, delay: 1.5, opacity: 0.3 },
-    { left: 82, size: 9, duration: 9.5, delay: 2.5, opacity: 0.2 },
-    { left: 90, size: 7, duration: 12, delay: 0.3, opacity: 0.15 },
+    { left: 8, size: 9, duration: 10, delay: 0, opacity: 0.2 },
+    { left: 18, size: 14, duration: 12, delay: 1.5, opacity: 0.3 },
+    { left: 28, size: 7, duration: 9, delay: 0.8, opacity: 0.15 },
+    { left: 38, size: 16, duration: 11, delay: 2.2, opacity: 0.35 },
+    { left: 48, size: 6, duration: 10, delay: 0.3, opacity: 0.12 },
+    { left: 55, size: 12, duration: 11, delay: 1.8, opacity: 0.28 },
+    { left: 65, size: 8, duration: 9.5, delay: 2.8, opacity: 0.18 },
+    { left: 72, size: 10, duration: 10.5, delay: 0.6, opacity: 0.22 },
+    { left: 78, size: 15, duration: 12, delay: 2, opacity: 0.32 },
+    { left: 85, size: 7, duration: 11, delay: 1.2, opacity: 0.14 },
+    { left: 92, size: 11, duration: 10, delay: 3, opacity: 0.25 },
+    { left: 96, size: 5, duration: 9, delay: 0.5, opacity: 0.1 },
   ]
 
   return (
@@ -133,6 +137,33 @@ export default function CoverSection({ onOpen }: CoverSectionProps) {
         }}
       />
 
+      {/* Warm ambient breathing glow — like a candle behind parchment */}
+      <div
+        className="absolute inset-0 pointer-events-none z-[2.5]"
+        style={{
+          background: 'radial-gradient(ellipse at 50% 40%, rgba(201,169,110,0.06) 0%, transparent 55%)',
+          animation: 'warmGlow 6s ease-in-out infinite alternate',
+        }}
+      />
+
+      {/* Light leak streak — warm golden ray from top-left, like sunlight through a window */}
+      <div
+        className="absolute inset-0 pointer-events-none z-[2.8]"
+        style={{
+          background: 'linear-gradient(135deg, rgba(201,169,110,0.08) 0%, rgba(201,169,110,0.02) 30%, transparent 50%)',
+          animation: 'goldenLightDrift 18s ease-in-out infinite alternate-reverse',
+        }}
+      />
+
+      {/* Cinematic dust particles layer — motes caught in golden light */}
+      <div
+        className="absolute inset-0 pointer-events-none z-[2.6] mix-blend-screen"
+        style={{
+          backgroundImage: "url('data:image/svg+xml,%3Csvg xmlns=\"http://www.w3.org/2000/svg\" width=\"150\" height=\"150\" viewBox=\"0 0 150 150\"%3E%3Cfilter id=\"d\"%3E%3CfeTurbulence type=\"fractalNoise\" baseFrequency=\"0.7\" numOctaves=\"2\" stitchTiles=\"stitch\"/%3E%3C/filter%3E%3Crect width=\"100%25\" height=\"100%25\" filter=\"url(%23d)\" opacity=\"0.02\"/%3E%3C/svg%3E')",
+          opacity: 0.3,
+        }}
+      />
+
       {/* Film grain — analog warmth */}
       <div
         className="absolute inset-0 pointer-events-none z-[1.5] mix-blend-overlay"
@@ -166,6 +197,20 @@ export default function CoverSection({ onOpen }: CoverSectionProps) {
         }}
       />
 
+      {/* Golden light rays — like sunbeams through a doorway, appear during opening */}
+      <div
+        className="absolute inset-0 pointer-events-none z-[3.3]"
+        style={{
+          background: `
+            linear-gradient(170deg, transparent 35%, rgba(201,169,110,0.06) 40%, rgba(201,169,110,0.12) 45%, rgba(232,200,120,0.08) 50%, transparent 55%),
+            linear-gradient(190deg, transparent 40%, rgba(201,169,110,0.04) 44%, rgba(201,169,110,0.08) 48%, transparent 53%)
+          `,
+          opacity: phase === 'blooming' || phase === 'breathing' ? 1 : 0,
+          transform: phase === 'dissolving' ? 'translateY(-5%)' : 'translateY(0)',
+          transition: 'opacity 0.8s ease, transform 1s ease',
+        }}
+      />
+
       {/* Darkness layer — the breath before the story */}
       <div
         className="absolute inset-0 pointer-events-none z-[4]"
@@ -183,6 +228,16 @@ export default function CoverSection({ onOpen }: CoverSectionProps) {
         <div className="absolute bottom-6 left-6 w-16 h-16 border-b border-l opacity-30" style={{ borderColor: 'var(--gold)' }} />
         <div className="absolute bottom-6 right-6 w-16 h-16 border-b border-r opacity-30" style={{ borderColor: 'var(--gold)' }} />
       </div>
+
+      {/* Depth of field layer — foreground blur that clears during opening */}
+      <div
+        className="absolute inset-0 pointer-events-none z-[19]"
+        style={{
+          backdropFilter: phase === 'idle' ? 'blur(1px)' : 'blur(0px)',
+          WebkitBackdropFilter: phase === 'idle' ? 'blur(1px)' : 'blur(0px)',
+          transition: 'backdrop-filter 1.5s ease, -webkit-backdrop-filter 1.5s ease',
+        }}
+      />
 
       {/* Floating jasmine petals */}
       <div
@@ -232,8 +287,9 @@ export default function CoverSection({ onOpen }: CoverSectionProps) {
           className="w-16 h-16 mx-auto mb-10 rounded-full flex items-center justify-center"
           style={{
             background: 'radial-gradient(circle, var(--gold-light), var(--gold-dark))',
-            boxShadow: '0 2px 12px rgba(201,169,110,0.3)',
+            boxShadow: '0 2px 12px rgba(201,169,110,0.3), 0 0 30px rgba(201,169,110,0.1)',
             opacity: 0.9,
+            animation: 'warmGlow 4s ease-in-out infinite alternate',
           }}
         >
           <span className="text-lg" style={{ fontFamily: 'var(--font-script)', color: 'var(--cream)' }}>

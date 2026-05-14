@@ -691,115 +691,45 @@ function DiaryIntroSection() {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   5. TIMELINE — Love Journey
-   Three milestones, like turning diary pages
-   FIXED: Faster handwriting (title stagger 0.05, desc stagger 0.022)
-   FIXED: Shorter gaps between cards (0.4), end padding 0.3
-   FIXED: Title font changed to serif italic (diary handwriting feel)
+   5. DIARY STORY — One page, one story, written in ink
+   A single diary card pinned on screen.
+   Each paragraph writes in with handwriting reveal,
+   then dissolves like disappearing ink before the next.
+   The year badge stays fixed at top-left like a diary date.
    ═══════════════════════════════════════════════════════════ */
-function TimelineSection() {
+function DiaryStorySection() {
   const sectionRef = useRef<HTMLDivElement>(null)
-  const wrapperRef = useRef<HTMLDivElement>(null)
-  const cardsRef = useRef<HTMLDivElement[]>([])
-  const svgBordersRef = useRef<SVGPathElement[]>([])
-  const timelineLineRef = useRef<HTMLDivElement>(null)
-  const dotsRef = useRef<HTMLDivElement[]>([])
-  const mobileDotsRef = useRef<HTMLDivElement[]>([])
-  const titlesRef = useRef<HTMLHeadingElement[]>([])
-  const descriptionsRef = useRef<HTMLDivElement[]>([])
+  const cardRef = useRef<HTMLDivElement>(null)
+  const yearBadgeRef = useRef<HTMLDivElement>(null)
+  const titleRef = useRef<HTMLDivElement>(null)
+  const descriptionRef = useRef<HTMLDivElement>(null)
   const progressRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!sectionRef.current || !wrapperRef.current) return
+    if (!sectionRef.current) return
 
     const ctx = gsap.context(() => {
-      const cards = cardsRef.current
-      const svgBorders = svgBordersRef.current
-      const dots = dotsRef.current
-      const mobileDots = mobileDotsRef.current
-      const titles = titlesRef.current
-      const descriptions = descriptionsRef.current
-      const timelineLine = timelineLineRef.current
-      const progressBar = progressRef.current
       const section = sectionRef.current!
+      const progressBar = progressRef.current
+      const yearBadge = yearBadgeRef.current
+      const titleEl = titleRef.current
+      const descEl = descriptionRef.current
+      const card = cardRef.current
 
-      // === STEP 1: Prepare all character spans ===
-      const allTitleChars: HTMLSpanElement[][] = []
-      const allDescChars: HTMLSpanElement[][] = []
+      if (!titleEl || !descEl || !yearBadge || !card) return
 
-      WEDDING.timeline.forEach((item, i) => {
-        const title = titles[i]
-        if (title) {
-          const text = title.textContent || ''
-          title.innerHTML = ''
-          const chars: HTMLSpanElement[] = []
-          for (const char of text) {
-            const span = document.createElement('span')
-            span.style.cssText = 'display:inline-block;will-change:opacity,transform;opacity:0;transform:translateY(6px) rotate(-3deg);'
-            span.textContent = char === ' ' ? '\u00A0' : char
-            title.appendChild(span)
-            chars.push(span)
-          }
-          allTitleChars.push(chars)
-        }
-
-        const desc = descriptions[i]
-        if (desc) {
-          desc.innerHTML = ''
-          const allC: HTMLSpanElement[] = []
-          const words = item.description.split(' ')
-          words.forEach((word, wi) => {
-            const ws = document.createElement('span')
-            ws.style.cssText = 'white-space:nowrap;display:inline;'
-            for (let j = 0; j < word.length; j++) {
-              const cs = document.createElement('span')
-              cs.className = 'hw-char'
-              cs.style.cssText = 'display:inline-block;will-change:opacity,transform;opacity:0;transform:translateY(3px) rotate(-2deg);min-width:0.08em;'
-              cs.textContent = word[j]
-              ws.appendChild(cs)
-              allC.push(cs)
-            }
-            desc.appendChild(ws)
-            if (wi < words.length - 1) {
-              const sp = document.createElement('span')
-              sp.innerHTML = '\u00A0'
-              sp.style.display = 'inline'
-              desc.appendChild(sp)
-            }
-          })
-          allDescChars.push(allC)
-        }
-      })
-
-      // === STEP 2: Initialize SVG stroke-dashoffset ===
-      svgBorders.forEach((path) => {
-        if (path) {
-          try {
-            const len = path.getTotalLength()
-            path.style.strokeDasharray = String(len)
-            path.style.strokeDashoffset = String(len)
-          } catch (_e) {
-            path.style.strokeDasharray = '2000'
-            path.style.strokeDashoffset = '2000'
-          }
-        }
-      })
-
-      // === STEP 3: Set initial states — subtle, not dramatic ===
-      cards.forEach((card) => { if (card) gsap.set(card, { opacity: 0, y: 12, scale: 0.98 }) })
-      dots.forEach((dot) => { if (dot) gsap.set(dot, { scale: 0, opacity: 0 }) })
-      mobileDots.forEach((dot) => { if (dot) gsap.set(dot, { scale: 0, opacity: 0 }) })
-      if (timelineLine) gsap.set(timelineLine, { scaleY: 0, transformOrigin: 'top center' })
+      // Set initial states
       if (progressBar) gsap.set(progressBar, { scaleX: 0, transformOrigin: 'left center' })
+      gsap.set(card, { opacity: 0, y: 15 })
 
-      // === STEP 4: Build master timeline — the story flows, not stutters ===
+      // The master timeline — pinned, scroll-driven diary
       const masterTl = gsap.timeline({
         scrollTrigger: {
           trigger: section,
           start: 'top 10%',
-          end: `+=${WEDDING.timeline.length * 80}%`,
+          end: `+=${WEDDING.timeline.length * 100}%`,
           pin: true,
-          scrub: 0.5,
+          scrub: 0.6,
           anticipatePin: 1,
           onUpdate: (self) => {
             if (progressBar) {
@@ -809,250 +739,125 @@ function TimelineSection() {
         },
       })
 
-      masterTl.to(section, { opacity: 1, duration: 0.3 })
+      // Card fades in
+      masterTl.to(card, {
+        opacity: 1,
+        y: 0,
+        duration: 0.5,
+        ease: 'power2.out',
+      })
 
-      if (timelineLine) {
-        masterTl.to(timelineLine, {
-          scaleY: 1,
-          duration: 0.6,
-          ease: 'power2.inOut',
-        })
-      }
-
-      WEDDING.timeline.forEach((_, index) => {
-        const card = cards[index]
-        const svgPath = svgBorders[index]
-        const dot = dots[index]
-        const mobileDot = mobileDots[index]
-        const titleChars = allTitleChars[index]
-        const descChars = allDescChars[index]
-
-        if (!card) return
-
-        // Card enters softly — like turning a diary page
-        masterTl.to(card, {
-          opacity: 1,
-          y: 0,
-          scale: 1,
-          duration: 0.4,
-          ease: 'power3.out',
+      // Build the story — write, dissolve, write, dissolve...
+      WEDDING.timeline.forEach((item, index) => {
+        // Write title — handwriting reveal
+        masterTl.call(() => {
+          if (yearBadge) {
+            yearBadge.textContent = item.year
+            gsap.fromTo(yearBadge, { opacity: 0, y: -5 }, { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' })
+          }
+          if (titleEl) {
+            titleEl.textContent = item.title
+            handwritingReveal(titleEl, 0.018, 0.06)
+          }
         })
 
-        if (svgPath) {
-          masterTl.to(svgPath, {
-            strokeDashoffset: 0,
-            duration: 0.5,
+        // Hold for writing to complete (title is short)
+        masterTl.to({}, { duration: 0.6 })
+
+        // Write description — handwriting reveal
+        masterTl.call(() => {
+          if (descEl) {
+            descEl.textContent = item.description
+            handwritingReveal(descEl, 0.018, 0.06)
+          }
+        })
+
+        // Hold for emotional reading (~1.5s worth of scroll)
+        masterTl.to({}, { duration: 2.0 })
+
+        // Dissolve — text fades like disappearing ink
+        if (index < WEDDING.timeline.length - 1) {
+          masterTl.to([titleEl, descEl], {
+            opacity: 0,
+            filter: 'blur(2px)',
+            duration: 0.6,
             ease: 'power2.inOut',
-          }, '-=0.2')
-        }
+          })
 
-        // Corner flourishes
-        const cardEl = card.querySelector('.relative') as HTMLDivElement | null
-        if (cardEl) {
-          const cornerPaths = cardEl.querySelectorAll('.svg-corner-flourish')
-          cornerPaths.forEach((cp) => {
-            const pathEl = cp as SVGPathElement
-            try {
-              const cLen = pathEl.getTotalLength()
-              pathEl.style.strokeDasharray = String(cLen)
-              pathEl.style.strokeDashoffset = String(cLen)
-            } catch (_e) {
-              pathEl.style.strokeDasharray = '100'
-              pathEl.style.strokeDashoffset = '100'
+          // Year badge fades
+          if (yearBadge) {
+            masterTl.to(yearBadge, {
+              opacity: 0,
+              duration: 0.3,
+              ease: 'power2.in',
+            }, '-=0.4')
+          }
+
+          // Brief pause — the space between thoughts
+          masterTl.to({}, { duration: 0.3 })
+
+          // Reset for next paragraph
+          masterTl.call(() => {
+            if (titleEl) {
+              titleEl.innerHTML = ''
+              gsap.set(titleEl, { opacity: 1, filter: 'blur(0px)' })
+            }
+            if (descEl) {
+              descEl.innerHTML = ''
+              gsap.set(descEl, { opacity: 1, filter: 'blur(0px)' })
             }
           })
-          if (cornerPaths.length > 0) {
-            masterTl.to(cornerPaths, {
-              strokeDashoffset: 0,
-              duration: 0.25,
-              stagger: 0.06,
-              ease: 'power2.inOut',
-            }, '-=0.25')
-          }
-        }
-
-        // Dot reveal
-        if (dot) {
-          const dotRing = dot.querySelector('.timeline-dot-ring') as SVGPathElement | null
-          masterTl.to(dot, {
-            scale: 1,
-            opacity: 1,
-            duration: 0.35,
-            ease: 'back.out(1.7)',
-          }, '-=0.45')
-          if (dotRing) {
-            const ringLen = dotRing.getTotalLength ? dotRing.getTotalLength() : 163.36
-            dotRing.style.strokeDasharray = String(ringLen)
-            dotRing.style.strokeDashoffset = String(ringLen)
-            masterTl.to(dotRing, {
-              strokeDashoffset: 0,
-              duration: 0.35,
-              ease: 'power2.inOut',
-            }, '-=0.2')
-          }
-        }
-        if (mobileDot) {
-          masterTl.to(mobileDot, {
-            scale: 1,
-            opacity: 1,
-            duration: 0.35,
-            ease: 'back.out(1.7)',
-          }, '<')
-        }
-
-        // Title — words appearing like ink flowing
-        if (titleChars && titleChars.length > 0) {
-          masterTl.to(titleChars, {
-            opacity: 1,
-            y: 0,
-            rotation: 0,
-            duration: 0.18,
-            stagger: 0.025,
-            ease: 'power2.out',
-          }, '-=0.25')
-        }
-
-        // Description — ink flowing faster, story continuing
-        if (descChars && descChars.length > 0) {
-          masterTl.to(descChars, {
-            opacity: 1,
-            y: 0,
-            rotation: 0,
-            duration: 0.07,
-            stagger: 0.012,
-            ease: 'power2.out',
-          }, '-=0.1')
-        }
-
-        // The story continues — brief breath between pages
-        if (index < WEDDING.timeline.length - 1) {
-          masterTl.to({}, { duration: 0.08 })
         }
       })
 
       // Final breath — the diary page settles
-      masterTl.to({}, { duration: 0.05 })
+      masterTl.to({}, { duration: 0.5 })
     })
 
     return () => ctx.revert()
   }, [])
 
   return (
-    <section ref={sectionRef} className="sidomukti-pattern cinema-depth py-28 px-6 relative" style={{ opacity: 0 }}>
-      {/* Progress bar — thin, 1px, gold gradient */}
+    <section ref={sectionRef} className="diary-paper-bg diary-lines diary-margin cinema-depth py-28 px-6 relative" style={{ opacity: 0 }}>
+      {/* Progress bar — thin gold line at top */}
       <div
         ref={progressRef}
         className="absolute top-0 left-0 right-0 h-[1px] z-20"
         style={{ background: 'linear-gradient(90deg, var(--gold-dark), var(--gold), var(--gold-dark))', transform: 'scaleX(0)', transformOrigin: 'left center' }}
       />
 
-      <div ref={wrapperRef} className="max-w-4xl mx-auto text-center">
-        {/* FIXED: Title font changed to serif italic — diary handwriting feel */}
-        <h2 className="text-3xl sm:text-4xl mb-2 italic" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
-          Love Story
-        </h2>
-        <div className="ornament-divider max-w-xs mx-auto mb-16">
-          <span className="text-[var(--gold)] text-lg">&#10047;</span>
-        </div>
-
-        <div className="relative">
-          {/* Center line (desktop) */}
+      <div className="max-w-lg mx-auto">
+        {/* The diary card — one page, one story */}
+        <div
+          ref={cardRef}
+          className="diary-note-card diary-note-card-vignette relative p-8 sm:p-10 rounded-lg bg-white/80 backdrop-blur-sm shadow-lg overflow-hidden"
+          style={{ minHeight: '320px' }}
+        >
+          {/* Year badge — fixed at top-left like a diary date */}
           <div
-            ref={timelineLineRef}
-            className="hidden sm:block absolute left-1/2 top-0 bottom-0 w-[2px] -translate-x-1/2"
-            style={{ background: 'linear-gradient(to bottom, transparent, var(--gold), transparent)', transformOrigin: 'top center', transform: 'scaleY(0)' }}
+            ref={yearBadgeRef}
+            className="text-sm tracking-wider mb-6"
+            style={{ fontFamily: 'var(--font-body)', color: 'var(--gold)', opacity: 0.6 }}
+          >
+            {WEDDING.timeline[0]?.year}
+          </div>
+
+          {/* Title — serif italic, handwriting reveal */}
+          <div
+            ref={titleRef}
+            className="text-2xl sm:text-3xl mb-4 min-h-[1.5em]"
+            style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold-dark)', fontStyle: 'italic' }}
           />
 
-          {WEDDING.timeline.map((item, index) => (
-            <div
-              key={item.year}
-              ref={(el) => { if (el) cardsRef.current[index] = el }}
-              className={`relative flex flex-col sm:flex-row items-center mb-16 last:mb-0 ${
-                index % 2 === 0 ? 'sm:flex-row' : 'sm:flex-row-reverse'
-              }`}
-            >
-              {/* Timeline dot (desktop) */}
-              <div
-                ref={(el) => { if (el) dotsRef.current[index] = el }}
-                className="hidden sm:flex absolute left-1/2 -translate-x-1/2 w-14 h-14 rounded-full items-center justify-center z-10"
-                style={{ opacity: 0 }}
-              >
-                <svg width="56" height="56" viewBox="0 0 56 56" className="absolute inset-0">
-                  <circle
-                    cx="28" cy="28" r="26"
-                    fill="none"
-                    stroke="var(--gold)"
-                    strokeWidth="2"
-                    className="timeline-dot-ring"
-                    style={{ strokeDasharray: 163.36, strokeDashoffset: 163.36 }}
-                  />
-                </svg>
-                <span className="text-xs font-bold relative z-10" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold-dark)' }}>
-                  {item.year}
-                </span>
-              </div>
+          {/* Description — smaller serif, handwriting reveal */}
+          <div
+            ref={descriptionRef}
+            className="text-base sm:text-lg leading-relaxed min-h-[6em]"
+            style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}
+          />
 
-              {/* Content */}
-              <div className={`w-full sm:w-[calc(50%-40px)] ${index % 2 === 0 ? 'sm:pr-12 sm:text-right' : 'sm:pl-12 sm:text-left'}`}>
-                <div className="diary-note-card diary-note-card-vignette relative p-6 rounded-lg bg-white/80 backdrop-blur-sm shadow-md overflow-hidden" style={{ minHeight: '180px' }}>
-                  {/* SVG Border */}
-                  <svg
-                    className="absolute inset-0 w-full h-full pointer-events-none"
-                    viewBox="0 0 400 180"
-                    preserveAspectRatio="none"
-                  >
-                    <path
-                      ref={(el) => { if (el) svgBordersRef.current[index] = el }}
-                      d="M 9 1 L 391 1 Q 399 1 399 9 L 399 171 Q 399 179 391 179 L 9 179 Q 1 179 1 171 L 1 9 Q 1 1 9 1 Z"
-                      fill="none"
-                      stroke="var(--gold)"
-                      strokeWidth="1.5"
-                      opacity="0.6"
-                      vectorEffect="non-scaling-stroke"
-                    />
-                  </svg>
-
-                  {/* Corner flourishes */}
-                  <svg className="absolute top-0 left-0 w-10 h-10 pointer-events-none" viewBox="0 0 40 40">
-                    <path d="M 2 38 L 2 8 Q 2 2 8 2 L 38 2" fill="none" stroke="var(--gold)" strokeWidth="1.5" opacity="0.35" className="svg-corner-flourish" />
-                  </svg>
-                  <svg className="absolute bottom-0 right-0 w-10 h-10 pointer-events-none" viewBox="0 0 40 40">
-                    <path d="M 38 2 L 38 32 Q 38 38 32 38 L 2 38" fill="none" stroke="var(--gold)" strokeWidth="1.5" opacity="0.35" className="svg-corner-flourish" />
-                  </svg>
-
-                  {/* Mobile year dot */}
-                  <div className="sm:hidden flex items-center justify-center mb-3">
-                    <div
-                      ref={(el) => { if (el) mobileDotsRef.current[index] = el }}
-                      className="w-12 h-12 rounded-full border-2 border-[var(--gold)] flex items-center justify-center"
-                      style={{ background: 'var(--cream)', opacity: 0 }}
-                    >
-                      <span className="text-xs font-bold" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold-dark)' }}>
-                        {item.year}
-                      </span>
-                    </div>
-                  </div>
-
-                  <h3
-                    ref={(el) => { if (el) titlesRef.current[index] = el }}
-                    className="text-xl sm:text-2xl mb-3 relative z-10"
-                    style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold-dark)', fontStyle: 'italic' }}
-                  >
-                    {item.title}
-                  </h3>
-
-                  <div
-                    ref={(el) => { if (el) descriptionsRef.current[index] = el }}
-                    className="text-sm leading-relaxed min-h-[3em] relative z-10"
-                    style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}
-                  />
-                </div>
-              </div>
-
-              {/* Empty space for layout */}
-              <div className="hidden sm:block w-[calc(50%-40px)]" />
-            </div>
-          ))}
+          {/* Subtle bottom margin line */}
+          <div className="absolute bottom-6 left-8 right-8 h-[1px]" style={{ background: 'var(--gold)', opacity: 0.1 }} />
         </div>
       </div>
     </section>
@@ -1256,50 +1061,59 @@ function GallerySection() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [touchStart, setTouchStart] = useState<number | null>(null)
 
-  // Polaroid rotations
+  // Polaroid rotations — more variety (-4 to +4)
   const rotations = useRef(
-    WEDDING.galleryImages.map(() => Math.round((Math.random() - 0.5) * 4))
+    WEDDING.galleryImages.map(() => Math.round((Math.random() - 0.5) * 8))
+  )
+
+  // Varied sizes — some bigger (featured memories), some smaller
+  const photoSizes = useRef(
+    WEDDING.galleryImages.map((_, i) => {
+      // Featured memories: 1st, 5th, 9th
+      if (i % 4 === 0) return 300
+      if (i % 3 === 0) return 260
+      if (i % 2 === 0) return 220
+      return 180 + Math.round(Math.random() * 40)
+    })
   )
 
   useEffect(() => {
     const ctx = gsap.context(() => {
       fadeIn(sectionRef.current!, { duration: 1.2, y: 20 })
 
-      // Memories returning one by one — each photo is a separate moment
+      // Memories returning one by one — each photo arrives like a memory
       const polaroids = sectionRef.current!.querySelectorAll('.memory-photo')
       if (polaroids.length > 0) {
         polaroids.forEach((polaroid, i) => {
-          // Non-linear stagger: first 3 fast, middle steady, last 2 slow
-          const staggerDelay = i < 3 ? 0.15 * i : i < 8 ? 0.45 + 0.2 * (i - 3) : 1.45 + 0.35 * (i - 8)
+          // Organic rhythm, not linear — each memory arrives in its own time
+          const staggerDelay = 0.2 * i + Math.sin(i * 0.7) * 0.15
 
           gsap.fromTo(polaroid,
-            { opacity: 0, y: 30, scale: 0.88, rotation: -2, filter: 'blur(4px)' },
+            { opacity: 0, y: 40 + i * 5, scale: 0.85, rotation: -3 + Math.random() * 6, filter: 'blur(6px)' },
             {
               opacity: 1,
               y: 0,
               scale: 1,
               rotation: 0,
               filter: 'blur(0px)',
-              duration: 0.9,
+              duration: 1.2,
               delay: staggerDelay,
               ease: 'power3.out',
               scrollTrigger: {
                 trigger: sectionRef.current!,
-                start: 'top 78%',
+                start: 'top 75%',
                 toggleActions: 'play none none none',
               },
               onComplete: () => {
-                // Warm glow pulse — memory solidifying
-                gsap.fromTo(polaroid,
-                  { boxShadow: '0 0 0px rgba(201,169,110,0)' },
-                  {
-                    boxShadow: '0 0 25px rgba(201,169,110,0.12)',
-                    duration: 0.5,
-                    yoyo: true,
-                    repeat: 1,
-                    ease: 'power2.inOut',
-                  }
-                )
+                // After placement, add subtle floating — like the photo is alive
+                gsap.to(polaroid, {
+                  y: '+=3',
+                  duration: 2 + Math.random() * 2,
+                  ease: 'sine.inOut',
+                  yoyo: true,
+                  repeat: -1,
+                  delay: Math.random() * 2,
+                })
               },
             }
           )
@@ -1378,11 +1192,11 @@ function GallerySection() {
                 // Each photo placed at a slightly different position, like photos pinned to a diary page
                 transform: `rotate(${rotations.current[index]}deg)`,
                 // Vary sizes — some bigger (featured memories), some smaller (casual moments)
-                maxWidth: index % 3 === 0 ? '280px' : index % 3 === 1 ? '220px' : '200px',
-                // Offset positions for organic feel
-                marginLeft: index % 2 === 0 ? 'auto' : '5%',
-                marginRight: index % 2 === 0 ? '5%' : 'auto',
-                marginBottom: index % 3 === 0 ? '-10px' : '0',
+                maxWidth: `${photoSizes.current[index]}px`,
+                // Offset positions for organic feel — overlap with negative margins
+                marginLeft: index % 3 === 0 ? 'auto' : index % 3 === 1 ? '8%' : '2%',
+                marginRight: index % 3 === 0 ? '2%' : index % 3 === 1 ? 'auto' : '8%',
+                marginBottom: index % 2 === 0 ? '-15px' : '-5px',
               }}
               onClick={() => openLightbox(index)}
               role="button"
@@ -1578,7 +1392,7 @@ function ClosingSection() {
               setTimeout(() => {
                 if (finalLineRef.current) {
                   gsap.set(finalLineRef.current, { opacity: 1 })
-                  handwritingReveal(finalLineRef.current, 0.06, 0.15, 0.8)
+                  handwritingReveal(finalLineRef.current, 0.08, 0.2, 1.2)
                 }
                 // Golden shimmer sweep — like the last light of golden hour
                 setTimeout(() => {
@@ -1592,17 +1406,34 @@ function ClosingSection() {
                         ease: 'power1.inOut',
                         onComplete: () => {
                           gsap.set(shimmerRef.current!, { opacity: 0 })
-                          // After the shimmer, wait 1.5s then begin fade-to-warm-darkness
+                          // Soft focus blur — content softly blurs like eyes closing
+                          const contentEl = sectionRef.current?.querySelector('.relative.z-10') as HTMLDivElement | null
+                          if (contentEl) {
+                            gsap.to(contentEl, {
+                              filter: 'blur(2px)',
+                              duration: 4,
+                              ease: 'power2.inOut',
+                            })
+                          }
+                          // Diary page settling — subtle scale-down like closing
+                          if (contentEl) {
+                            gsap.to(contentEl, {
+                              scale: 0.98,
+                              duration: 4,
+                              ease: 'power2.inOut',
+                            })
+                          }
+                          // After the shimmer, wait 1.5s then begin fade-to-warm-darkness (slower: 8s)
                           setTimeout(() => {
                             const fadeOverlay = sectionRef.current?.querySelector('.ending-fade-overlay') as HTMLDivElement | null
                             if (fadeOverlay) {
                               gsap.to(fadeOverlay, {
                                 opacity: 0.85,
-                                duration: 6,
+                                duration: 8,
                                 ease: 'power2.inOut',
                               })
                             }
-                            // After the darkness settles, fade in the date
+                            // After the darkness settles (5s after darkness starts), fade in the date
                             // The last thing you see — the beginning of forever
                             setTimeout(() => {
                               if (dateRef.current) {
@@ -1613,7 +1444,7 @@ function ClosingSection() {
                                   ease: 'power2.out',
                                 })
                               }
-                            }, 3500)
+                            }, 5000)
                           }, 1500)
                         },
                       }
@@ -1743,7 +1574,7 @@ function ClosingSection() {
             className="text-2xl sm:text-3xl gold-shimmer-text"
             style={{ fontFamily: 'var(--font-script)' }}
           >
-            Cerita kami belum selesai...
+            Cerita mereka belum selesai...
           </p>
         </div>
 
@@ -1851,17 +1682,17 @@ export default function Home() {
     // Speed zones based on scroll position — like a conductor's tempo markings
     const getSpeedForPosition = (scrollY: number, docHeight: number) => {
       const progress = scrollY / docHeight
-      if (progress < 0.05) return 0.4    // Cover — slow, reverent
-      if (progress < 0.12) return 1.2    // Transition to Bismillah — flowing
-      if (progress < 0.20) return 0.5    // Bismillah — slow, sacred
-      if (progress < 0.30) return 1.0    // Transition to couple — moving
-      if (progress < 0.40) return 0.6    // Couple names — breathing
-      if (progress < 0.50) return 1.2    // Transitions — flowing
-      if (progress < 0.60) return 0.8    // Diary/timeline — reading
-      if (progress < 0.70) return 1.0    // Countdown/events — medium
-      if (progress < 0.80) return 1.0    // Gallery — flowing
-      if (progress < 0.90) return 0.6    // Wishes — breathing
-      return 0.3                          // Closing — slow, emotional
+      if (progress < 0.05) return 0.7    // Cover — was 0.4, now faster
+      if (progress < 0.12) return 1.8    // Transition — was 1.2
+      if (progress < 0.20) return 0.8    // Bismillah — was 0.5
+      if (progress < 0.30) return 1.5    // Transition — was 1.0
+      if (progress < 0.40) return 1.0    // Couple — was 0.6
+      if (progress < 0.50) return 1.8    // Transitions — was 1.2
+      if (progress < 0.60) return 1.2    // Diary/story — was 0.8
+      if (progress < 0.70) return 1.5    // Countdown/events — was 1.0
+      if (progress < 0.80) return 1.5    // Gallery — was 1.0
+      if (progress < 0.90) return 1.0    // Wishes — was 0.6
+      return 0.5                          // Closing — was 0.3
     }
 
     const state = autoScrollState.current
@@ -1880,8 +1711,8 @@ export default function Home() {
       state.targetSpeed = getSpeedForPosition(window.scrollY, document.documentElement.scrollHeight)
 
       // Smooth acceleration — ease into new speed, never snap
-      // Lerp factor 0.03 means ~30 frames to reach target (0.5s at 60fps)
-      const lerpFactor = 0.03
+      // Lerp factor 0.05 means ~20 frames to reach target (more responsive)
+      const lerpFactor = 0.05
       state.currentSpeed += (state.targetSpeed - state.currentSpeed) * lerpFactor
 
       // Only scroll if we've built up enough speed to avoid jerky starts
@@ -1893,11 +1724,11 @@ export default function Home() {
       animationId = requestAnimationFrame(autoScroll)
     }
 
-    // Start after the story breathes in — 2s delay
+    // Start after the story breathes in — 1.2s delay
     const startTimeout = setTimeout(() => {
-      state.currentSpeed = 0.2 // Gentle start, will ramp up smoothly
+      state.currentSpeed = 0.5 // Faster start, will ramp up smoothly
       animationId = requestAnimationFrame(autoScroll)
-    }, 2000)
+    }, 1200)
 
     // User takes control — story pauses respectfully, then resumes smoothly
     const pauseAndResume = () => {
@@ -1906,7 +1737,7 @@ export default function Home() {
       cancelAnimationFrame(animationId)
       clearTimeout(resumeTimeout)
 
-      // Resume after 3s — story gently continues from where we are
+      // Resume after 2.5s — story gently continues from where we are
       resumeTimeout = setTimeout(() => {
         userScrollingRef.current = false
         state.paused = false
@@ -1917,7 +1748,7 @@ export default function Home() {
           state.currentSpeed *= 0.5
           animationId = requestAnimationFrame(autoScroll)
         }
-      }, 3000)
+      }, 2500)
     }
 
     const onWheel = () => pauseAndResume()
@@ -1961,7 +1792,7 @@ export default function Home() {
             <BismillahSection />
             <CoupleSection />
             <DiaryIntroSection />
-            <TimelineSection />
+            <DiaryStorySection />
             {/* LamaranSection and MenikahSection REMOVED — covered in Timeline */}
             <CountdownSection />
             <EventSection />

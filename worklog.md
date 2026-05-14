@@ -345,3 +345,110 @@ Stage Summary:
 - Phase timings slowed from 1600ms total → 2400ms for more cinematic breathing room
 - No lint errors in modified source files (existing no-this-alias warnings are from GSAP/Lenis third-party code)
 - Dev server compiles and serves successfully (HTTP 200)
+
+---
+Task ID: 3
+Agent: full-stack-developer
+Task: Cinematic Wedding Refinement — CoverSection.tsx Hero Enhancement
+
+Work Log:
+- Added 3 new atmospheric layers after "Subtle golden light drift" div:
+  1. Warm ambient breathing glow (z-[2.5]) — radial-gradient at 50% 40% with warmGlow 6s animation, like a candle behind parchment
+  2. Light leak streak (z-[2.8]) — linear-gradient from top-left at 135deg with goldenLightDrift 18s reverse, like sunlight through a window
+  3. Cinematic dust particles layer (z-[2.6] mix-blend-screen) — SVG fractalNoise with baseFrequency 0.7, opacity 0.3, motes caught in golden light
+- Added golden light rays div (z-[3.3]) after cinematic light sweep — dual linear-gradient (170deg + 190deg) that appears during blooming/breathing phases and shifts upward during dissolving, like sunbeams through a doorway
+- Added depth of field layer (z-[19]) after corner ornaments — backdropFilter blur(1px) when idle that clears to blur(0px) when opening, with 1.5s ease transition, creating foreground-to-focus cinematic effect
+- Expanded petalConfigs from 8 to 12 petals with more varied positions (8-96% left), sizes (5-16px), durations (9-12s), delays (0-3s), and opacities (0.1-0.35) for richer ambient atmosphere
+- Tightened phase transition timings for snappier cinematic feel:
+  - blooming: 300ms → 250ms
+  - breathing: 800ms → 700ms
+  - dissolving: 1100ms → 1000ms
+  - darkness: 2000ms → 1800ms
+  - onOpen: 2400ms → 2200ms
+  - Total opening: 2400ms → 2200ms (200ms tighter, more decisive)
+- Enhanced I&A seal div with warm bloom glow: added `0 0 30px rgba(201,169,110,0.1)` to box-shadow and `warmGlow 4s ease-in-out infinite alternate` animation for pulsing candlelight effect
+
+Stage Summary:
+- CoverSection.tsx: 283 → 340 lines
+- 6 new atmospheric/effect layers added (3 ambient + 1 light rays + 1 depth of field + seal glow enhancement)
+- Hero opening now has 5 distinct atmospheric layers + 3 signature moment layers + depth of field + 12 petals
+- Phase timings tightened by 200ms total for snappier cinematic entry
+- Seal now pulses with warm candlelight glow
+- No new lint errors introduced (all existing errors are from GSAP/Lenis in page.tsx)
+- Dev server compiles and serves successfully (HTTP 200)
+
+---
+Task ID: 4
+Agent: CSS/Atmosphere Specialist
+Task: Cinematic Wedding Refinement — globals.css Atmosphere & Lighting
+
+Work Log:
+- Updated warmGlow keyframe values (30%: 0.07→0.08, 80%: 0.06→0.07) for more visible candlelight breathing
+- Added 5 new keyframe animations: inkDissolve, memoryFloat, diarySettle, softLightLeak, emotionalBreathe
+- Added .cinema-ambient-glow class with triple radial-gradient and warmGlow 10s animation — multi-point golden warmth like candlelight in a room
+- Added .diary-story-card class with emotionalBreathe 8s animation, layered box-shadow, golden vignette ::before
+- Added .ink-dissolve-out and .memory-float utility classes
+- Enhanced .cinema-vignette::before: changed from 2-stop (transparent 40% → 0.5) to 3-stop (transparent 35% → 0.6 at 80% → 0.75 at 100%), moved inner glow to 50% 30% with 0.06 opacity
+- Added .soft-light-leak class — diagonal golden gradient with softLightLeak 15s animation
+- Enhanced body::after paper grain: SVG noise opacity 0.03→0.035, body opacity 0.35→0.4
+- Added .cinema-shadow-depth class — triple box-shadow for page-like depth effect
+
+Stage Summary:
+- globals.css: 7 atmospheric enhancements (vignette, ambient glow, paper grain, light leak, emotional lighting)
+- All new animations respect prefers-reduced-motion
+- Dev server compiles successfully (HTTP 200)
+- No new lint errors introduced
+
+---
+Task ID: 2
+Agent: full-stack-developer
+Task: Cinematic Wedding Refinement — DiaryStorySection, Auto-Scroll, Gallery, Closing
+
+Work Log:
+
+### CHANGE 1: Replaced TimelineSection with DiaryStorySection
+- Removed entire TimelineSection component (~360 lines: multiple cards, SVG borders, timeline dots, left/right layout, corner flourishes, mobile dots)
+- Created new DiaryStorySection component (~170 lines): one single pinned diary card with progressive story telling
+- One fixed elegant diary page/card centered on screen using GSAP ScrollTrigger pin
+- Story paragraphs write in with handwritingReveal (stagger 0.018, charDuration 0.06 — fast, natural flow)
+- Each paragraph: write in → hold for emotional reading (2.0s scroll distance) → dissolve like disappearing ink (opacity 1→0, blur 2px)
+- Brief pause between paragraphs (0.3s — the space between thoughts)
+- Year badge at top-left changes with each paragraph (fades out/in)
+- After dissolve, text clears and next paragraph writes in the EXACT SAME position
+- Progress indicator: thin gold line at top of section
+- Container: diary-paper-bg diary-lines diary-margin cinema-depth, py-28 px-6
+- Centered max-w-lg diary card with diary-note-card diary-note-card-vignette styling
+- Title in serif italic, description in smaller serif
+
+### CHANGE 2: Auto-scroll speed improvements (1.5x-2x faster)
+- Updated getSpeedForPosition: cover 0.4→0.7, transition 1.2→1.8, Bismillah 0.5→0.8, transition 1.0→1.5, couple 0.6→1.0, transitions 1.2→1.8, diary/story 0.8→1.2, countdown/events 1.0→1.5, gallery 1.0→1.5, wishes 0.6→1.0, closing 0.3→0.5
+- Initial start delay: 2000ms → 1200ms
+- lerpFactor: 0.03 → 0.05 (more responsive acceleration)
+- Initial speed: 0.2 → 0.5
+- Resume timeout: 3000ms → 2500ms
+
+### CHANGE 3: Gallery Section — Memory Placement
+- Updated rotations: Math.round((Math.random() - 0.5) * 4) → Math.round((Math.random() - 0.5) * 8) for more variety (-4 to +4 degrees)
+- Added photoSizes ref with varied maxWidth (180px to 300px): featured memories at i%4===0 get 300px, i%3===0 get 260px, etc.
+- Updated GSAP animation: organic rhythm stagger (0.2 * i + Math.sin(i * 0.7) * 0.15), deeper blur(6px), longer duration 1.2s, y starts at 40 + i * 5, scale 0.85, rotation -3 + Math.random() * 6
+- After placement: subtle floating animation (y: +=3, 2-4s duration, sine.inOut, yoyo, infinite) — photos are alive
+- Updated inline styles: varied maxWidth from photoSizes ref, more varied margins (3-way split), negative marginBottom for overlap (-15px / -5px)
+
+### CHANGE 4: Closing Section — Emotional Aftertaste
+- Changed handwritingReveal final line: stagger 0.06→0.08, charDuration 0.15→0.2, delay 0.8→1.2 (slower, more emotional)
+- Added soft focus blur before darkness: content blurs to blur(2px) over 4s with power2.inOut easing — like eyes closing
+- Added diary page settling: content scales down 1→0.98 over 4s — like the diary page closing
+- Changed fade-to-darkness duration: 6s → 8s (slower, more gradual)
+- Changed date reveal timing: 3.5s → 5s after darkness starts (later, more anticipation)
+- Changed final text: "Cerita kami belum selesai..." → "Cerita mereka belum selesai..." (third-person, diary narrator speaking about the couple)
+
+### ALSO: Updated Home component rendering
+- Changed `<TimelineSection />` to `<DiaryStorySection />`
+
+Stage Summary:
+- TimelineSection fully replaced with immersive DiaryStorySection (single pinned diary card with progressive dissolve transitions)
+- Auto-scroll is now 1.5-2x faster across all speed zones with more responsive acceleration
+- Gallery photos arrive like memories with organic stagger, deeper blur-to-focus, and continuous subtle floating
+- Closing section has enhanced emotional ending: slower handwriting, soft focus blur, page settling, slower darkness, later date reveal, third-person narrator
+- Page compiles successfully (HTTP 200, no TS errors in page.tsx, no lint errors in source files)
+- Removed unused currentIndexRef from DiaryStorySection
