@@ -693,6 +693,12 @@ html.lenis, html.lenis body {
   50% { opacity: 0; }
 }
 
+/* Handwriting character base style */
+.hw-char {
+  display: inline-block;
+  will-change: opacity, transform;
+}
+
 .lenis.lenis-smooth {
   scroll-behavior: auto !important;
 }

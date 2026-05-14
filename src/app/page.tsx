@@ -150,12 +150,13 @@ function CursorFollower() {
 // Cover / Hero Section - using enhanced CoverSection component
 // The CoverSectionComponent is imported and used directly in the Home component
 
-// Bismillah Section with elegant reveal (Arabic kept intact to preserve cursive connections)
+// Bismillah Section with typewriter animation on the quote text
 function BismillahSection() {
   const sectionRef = useRef<HTMLDivElement>(null)
   const arabicRef = useRef<HTMLDivElement>(null)
   const quoteRef = useRef<HTMLDivElement>(null)
   const sourceRef = useRef<HTMLDivElement>(null)
+  const hasAnimated = useRef(false)
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -163,7 +164,6 @@ function BismillahSection() {
       fadeIn(sectionRef.current!, { y: 30 })
 
       // Arabic text: animate as whole block to preserve cursive letter connections
-      // Splitting Arabic chars with inline-block breaks the connected script
       if (arabicRef.current) {
         gsap.fromTo(arabicRef.current,
           { opacity: 0, scale: 0.85, filter: 'blur(8px)' },
@@ -182,12 +182,95 @@ function BismillahSection() {
         )
       }
 
-      fadeIn(quoteRef.current!, { delay: 0.5, y: 20 })
-      fadeIn(sourceRef.current!, { delay: 0.8, y: 15 })
+      // Typewriter animation on the quote text (Surah Ar-Rum: 21)
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting && !hasAnimated.current) {
+              hasAnimated.current = true
+              typewriterReveal(quoteRef.current!, sourceRef.current!)
+            }
+          })
+        },
+        { threshold: 0.3 }
+      )
+
+      if (sectionRef.current) {
+        observer.observe(sectionRef.current)
+      }
+
+      return () => observer.disconnect()
     })
 
     return () => ctx.revert()
   }, [])
+
+  // Typewriter effect: characters appear one by one with blinking cursor
+  const typewriterReveal = (quoteEl: HTMLParagraphElement, sourceEl: HTMLParagraphElement) => {
+    if (!quoteEl) return
+
+    const fullText = quoteEl.textContent || ''
+    quoteEl.innerHTML = ''
+
+    // Create cursor element
+    const cursor = document.createElement('span')
+    cursor.className = 'typewriter-cursor'
+    cursor.textContent = '|'
+    cursor.style.cssText = `
+      display: inline-block;
+      animation: typewriterBlink 0.7s step-end infinite;
+      color: var(--gold);
+      font-weight: 300;
+      margin-left: 1px;
+    `
+
+    // Create a span for each character
+    const charSpans: HTMLSpanElement[] = []
+    for (let i = 0; i < fullText.length; i++) {
+      const span = document.createElement('span')
+      span.textContent = fullText[i]
+      span.style.opacity = '0'
+      span.style.display = 'inline'
+      quoteEl.appendChild(span)
+      charSpans.push(span)
+    }
+    quoteEl.appendChild(cursor)
+
+    // Animate each character appearing
+    const tl = gsap.timeline()
+
+    tl.to(charSpans, {
+      opacity: 1,
+      duration: 0.01,
+      stagger: 0.035,
+      ease: 'none',
+      onStart: () => {
+        // Make source visible but keep it hidden until quote is done
+        if (sourceEl) {
+          gsap.set(sourceEl, { opacity: 0, y: 10 })
+        }
+      },
+    })
+
+    // Remove cursor and reveal source
+    tl.to(cursor, {
+      opacity: 0,
+      duration: 0.3,
+      onComplete: () => {
+        cursor.remove()
+      },
+    }, '+=0.2')
+
+    // Reveal the source line
+    if (sourceEl) {
+      tl.to(sourceEl, {
+        opacity: 1,
+        y: 0,
+        duration: 0.6,
+        ease: 'power2.out',
+      }, '-=0.1')
+    }
+  }
 
   return (
     <section ref={sectionRef} className="py-20 px-6 text-center" style={{ background: 'var(--cream)', opacity: 0 }}>
@@ -195,10 +278,10 @@ function BismillahSection() {
         <p ref={arabicRef} className="text-3xl sm:text-4xl md:text-5xl mb-6 leading-relaxed" style={{ fontFamily: 'var(--font-arabic)', color: 'var(--brown)', opacity: 0 }}>
           بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
         </p>
-        <p ref={quoteRef} className="text-base sm:text-lg italic leading-relaxed" style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}>
+        <p ref={quoteRef} className="text-base sm:text-lg italic leading-relaxed min-h-[5em]" style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}>
           &ldquo;Dan di antara tanda-tanda kekuasaan-Nya ialah Dia menciptakan untukmu pasangan hidup dari jenismu sendiri, supaya kamu merasa tenteram kepadanya, dan dijadikan-Nya di antaramu rasa kasih dan sayang.&rdquo;
         </p>
-        <p ref={sourceRef} className="mt-4 text-sm" style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}>
+        <p ref={sourceRef} className="mt-4 text-sm" style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)', opacity: 0 }}>
           — QS. Ar-Rum: 21
         </p>
       </div>
@@ -324,7 +407,7 @@ function QuoteSection() {
         <p className="text-2xl sm:text-3xl md:text-4xl italic leading-relaxed mb-6" style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold-light)' }}>
           &ldquo;Apa yang menjadi takdirmu akan menemukan jalannya untuk menemukanmu.&rdquo;
         </p>
-        <p className="text-sm tracking-widest uppercase" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold-light)]' }}>
+        <p className="text-sm tracking-widest uppercase" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold-light)' }}>
           — Sayidina Ali bin Abi Thalib
         </p>
       </div>
@@ -332,266 +415,28 @@ function QuoteSection() {
   )
 }
 
-// Individual Timeline Story Card with handwriting animation
-function TimelineStoryCard({ item, index, shouldAnimate, onStart, onComplete }: {
-  item: { year: string; title: string; description: string }
-  index: number
-  shouldAnimate: boolean
-  onStart: () => void
-  onComplete: () => void
-}) {
-  const cardRef = useRef<HTMLDivElement>(null)
-  const titleRef = useRef<HTMLHeadingElement>(null)
-  const dotRef = useRef<HTMLDivElement>(null)
-  const textContainerRef = useRef<HTMLDivElement>(null)
-  const mobileDotRef = useRef<HTMLDivElement>(null)
-  const borderRef = useRef<HTMLDivElement>(null)
-  const hasAnimated = useRef(false)
-  const onCompleteRef = useRef(onComplete)
-  const onStartRef = useRef(onStart)
-  const charsPreparedRef = useRef(false)
-
-  useEffect(() => {
-    onCompleteRef.current = onComplete
-    onStartRef.current = onStart
-  }, [onComplete, onStart])
-
-  // Prepare characters for handwriting animation — only when shouldAnimate is true
-  useEffect(() => {
-    if (!shouldAnimate || !textContainerRef.current || charsPreparedRef.current) return
-    charsPreparedRef.current = true
-
-    // Split text into words, then characters — preserve spaces
-    const text = item.description
-    const container = textContainerRef.current
-    container.innerHTML = ''
-
-    const words = text.split(' ')
-    words.forEach((word, wordIdx) => {
-      const wordSpan = document.createElement('span')
-      wordSpan.style.whiteSpace = 'nowrap'
-      wordSpan.style.display = 'inline'
-
-      for (let i = 0; i < word.length; i++) {
-        const charSpan = document.createElement('span')
-        charSpan.className = 'handwriting-char'
-        charSpan.style.display = 'inline-block'
-        charSpan.style.willChange = 'opacity, transform'
-        charSpan.style.opacity = '0'
-        charSpan.style.transform = 'translateY(4px) rotate(-3deg)'
-        charSpan.style.minWidth = '0.1em'
-        charSpan.textContent = word[i]
-        wordSpan.appendChild(charSpan)
-      }
-
-      container.appendChild(wordSpan)
-
-      // Add space between words
-      if (wordIdx < words.length - 1) {
-        const space = document.createElement('span')
-        space.innerHTML = '\u00A0'
-        space.style.opacity = '0'
-        space.className = 'handwriting-char'
-        space.style.willChange = 'opacity'
-        container.appendChild(space)
-      }
-    })
-  }, [shouldAnimate, item.description])
-
-  // Trigger handwriting when shouldAnimate becomes true
-  useEffect(() => {
-    if (!shouldAnimate || hasAnimated.current) return
-
-    // Small delay to ensure DOM is ready
-    const timer = setTimeout(() => {
-      if (hasAnimated.current) return
-      hasAnimated.current = true
-      onStartRef.current()
-
-      const tl = gsap.timeline({
-        onComplete: () => {
-          onCompleteRef.current()
-        },
-      })
-
-      // Step 1: Card border draws in
-      if (borderRef.current) {
-        tl.fromTo(borderRef.current,
-          { clipPath: 'inset(0 100% 100% 0)' },
-          { clipPath: 'inset(0 0% 0% 0%)', duration: 0.8, ease: 'power2.inOut' },
-          0
-        )
-      }
-
-      // Step 2: Timeline dot pops in
-      if (dotRef.current) {
-        tl.fromTo(dotRef.current,
-          { scale: 0, opacity: 0 },
-          { scale: 1, opacity: 1, duration: 0.5, ease: 'back.out(2)' },
-          0.3
-        )
-      }
-
-      // Mobile dot
-      if (mobileDotRef.current) {
-        tl.fromTo(mobileDotRef.current,
-          { scale: 0, opacity: 0 },
-          { scale: 1, opacity: 1, duration: 0.5, ease: 'back.out(2)' },
-          0.3
-        )
-      }
-
-      // Step 3: Title writes in (character by character with slight rotation)
-      if (titleRef.current) {
-        const titleText = titleRef.current.textContent || ''
-        titleRef.current.innerHTML = ''
-        const titleChars: HTMLSpanElement[] = []
-
-        for (const char of titleText) {
-          const span = document.createElement('span')
-          span.style.display = 'inline-block'
-          span.style.willChange = 'opacity, transform'
-          span.style.opacity = '0'
-          span.style.transform = 'translateY(8px) rotate(-5deg)'
-          span.textContent = char === ' ' ? '\u00A0' : char
-          titleRef.current.appendChild(span)
-          titleChars.push(span)
-        }
-
-        tl.to(titleChars, {
-          opacity: 1,
-          y: 0,
-          rotation: 0,
-          duration: 0.15,
-          stagger: 0.04,
-          ease: 'power2.out',
-        }, 0.5)
-      }
-
-      // Step 4: Description handwriting animation
-      if (textContainerRef.current) {
-        const chars = textContainerRef.current.querySelectorAll('.handwriting-char')
-
-        // Animate each character appearing as if being written
-        tl.to(chars, {
-          opacity: 1,
-          y: 0,
-          rotation: 0,
-          duration: 0.08,
-          stagger: 0.022, // Smooth handwriting pace
-          ease: 'power1.out',
-        }, 0.9)
-      }
-    }, 100)
-
-    return () => clearTimeout(timer)
-  }, [shouldAnimate])
-
-  return (
-    <div
-      ref={cardRef}
-      className={`relative flex flex-col sm:flex-row items-center mb-16 last:mb-0 ${
-        index % 2 === 0 ? 'sm:flex-row' : 'sm:flex-row-reverse'
-      }`}
-    >
-      {/* Timeline dot */}
-      <div
-        ref={dotRef}
-        className="hidden sm:flex absolute left-1/2 -translate-x-1/2 w-12 h-12 rounded-full border-2 border-[var(--gold)] items-center justify-center z-10"
-        style={{ background: 'var(--cream)', opacity: 0 }}
-      >
-        <span className="text-xs font-bold" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold-dark)' }}>
-          {item.year}
-        </span>
-      </div>
-
-      {/* Content */}
-      <div className={`w-full sm:w-[calc(50%-40px)] ${index % 2 === 0 ? 'sm:pr-12 sm:text-right' : 'sm:pl-12 sm:text-left'}`}>
-        <div className="bg-white/80 backdrop-blur-sm rounded-lg p-6 shadow-md border border-[var(--gold)]/20 relative overflow-hidden">
-          {/* Animated border draw */}
-          <div
-            ref={borderRef}
-            className="absolute inset-0 rounded-lg pointer-events-none"
-            style={{
-              clipPath: 'inset(0 100% 100% 0%)',
-              border: '2px solid var(--gold)',
-              opacity: 0.4,
-            }}
-          />
-
-          {/* Decorative corner accent */}
-          <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 opacity-30" style={{ borderColor: 'var(--gold)' }} />
-          <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 opacity-30" style={{ borderColor: 'var(--gold)' }} />
-
-          {/* Mobile year */}
-          <div className="sm:hidden flex items-center justify-center mb-3">
-            <div
-              ref={mobileDotRef}
-              className="w-12 h-12 rounded-full border-2 border-[var(--gold)] flex items-center justify-center"
-              style={{ background: 'var(--cream)', opacity: 0 }}
-            >
-              <span className="text-xs font-bold" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold-dark)' }}>
-                {item.year}
-              </span>
-            </div>
-          </div>
-
-          <h3
-            ref={titleRef}
-            className="text-xl sm:text-2xl mb-3"
-            style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)', opacity: 1 }}
-          >
-            {item.title}
-          </h3>
-
-          {/* Handwriting text area */}
-          <div
-            ref={textContainerRef}
-            className="text-sm leading-relaxed min-h-[3em]"
-            style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}
-          />
-        </div>
-      </div>
-
-      {/* Empty space for layout */}
-      <div className="hidden sm:block w-[calc(50%-40px)]" />
-    </div>
-  )
-}
-
-// Timeline Section with sequential handwriting storytelling + auto-scroll
+// Timeline Section with sequential handwriting animation + auto-scroll
 function TimelineSection() {
   const sectionRef = useRef<HTMLDivElement>(null)
-  const completedRef = useRef<Set<number>>(new Set())
-  const [, forceUpdate] = useState(0)
+  const cardsRef = useRef<HTMLDivElement[]>([])
+  const dotsRef = useRef<HTMLDivElement[]>([])
+  const mobileDotsRef = useRef<HTMLDivElement[]>([])
+  const bordersRef = useRef<HTMLDivElement[]>([])
+  const titlesRef = useRef<HTMLHeadingElement[]>([])
+  const descriptionsRef = useRef<HTMLDivElement[]>([])
+  const hasAnimated = useRef(false)
   const autoScrollRef = useRef<number | null>(null)
   const isScrollPausedRef = useRef(false)
-  const userScrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const userScrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Detect user manual scroll to pause auto-scroll temporarily
   useEffect(() => {
-    const handleUserScroll = () => {
-      // If auto-scroll is active, detect manual scroll by checking if scroll position
-      // differs significantly from where auto-scroll would put it
-      isScrollPausedRef.current = true
-
-      if (userScrollTimeoutRef.current) {
-        clearTimeout(userScrollTimeoutRef.current)
-      }
-
-      // Resume auto-scroll after 3 seconds of no manual scrolling
-      userScrollTimeoutRef.current = setTimeout(() => {
-        isScrollPausedRef.current = false
-      }, 3000)
-    }
-
-    // Use wheel/touch events to detect intentional user scroll
     const handleWheel = () => {
       isScrollPausedRef.current = true
       if (userScrollTimeoutRef.current) clearTimeout(userScrollTimeoutRef.current)
       userScrollTimeoutRef.current = setTimeout(() => {
         isScrollPausedRef.current = false
-      }, 3000)
+      }, 2000)
     }
 
     const handleTouchStart = () => {
@@ -599,7 +444,7 @@ function TimelineSection() {
       if (userScrollTimeoutRef.current) clearTimeout(userScrollTimeoutRef.current)
       userScrollTimeoutRef.current = setTimeout(() => {
         isScrollPausedRef.current = false
-      }, 5000)
+      }, 3000)
     }
 
     window.addEventListener('wheel', handleWheel, { passive: true })
@@ -612,11 +457,11 @@ function TimelineSection() {
     }
   }, [])
 
-  // Slow auto-scroll function
+  // Auto-scroll: faster speed, scrolls until timeline section bottom is visible
   const startAutoScroll = useCallback(() => {
-    if (autoScrollRef.current) return // Already scrolling
+    if (autoScrollRef.current) return
 
-    const scrollSpeed = 0.4 // pixels per frame — very slow and gentle
+    const scrollSpeed = 1.2 // pixels per frame — faster than before
 
     const scrollStep = () => {
       if (isScrollPausedRef.current) {
@@ -624,9 +469,7 @@ function TimelineSection() {
         return
       }
 
-      // Check if all cards are complete — stop scrolling
-      const allDone = completedRef.current.size >= WEDDING.timeline.length
-      if (allDone) {
+      if (!sectionRef.current) {
         if (autoScrollRef.current) {
           cancelAnimationFrame(autoScrollRef.current)
           autoScrollRef.current = null
@@ -634,19 +477,17 @@ function TimelineSection() {
         return
       }
 
-      // Check if the timeline section is still in view
-      if (sectionRef.current) {
-        const rect = sectionRef.current.getBoundingClientRect()
-        const sectionBottom = rect.bottom
+      const rect = sectionRef.current.getBoundingClientRect()
+      const sectionBottom = rect.bottom
+      const viewHeight = window.innerHeight
 
-        // Stop scrolling if we've passed the section
-        if (sectionBottom < 100) {
-          if (autoScrollRef.current) {
-            cancelAnimationFrame(autoScrollRef.current)
-            autoScrollRef.current = null
-          }
-          return
+      // Stop if the section bottom is fully visible in the viewport
+      if (sectionBottom <= viewHeight) {
+        if (autoScrollRef.current) {
+          cancelAnimationFrame(autoScrollRef.current)
+          autoScrollRef.current = null
         }
+        return
       }
 
       window.scrollBy(0, scrollSpeed)
@@ -656,7 +497,6 @@ function TimelineSection() {
     autoScrollRef.current = requestAnimationFrame(scrollStep)
   }, [])
 
-  // Stop auto-scroll
   const stopAutoScroll = useCallback(() => {
     if (autoScrollRef.current) {
       cancelAnimationFrame(autoScrollRef.current)
@@ -664,49 +504,23 @@ function TimelineSection() {
     }
   }, [])
 
-  // Handle card completion — triggers next card
-  const handleCardComplete = useCallback((index: number) => {
-    completedRef.current.add(index)
-    forceUpdate(n => n + 1)
-
-    // If all cards are done, stop auto-scroll
-    if (completedRef.current.size >= WEDDING.timeline.length) {
-      stopAutoScroll()
-    }
-  }, [stopAutoScroll])
-
-  // Handle card start — begin auto-scroll on first card
-  const handleCardStart = useCallback((index: number) => {
-    if (index === 0) {
-      startAutoScroll()
-    }
-  }, [startAutoScroll])
-
-  // Determine which card should be active
-  // Card N is active if all cards before it are complete
-  const getActiveCardIndex = useCallback((): number => {
-    for (let i = 0; i < WEDDING.timeline.length; i++) {
-      if (!completedRef.current.has(i)) return i
-    }
-    return WEDDING.timeline.length // All complete
-  }, [])
-
-  // Kick off the first card when section enters viewport
+  // Main animation: triggered once when section enters viewport
   useEffect(() => {
     const ctx = gsap.context(() => {
+      // Fade in section
       fadeIn(sectionRef.current!, { y: 30 })
     })
 
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting && completedRef.current.size === 0) {
-            // Trigger first card
-            forceUpdate(n => n + 1)
+          if (entry.isIntersecting && !hasAnimated.current) {
+            hasAnimated.current = true
+            runHandwritingAnimation()
           }
         })
       },
-      { threshold: 0.2 }
+      { threshold: 0.15 }
     )
 
     if (sectionRef.current) {
@@ -718,9 +532,153 @@ function TimelineSection() {
       observer.disconnect()
       stopAutoScroll()
     }
-  }, [stopAutoScroll])
+  }, [])
 
-  const activeCardIndex = getActiveCardIndex()
+  // Split text into individual character spans for handwriting animation
+  const splitTextToChars = (container: HTMLDivElement, text: string) => {
+    container.innerHTML = ''
+    const allChars: HTMLSpanElement[] = []
+
+    const words = text.split(' ')
+    words.forEach((word, wordIdx) => {
+      const wordSpan = document.createElement('span')
+      wordSpan.style.whiteSpace = 'nowrap'
+      wordSpan.style.display = 'inline'
+
+      for (let i = 0; i < word.length; i++) {
+        const charSpan = document.createElement('span')
+        charSpan.className = 'hw-char'
+        charSpan.style.display = 'inline-block'
+        charSpan.style.willChange = 'opacity, transform'
+        charSpan.style.opacity = '0'
+        charSpan.style.transform = 'translateY(3px) rotate(-2deg)'
+        charSpan.style.minWidth = '0.08em'
+        charSpan.style.transition = 'none'
+        charSpan.textContent = word[i]
+        wordSpan.appendChild(charSpan)
+        allChars.push(charSpan)
+      }
+
+      container.appendChild(wordSpan)
+
+      // Add space between words
+      if (wordIdx < words.length - 1) {
+        const space = document.createElement('span')
+        space.innerHTML = '\u00A0'
+        space.style.display = 'inline'
+        container.appendChild(space)
+      }
+    })
+
+    return allChars
+  }
+
+  // Split title into character spans
+  const splitTitleToChars = (heading: HTMLHeadingElement) => {
+    const text = heading.textContent || ''
+    heading.innerHTML = ''
+    const chars: HTMLSpanElement[] = []
+
+    for (const char of text) {
+      const span = document.createElement('span')
+      span.style.display = 'inline-block'
+      span.style.willChange = 'opacity, transform'
+      span.style.opacity = '0'
+      span.style.transform = 'translateY(6px) rotate(-3deg)'
+      span.textContent = char === ' ' ? '\u00A0' : char
+      heading.appendChild(span)
+      chars.push(span)
+    }
+
+    return chars
+  }
+
+  const runHandwritingAnimation = () => {
+    const masterTl = gsap.timeline({
+      onStart: () => {
+        startAutoScroll()
+      },
+      onComplete: () => {
+        stopAutoScroll()
+      },
+    })
+
+    WEDDING.timeline.forEach((item, index) => {
+      const card = cardsRef.current[index]
+      const dot = dotsRef.current[index]
+      const mobileDot = mobileDotsRef.current[index]
+      const border = bordersRef.current[index]
+      const title = titlesRef.current[index]
+      const description = descriptionsRef.current[index]
+
+      if (!card || !title || !description) return
+
+      // Prepare character spans
+      const titleChars = splitTitleToChars(title)
+      const descChars = splitTextToChars(description, item.description)
+
+      // Card container: fade in
+      masterTl.fromTo(card,
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' },
+        index === 0 ? 0 : '-=0.1'
+      )
+
+      // Border draw
+      if (border) {
+        masterTl.fromTo(border,
+          { clipPath: 'inset(0 100% 100% 0)' },
+          { clipPath: 'inset(0 0% 0% 0%)', duration: 0.6, ease: 'power2.inOut' },
+          '-=0.4'
+        )
+      }
+
+      // Timeline dot pops in
+      if (dot) {
+        masterTl.fromTo(dot,
+          { scale: 0, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.4, ease: 'back.out(2)' },
+          '-=0.3'
+        )
+      }
+      if (mobileDot) {
+        masterTl.fromTo(mobileDot,
+          { scale: 0, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.4, ease: 'back.out(2)' },
+          '-=0.4'
+        )
+      }
+
+      // Title: characters appear one by one (handwriting feel)
+      if (titleChars.length > 0) {
+        masterTl.to(titleChars, {
+          opacity: 1,
+          y: 0,
+          rotation: 0,
+          duration: 0.12,
+          stagger: 0.04,
+          ease: 'power2.out',
+        }, '-=0.2')
+      }
+
+      // Description: characters appear one by one (handwriting feel)
+      if (descChars.length > 0) {
+        masterTl.to(descChars, {
+          opacity: 1,
+          y: 0,
+          rotation: 0,
+          duration: 0.06,
+          stagger: 0.018,
+          ease: 'power1.out',
+        }, '-=0.1')
+      }
+
+      // Small gap between cards (0.3s pause)
+      if (index < WEDDING.timeline.length - 1) {
+        masterTl.to({}, { duration: 0.3 })
+      }
+    })
+  }
 
   return (
     <section ref={sectionRef} className="py-20 px-6" style={{ background: 'var(--cream)', opacity: 0 }}>
@@ -736,37 +694,78 @@ function TimelineSection() {
           {/* Center line */}
           <div className="timeline-line hidden sm:block" />
 
-          {WEDDING.timeline.map((item, index) => {
-            // Card is active if it's the next one to animate
-            const isActive = index === activeCardIndex
-            // Card is already done (animation complete)
-            const isDone = completedRef.current.has(index)
-            // Card should animate if it's active OR already done (to keep content visible)
-            const shouldAnimate = isActive || isDone
-            // Card should be visible (active or done)
-            const shouldShow = isDone || isActive
-
-            return (
-              <div key={item.year} data-timeline-item data-index={index}
-                style={{
-                  opacity: shouldShow ? 1 : 0,
-                  transition: 'opacity 0.8s ease',
-                  pointerEvents: shouldShow ? 'auto' : 'none',
-                  maxHeight: shouldShow ? '1000px' : '0px',
-                  overflow: 'hidden',
-                  marginBottom: shouldShow ? undefined : 0,
-                }}
+          {WEDDING.timeline.map((item, index) => (
+            <div
+              key={item.year}
+              ref={(el) => { if (el) cardsRef.current[index] = el }}
+              className={`relative flex flex-col sm:flex-row items-center mb-16 last:mb-0 ${
+                index % 2 === 0 ? 'sm:flex-row' : 'sm:flex-row-reverse'
+              }`}
+              style={{ opacity: 0 }}
+            >
+              {/* Timeline dot */}
+              <div
+                ref={(el) => { if (el) dotsRef.current[index] = el }}
+                className="hidden sm:flex absolute left-1/2 -translate-x-1/2 w-12 h-12 rounded-full border-2 border-[var(--gold)] items-center justify-center z-10"
+                style={{ background: 'var(--cream)', opacity: 0 }}
               >
-                <TimelineStoryCard
-                  item={item}
-                  index={index}
-                  shouldAnimate={shouldAnimate}
-                  onStart={() => handleCardStart(index)}
-                  onComplete={() => handleCardComplete(index)}
-                />
+                <span className="text-xs font-bold" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold-dark)' }}>
+                  {item.year}
+                </span>
               </div>
-            )
-          })}
+
+              {/* Content */}
+              <div className={`w-full sm:w-[calc(50%-40px)] ${index % 2 === 0 ? 'sm:pr-12 sm:text-right' : 'sm:pl-12 sm:text-left'}`}>
+                <div className="bg-white/80 backdrop-blur-sm rounded-lg p-6 shadow-md border border-[var(--gold)]/20 relative overflow-hidden">
+                  {/* Animated border draw */}
+                  <div
+                    ref={(el) => { if (el) bordersRef.current[index] = el }}
+                    className="absolute inset-0 rounded-lg pointer-events-none"
+                    style={{
+                      clipPath: 'inset(0 100% 100% 0%)',
+                      border: '2px solid var(--gold)',
+                      opacity: 0.4,
+                    }}
+                  />
+
+                  {/* Decorative corner accent */}
+                  <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 opacity-30" style={{ borderColor: 'var(--gold)' }} />
+                  <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 opacity-30" style={{ borderColor: 'var(--gold)' }} />
+
+                  {/* Mobile year */}
+                  <div className="sm:hidden flex items-center justify-center mb-3">
+                    <div
+                      ref={(el) => { if (el) mobileDotsRef.current[index] = el }}
+                      className="w-12 h-12 rounded-full border-2 border-[var(--gold)] flex items-center justify-center"
+                      style={{ background: 'var(--cream)', opacity: 0 }}
+                    >
+                      <span className="text-xs font-bold" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold-dark)' }}>
+                        {item.year}
+                      </span>
+                    </div>
+                  </div>
+
+                  <h3
+                    ref={(el) => { if (el) titlesRef.current[index] = el }}
+                    className="text-xl sm:text-2xl mb-3"
+                    style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}
+                  >
+                    {item.title}
+                  </h3>
+
+                  {/* Handwriting text area */}
+                  <div
+                    ref={(el) => { if (el) descriptionsRef.current[index] = el }}
+                    className="text-sm leading-relaxed min-h-[3em]"
+                    style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}
+                  />
+                </div>
+              </div>
+
+              {/* Empty space for layout */}
+              <div className="hidden sm:block w-[calc(50%-40px)]" />
+            </div>
+          ))}
         </div>
       </div>
     </section>
@@ -867,7 +866,7 @@ function CountdownSection() {
                   {String(item.value).padStart(2, '0')}
                 </span>
               </div>
-              <span className="text-xs sm:text-sm tracking-wider uppercase" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold-light)]' }}>
+              <span className="text-xs sm:text-sm tracking-wider uppercase" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold-light)' }}>
                 {item.label}
               </span>
             </div>
@@ -1471,7 +1470,7 @@ function FooterSection() {
       />
       <div className="absolute inset-0 bg-[var(--brown)]/80" />
       <div ref={contentRef} className="relative z-10 max-w-2xl mx-auto" style={{ opacity: 0 }}>
-        <p className="text-sm tracking-[0.3em] uppercase mb-4" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold-light)]' }}>
+        <p className="text-sm tracking-[0.3em] uppercase mb-4" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold-light)' }}>
           Terima Kasih
         </p>
         <h2 className="text-4xl sm:text-5xl md:text-6xl mb-4" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-light)' }}>
@@ -1480,7 +1479,7 @@ function FooterSection() {
         <div className="ornament-divider max-w-xs mx-auto mb-6">
           <span className="text-[var(--gold)] text-lg">&#10047;</span>
         </div>
-        <p className="text-sm leading-relaxed" style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold-light)]' }}>
+        <p className="text-sm leading-relaxed" style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold-light)' }}>
           Atas kehadiran dan doa restu yang kalian berikan,<br />
           kami mengucapkan terima kasih.<br />
           Semoga Allah membalas kebaikan kalian.
