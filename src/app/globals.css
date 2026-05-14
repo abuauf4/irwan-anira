@@ -1,9 +1,23 @@
+/* ========================================
+   LOVE DIARY — Cinematic Wedding Invitation
+   A dark room, a projector, a love story
+   ======================================== */
+
+/* 1. Google Fonts — MUST come before tailwindcss */
 @import url('https://fonts.googleapis.com/css2?family=Amiri:ital@0;1&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Great+Vibes&family=Inter:wght@300;400;500&display=swap');
+
+/* 2. Tailwind CSS */
 @import "tailwindcss";
+
+/* 3. Animate CSS */
 @import "tw-animate-css";
 
+/* 4. Dark variant */
 @custom-variant dark (&:is(.dark *));
 
+/* ========================================
+   5. THEME INLINE — design tokens
+   ======================================== */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -48,8 +62,12 @@
   --font-body: 'Inter', sans-serif;
 }
 
+/* ========================================
+   6. CSS VARIABLES — the palette of memory
+   ======================================== */
 :root {
   --radius: 0.625rem;
+
   /* Warm ivory paper base */
   --background: #FBF7F0;
   --foreground: #3D3225;
@@ -92,8 +110,18 @@
   --java-indigo: #2C1654;
   --java-terracotta: #C4623A;
   --java-soga: #A67B3D;
+
+  /* ====== CINEMATIC DARK MOOD — new ====== */
+  --dark-bg: #1a1510;
+  --dark-bg-soft: #2C2218;
+  --dark-overlay: rgba(26, 21, 16, 0.85);
+  --cinema-glow: rgba(201, 169, 110, 0.06);
+  --cinema-spotlight: rgba(201, 169, 110, 0.08);
 }
 
+/* ========================================
+   7. BASE LAYER
+   ======================================== */
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -106,8 +134,8 @@
 }
 
 /* ========================================
-   CINEMATIC DIARY — CUSTOM SCROLLBAR
-   Thin, warm, barely there
+   8. CUSTOM SCROLLBAR
+   Thin, warm, barely there — like flipping pages
    ======================================== */
 ::-webkit-scrollbar {
   width: 4px;
@@ -126,7 +154,7 @@ html {
 }
 
 /* ========================================
-   REDUCED MOTION — respect the preference
+   9. REDUCED MOTION — respect the preference
    ======================================== */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -140,8 +168,8 @@ html {
 }
 
 /* ========================================
-   CINEMATIC ANIMATIONS — slow, purposeful
-   Every animation earns its place
+   10. KEYFRAME ANIMATIONS — slow, purposeful
+   Every animation earns its place in the story
    ======================================== */
 
 @keyframes fadeInUp {
@@ -224,7 +252,16 @@ html {
   100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
 }
 
-/* Animation utility classes — cinematic pacing */
+/* NEW: Gallery fade-in — slow, like photos developing */
+@keyframes galleryFadeIn {
+  from { opacity: 0; transform: translateY(30px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ========================================
+   11. ANIMATION UTILITY CLASSES
+   Cinematic pacing — nothing rushed
+   ======================================== */
 .animate-fade-in-up {
   animation: fadeInUp 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
@@ -249,8 +286,14 @@ html {
   animation: breathe 6s ease-in-out infinite;
 }
 
+/* Gallery item entrance — slow reveal like developing film */
+.animate-gallery-in {
+  animation: galleryFadeIn 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
 /* ========================================
-   GOLD SHIMMER — luxury but subtle
+   12. GOLD SHIMMER — luxury but subtle
+   Like light catching the edge of a ring
    ======================================== */
 .gold-shimmer {
   background: linear-gradient(90deg, var(--gold-dark), var(--gold-light), var(--gold), var(--gold-light), var(--gold-dark));
@@ -262,7 +305,8 @@ html {
 }
 
 /* ========================================
-   ORNAMENTAL DIVIDERS — minimal, elegant
+   13. ORNAMENTAL DIVIDERS — minimal, elegant
+   The quiet between chapters
    ======================================== */
 .ornament-divider {
   display: flex;
@@ -281,7 +325,7 @@ html {
 }
 
 /* ========================================
-   DIARY PAPER TEXTURES
+   14. DIARY PAPER TEXTURES
    Warm aged paper, like opening an old journal
    ======================================== */
 .diary-paper-bg {
@@ -302,7 +346,10 @@ html {
   pointer-events: none;
 }
 
-/* Diary note card — like a handwritten note tucked in the journal */
+/* ========================================
+   15. DIARY NOTE CARD
+   Like a handwritten note tucked in the journal
+   ======================================== */
 .diary-note-card {
   background: linear-gradient(145deg, #fffcf5, #f8f0e0);
   box-shadow:
@@ -336,7 +383,8 @@ html {
 }
 
 /* ========================================
-   POLAROID FRAME — memory captured
+   16. POLAROID FRAME — memory captured
+   Enhanced with cinematic hover scale
    ======================================== */
 .polaroid-frame {
   background: white;
@@ -349,13 +397,16 @@ html {
 }
 
 .polaroid-frame:hover {
+  transform: rotate(0deg) scale(1.03) translateY(-4px) !important;
   box-shadow:
     2px 4px 16px rgba(0, 0, 0, 0.12),
-    0 1px 4px rgba(0, 0, 0, 0.06);
+    0 1px 4px rgba(0, 0, 0, 0.06),
+    0 0 20px rgba(201, 169, 110, 0.08);
 }
 
 /* ========================================
-   GOLD LIGHT LEAK — cinematic warmth
+   17. GOLD LIGHT LEAK — cinematic warmth
+   Like sunlight through dusty curtains
    ======================================== */
 .gold-light-leak {
   background:
@@ -366,7 +417,8 @@ html {
 }
 
 /* ========================================
-   HANDWRITING ANIMATION BASE
+   18. HANDWRITING ANIMATION BASE
+   Ink meeting paper
    ======================================== */
 .hw-char {
   display: inline-block;
@@ -378,7 +430,8 @@ html {
 }
 
 /* ========================================
-   SVG STROKE ANIMATION
+   19. SVG STROKE ANIMATION
+   Ornamental lines drawing themselves
    ======================================== */
 .svg-corner-flourish {
   stroke-dasharray: 100;
@@ -395,7 +448,8 @@ html {
 }
 
 /* ========================================
-   SECTION REVEAL — gentle, not aggressive
+   20. SECTION REVEAL — gentle, not aggressive
+   Like turning a page in slow motion
    ======================================== */
 .reveal {
   opacity: 0;
@@ -417,7 +471,8 @@ html {
 }
 
 /* ========================================
-   HERO / COVER
+   21. HERO / COVER
+   The opening scene — darkness before the story
    ======================================== */
 .hero-overlay {
   background: linear-gradient(
@@ -429,7 +484,8 @@ html {
 }
 
 /* ========================================
-   GALLERY GRID
+   22. GALLERY GRID
+   Photos pinned to the diary page
    ======================================== */
 .gallery-grid {
   display: grid;
@@ -445,7 +501,8 @@ html {
 }
 
 /* ========================================
-   LIGHTBOX
+   23. LIGHTBOX
+   Full-screen photo — the projector beam
    ======================================== */
 .lightbox-overlay {
   position: fixed;
@@ -466,7 +523,8 @@ html {
 }
 
 /* ========================================
-   MUSIC PLAYER PULSE
+   24. MUSIC PLAYER PULSE
+   A heartbeat in the dark
    ======================================== */
 .music-pulse { position: relative; }
 
@@ -483,7 +541,8 @@ html {
 .music-pulse.playing::after { opacity: 1; }
 
 /* ========================================
-   TIMELINE
+   25. TIMELINE
+   The thread of their story
    ======================================== */
 .timeline-line {
   position: absolute;
@@ -501,12 +560,12 @@ html {
 }
 
 /* ========================================
-   UTILITY CLASSES
+   26. UTILITY CLASSES
    ======================================== */
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Cursor follower */
+/* Cursor follower — a golden glow following the eye */
 .cursor-follower {
   position: fixed;
   top: 0;
@@ -523,19 +582,19 @@ html {
   transition: opacity 0.3s ease;
 }
 
-/* Countdown */
+/* Countdown — numbers trembling with anticipation */
 .countdown-number {
   display: inline-block;
   will-change: transform, opacity;
 }
 
-/* Hero */
+/* Hero animation */
 .hero-animate { will-change: transform, opacity; }
 
-/* Magnetic button */
+/* Magnetic button — drawn to touch */
 .magnetic-btn { will-change: transform; transition: transform 0.5s ease-out; }
 
-/* Image reveal */
+/* Image reveal — like a photograph developing */
 .image-reveal {
   will-change: clip-path, opacity;
   clip-path: inset(100% 0% 0% 0%);
@@ -548,11 +607,11 @@ html {
 /* Preloader character */
 .preloader-char { display: inline-block; will-change: transform, opacity; }
 
-/* Jasmine petal */
+/* Jasmine petal — floating in warm air */
 .jasmine-petal { pointer-events: none; will-change: transform, opacity; }
 
 /* ========================================
-   LENIS SMOOTH SCROLL
+   27. LENIS SMOOTH SCROLL
    ======================================== */
 html.lenis, html.lenis body { height: auto; }
 
@@ -562,8 +621,9 @@ html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-smooth iframe { pointer-events: none; }
 
 /* ========================================
-   JAVANESE CULTURAL PATTERNS — subtle
-   Used sparingly, like whispers of tradition
+   28. JAVANESE CULTURAL PATTERNS
+   Subtle — like whispers of tradition
+   Batik, sidomukti, the geometry of heritage
    ======================================== */
 
 .batik-kawung {
@@ -632,8 +692,9 @@ html.lenis, html.lenis body { height: auto; }
 }
 
 /* ========================================
-   CINEMATIC SECTION TRANSITIONS
+   29. CINEMA SECTION TRANSITIONS
    Each section breathes with space
+   Like dissolves between scenes
    ======================================== */
 .cinema-section {
   position: relative;
@@ -674,8 +735,9 @@ html.lenis, html.lenis body { height: auto; }
 }
 
 /* ========================================
-   DIARY PAGE LINES
+   30. DIARY PAGE LINES & MARGIN
    Subtle ruled lines like journal paper
+   The red margin line of memory
    ======================================== */
 .diary-lines {
   background-image: repeating-linear-gradient(
@@ -688,10 +750,6 @@ html.lenis, html.lenis body { height: auto; }
   background-size: 100% 32px;
 }
 
-/* ========================================
-   DIARY MARGIN LINE
-   The red margin line of a journal
-   ======================================== */
 .diary-margin::before {
   content: '';
   position: absolute;
@@ -710,7 +768,246 @@ html.lenis, html.lenis body { height: auto; }
 }
 
 /* ========================================
-   REDUCED MOTION OVERRIDES
+   31. CINEMA DARK SECTION CLASSES
+   Dark moody backgrounds — the projector is on
+   ======================================== */
+
+/* Dark moody section with deep warm tones */
+.cinema-dark-section {
+  position: relative;
+  background: linear-gradient(135deg, #1a1510 0%, #2C2218 50%, #1a1510 100%);
+  color: var(--cream);
+  overflow: hidden;
+}
+
+/* Cinematic noise texture overlay for dark sections */
+.cinema-dark-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 300px 300px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.6;
+}
+
+/* ========================================
+   32. VIGNETTE & SPOTLIGHT
+   Dark edges, bright center — the cinema
+   Soft golden light from above
+   ======================================== */
+
+/* Vignette overlay — dark edges, bright center */
+.cinema-vignette::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.4) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Spotlight effect — soft golden light from above */
+.cinema-spotlight::after {
+  content: '';
+  position: absolute;
+  top: -20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 70%;
+  background: radial-gradient(ellipse at center, rgba(201, 169, 110, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Combined: vignette + spotlight for full cinematic atmosphere */
+.cinema-atmosphere {
+  position: relative;
+}
+
+.cinema-atmosphere::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.4) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.cinema-atmosphere::after {
+  content: '';
+  position: absolute;
+  top: -20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 70%;
+  background: radial-gradient(ellipse at center, rgba(201, 169, 110, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ========================================
+   33. COUPLE DARK SECTION
+   The two of them, bathed in warm darkness
+   ======================================== */
+.couple-dark-section {
+  background: linear-gradient(180deg, #1a1510 0%, #2C2218 40%, #1a1510 100%);
+  position: relative;
+  overflow: hidden;
+  color: var(--cream);
+}
+
+/* Soft golden light from top center — like a lamp above */
+.couple-dark-section .cinema-vignette::before {
+  background: radial-gradient(ellipse at center top, transparent 30%, rgba(0, 0, 0, 0.35) 100%);
+}
+
+/* Subtle warm glow at the top of couple section */
+.couple-dark-section::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 40%;
+  background: radial-gradient(ellipse at center top, rgba(201, 169, 110, 0.04) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ========================================
+   34. COUPLE PHOTO FRAME GLOW
+   Portraits lit by golden warmth
+   ======================================== */
+.couple-photo-frame {
+  box-shadow:
+    0 0 0 2px var(--gold),
+    0 0 20px rgba(201, 169, 110, 0.15),
+    0 4px 20px rgba(0, 0, 0, 0.3);
+  transition: box-shadow 0.6s ease;
+}
+
+.couple-photo-frame:hover {
+  box-shadow:
+    0 0 0 2px var(--gold-light),
+    0 0 30px rgba(201, 169, 110, 0.25),
+    0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* ========================================
+   BISMILLAH MOODY
+   Opening words in warm light
+   ======================================== */
+.bismillah-moody {
+  background: linear-gradient(180deg, #FBF7F0 0%, #F0E8DA 40%, #E8DDD0 100%);
+  position: relative;
+}
+
+.bismillah-moody::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50%;
+  height: 30%;
+  background: radial-gradient(ellipse at center, rgba(201, 169, 110, 0.05) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ========================================
+   CINEMA DARK SECTION FADES
+   Smooth transitions between dark and light
+   ======================================== */
+.cinema-dark-fade-top {
+  position: relative;
+}
+
+.cinema-dark-fade-top::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: linear-gradient(to bottom, var(--dark-bg), transparent);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.cinema-dark-fade-bottom {
+  position: relative;
+}
+
+.cinema-dark-fade-bottom::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: linear-gradient(to top, var(--dark-bg), transparent);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ========================================
+   CINEMA TEXT STYLES
+   Text that glows in the dark
+   ======================================== */
+.cinema-text-glow {
+  text-shadow:
+    0 0 20px rgba(201, 169, 110, 0.15),
+    0 0 40px rgba(201, 169, 110, 0.05);
+}
+
+.cinema-text-warm {
+  color: var(--cream);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.cinema-gold-text {
+  color: var(--gold);
+  text-shadow:
+    0 0 10px rgba(201, 169, 110, 0.1),
+    0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* ========================================
+   CINEMA CARD ON DARK
+   Light cards floating on dark backgrounds
+   ======================================== */
+.cinema-card-float {
+  background: rgba(251, 247, 240, 0.06);
+  border: 1px solid rgba(201, 169, 110, 0.12);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.5s ease;
+}
+
+.cinema-card-float:hover {
+  background: rgba(251, 247, 240, 0.1);
+  border-color: rgba(201, 169, 110, 0.2);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* ========================================
+   DARK SECTION SCROLLBAR
+   Gold on dark — like ember in night
+   ======================================== */
+.cinema-dark-section ::-webkit-scrollbar-thumb,
+.couple-dark-section ::-webkit-scrollbar-thumb {
+  background: rgba(201, 169, 110, 0.4);
+}
+
+/* ========================================
+   35. REDUCED MOTION OVERRIDES
+   Final word — no animation if preferred
    ======================================== */
 @media (prefers-reduced-motion: reduce) {
   .diary-note-card { transform: none !important; }
@@ -718,4 +1015,8 @@ html.lenis, html.lenis body { height: auto; }
   .gold-light-leak { animation: none !important; opacity: 0.6 !important; }
   .animate-float { animation: none !important; }
   .animate-breathe { animation: none !important; }
+  .animate-gallery-in { animation: none !important; opacity: 1 !important; }
+  .cinema-spotlight::after { animation: none !important; }
+  .cinema-atmosphere::after { animation: none !important; }
+  .couple-dark-section::after { animation: none !important; }
 }

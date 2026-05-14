@@ -57,10 +57,10 @@ export default function Preloader({ onComplete, groomName, brideName }: Preloade
       )
     }
 
-    // Progress bar — thin, elegant
+    // Progress bar — thin, elegant (2.5s for faster feel)
     tl.to(progressRef.current, {
       width: '100%',
-      duration: 3.5,
+      duration: 2.5,
       ease: 'power1.inOut',
       onUpdate: () => {
         if (progressRef.current) {
@@ -137,8 +137,13 @@ export default function Preloader({ onComplete, groomName, brideName }: Preloade
     <div
       ref={containerRef}
       className="fixed inset-0 z-[9999] flex flex-col items-center justify-center"
-      style={{ background: 'var(--cream)' }}
+      style={{ background: '#F5EDDF' }}
     >
+      {/* Vignette overlay — dark edges for cinematic depth */}
+      <div className="absolute inset-0 pointer-events-none" style={{
+        background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.15) 100%)'
+      }} />
+
       {/* Ink drop — subtle circle that spreads */}
       <div
         ref={inkDropRef}

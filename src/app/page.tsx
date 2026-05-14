@@ -94,11 +94,12 @@ function useCountdown(targetDate: string) {
 /* ═══════════════════════════════════════════════════════════
    HANDWRITING REVEAL — shared utility
    Ink flowing onto paper, character by character
+   FIXED: Faster stagger 0.022, charDuration 0.08
    ═══════════════════════════════════════════════════════════ */
 function handwritingReveal(
   el: HTMLDivElement,
-  stagger: number = 0.035,
-  charDuration: number = 0.1,
+  stagger: number = 0.022,
+  charDuration: number = 0.08,
   delay: number = 0,
 ) {
   if (!el) return
@@ -170,6 +171,7 @@ function CursorFollower() {
 /* ═══════════════════════════════════════════════════════════
    2. BISMILLAH — Sacred, still, reverent
    The opening of every good thing
+   Cinema dark atmosphere, more moody
    ═══════════════════════════════════════════════════════════ */
 function BismillahSection() {
   const sectionRef = useRef<HTMLDivElement>(null)
@@ -281,26 +283,28 @@ function BismillahSection() {
   }, [])
 
   return (
-    <section ref={sectionRef} className="py-28 px-6 text-center" style={{ background: 'var(--cream)', opacity: 0 }}>
-      <div className="max-w-2xl mx-auto">
+    <section ref={sectionRef} className="cinema-dark-section cinema-vignette py-28 px-6 text-center relative overflow-hidden" style={{ opacity: 0 }}>
+      {/* Soft golden light spots */}
+      <div className="gold-light-leak absolute inset-0 pointer-events-none" />
+      <div className="max-w-2xl mx-auto relative z-10">
         <p
           ref={arabicRef}
           className="text-3xl sm:text-4xl md:text-5xl mb-8 leading-relaxed"
-          style={{ fontFamily: 'var(--font-arabic)', color: 'var(--brown)', opacity: 0 }}
+          style={{ fontFamily: 'var(--font-arabic)', color: 'var(--gold-light)', opacity: 0 }}
         >
           بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
         </p>
         <p
           ref={quoteRef}
           className="text-base sm:text-lg italic leading-relaxed min-h-[5em]"
-          style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}
+          style={{ fontFamily: 'var(--font-serif)', color: 'var(--cream)' }}
         >
           &ldquo;Dan di antara tanda-tanda kekuasaan-Nya ialah Dia menciptakan untukmu pasangan hidup dari jenismu sendiri, supaya kamu merasa tenteram kepadanya, dan dijadikan-Nya di antaramu rasa kasih dan sayang.&rdquo;
         </p>
         <p
           ref={sourceRef}
           className="mt-6 text-sm"
-          style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)', opacity: 0 }}
+          style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold)', opacity: 0 }}
         >
           — QS. Ar-Rum: 21
         </p>
@@ -312,25 +316,63 @@ function BismillahSection() {
 /* ═══════════════════════════════════════════════════════════
    3. COUPLE — Intimate, close
    Two souls becoming one story
+   ADDED: Cinematic blur-to-clear photo animations
+   ADDED: Dark moody background with vignette
    ═══════════════════════════════════════════════════════════ */
 function CoupleSection() {
   const sectionRef = useRef<HTMLDivElement>(null)
   const groomRef = useRef<HTMLDivElement>(null)
   const brideRef = useRef<HTMLDivElement>(null)
   const heartRef = useRef<HTMLDivElement>(null)
+  const groomNameRef = useRef<HTMLHeadingElement>(null)
+  const brideNameRef = useRef<HTMLHeadingElement>(null)
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      fadeIn(sectionRef.current!, { duration: 1.2, y: 20 })
+      // Section fade
+      gsap.fromTo(sectionRef.current!,
+        { opacity: 0 },
+        {
+          opacity: 1,
+          duration: 1.5,
+          scrollTrigger: {
+            trigger: sectionRef.current!,
+            start: 'top 85%',
+            toggleActions: 'play none none none',
+          },
+        }
+      )
 
-      // Gentle fade in — NOT slide from sides
+      // Groom photo — cinematic reveal with blur
       if (groomRef.current) {
         gsap.fromTo(groomRef.current,
-          { opacity: 0, y: 20 },
+          { opacity: 0, y: 30, scale: 0.85, filter: 'blur(8px)' },
           {
             opacity: 1,
             y: 0,
-            duration: 1.2,
+            scale: 1,
+            filter: 'blur(0px)',
+            duration: 1.8,
+            ease: 'power3.out',
+            scrollTrigger: {
+              trigger: sectionRef.current!,
+              start: 'top 85%',
+              toggleActions: 'play none none none',
+            },
+          }
+        )
+      }
+
+      // Bride photo — cinematic reveal with blur, slight delay
+      if (brideRef.current) {
+        gsap.fromTo(brideRef.current,
+          { opacity: 0, y: 30, scale: 0.85, filter: 'blur(8px)' },
+          {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            filter: 'blur(0px)',
+            duration: 1.8,
             delay: 0.3,
             ease: 'power3.out',
             scrollTrigger: {
@@ -342,9 +384,10 @@ function CoupleSection() {
         )
       }
 
-      if (heartRef.current) {
-        gsap.fromTo(heartRef.current,
-          { opacity: 0, y: 10 },
+      // Groom name — fade in from below after photo
+      if (groomNameRef.current) {
+        gsap.fromTo(groomNameRef.current,
+          { opacity: 0, y: 15 },
           {
             opacity: 1,
             y: 0,
@@ -360,15 +403,35 @@ function CoupleSection() {
         )
       }
 
-      if (brideRef.current) {
-        gsap.fromTo(brideRef.current,
-          { opacity: 0, y: 20 },
+      // Bride name — fade in from below after photo
+      if (brideNameRef.current) {
+        gsap.fromTo(brideNameRef.current,
+          { opacity: 0, y: 15 },
           {
             opacity: 1,
             y: 0,
             duration: 1.2,
-            delay: 0.3,
+            delay: 0.9,
             ease: 'power3.out',
+            scrollTrigger: {
+              trigger: sectionRef.current!,
+              start: 'top 85%',
+              toggleActions: 'play none none none',
+            },
+          }
+        )
+      }
+
+      // Heart — gentle reveal after both names
+      if (heartRef.current) {
+        gsap.fromTo(heartRef.current,
+          { opacity: 0, scale: 0.5 },
+          {
+            opacity: 1,
+            scale: 1,
+            duration: 1.2,
+            delay: 0.6,
+            ease: 'back.out(2)',
             scrollTrigger: {
               trigger: sectionRef.current!,
               start: 'top 85%',
@@ -383,9 +446,12 @@ function CoupleSection() {
   }, [])
 
   return (
-    <section ref={sectionRef} className="py-28 px-6" style={{ background: 'var(--cream-dark)', opacity: 0 }}>
-      <div className="max-w-4xl mx-auto text-center">
-        <h2 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
+    <section ref={sectionRef} className="cinema-dark-section cinema-vignette py-28 px-6 relative overflow-hidden" style={{ opacity: 0 }}>
+      {/* Soft golden light spots */}
+      <div className="gold-light-leak absolute inset-0 pointer-events-none" />
+
+      <div className="max-w-4xl mx-auto text-center relative z-10">
+        <h2 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-light)' }}>
           Mempelai
         </h2>
         <div className="ornament-divider max-w-xs mx-auto mb-14">
@@ -398,15 +464,15 @@ function CoupleSection() {
             <div className="w-36 h-36 sm:w-44 sm:h-44 rounded-full overflow-hidden mx-auto mb-6 border-2 border-[var(--gold)] shadow-lg">
               <img src="/images/groom.jpg" alt={WEDDING.groom} className="w-full h-full object-cover" />
             </div>
-            <h3 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
+            <h3 ref={groomNameRef} className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-light)', opacity: 0 }}>
               {WEDDING.groom}
             </h3>
             <div className="ornament-divider max-w-[120px] mx-auto mb-3">
               <span className="text-[var(--gold)] text-xs">&#10047;</span>
             </div>
-            <p className="text-sm italic" style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}>
+            <p className="text-sm italic" style={{ fontFamily: 'var(--font-serif)', color: 'var(--cream)', opacity: 0.8 }}>
               Putra dari<br />
-              <span className="not-italic font-medium" style={{ color: 'var(--brown)' }}>{WEDDING.groomParents}</span>
+              <span className="not-italic font-medium" style={{ color: 'var(--cream)' }}>{WEDDING.groomParents}</span>
             </p>
           </div>
 
@@ -424,15 +490,15 @@ function CoupleSection() {
             <div className="w-36 h-36 sm:w-44 sm:h-44 rounded-full overflow-hidden mx-auto mb-6 border-2 border-[var(--gold)] shadow-lg">
               <img src="/images/bride.jpg" alt={WEDDING.bride} className="w-full h-full object-cover" />
             </div>
-            <h3 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
+            <h3 ref={brideNameRef} className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-light)', opacity: 0 }}>
               {WEDDING.bride}
             </h3>
             <div className="ornament-divider max-w-[120px] mx-auto mb-3">
               <span className="text-[var(--gold)] text-xs">&#10047;</span>
             </div>
-            <p className="text-sm italic" style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}>
+            <p className="text-sm italic" style={{ fontFamily: 'var(--font-serif)', color: 'var(--cream)', opacity: 0.8 }}>
               Putri dari<br />
-              <span className="not-italic font-medium" style={{ color: 'var(--brown)' }}>{WEDDING.brideParents}</span>
+              <span className="not-italic font-medium" style={{ color: 'var(--cream)' }}>{WEDDING.brideParents}</span>
             </p>
           </div>
         </div>
@@ -444,6 +510,7 @@ function CoupleSection() {
 /* ═══════════════════════════════════════════════════════════
    4. DIARY INTRO — Opening the diary
    Like reading someone's journal for the first time
+   FIXED: Faster handwriting stagger 0.022, charDuration 0.08
    ═══════════════════════════════════════════════════════════ */
 function DiaryIntroSection() {
   const sectionRef = useRef<HTMLDivElement>(null)
@@ -501,13 +568,13 @@ function DiaryIntroSection() {
         }
       }
 
-      // Handwriting reveal
+      // Handwriting reveal — FIXED: faster speed
       const observer = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
             if (entry.isIntersecting && !hasAnimated.current) {
               hasAnimated.current = true
-              handwritingReveal(textRef.current!, 0.035, 0.1)
+              handwritingReveal(textRef.current!, 0.022, 0.08)
             }
           })
         },
@@ -586,6 +653,9 @@ function DiaryIntroSection() {
 /* ═══════════════════════════════════════════════════════════
    5. TIMELINE — Love Journey
    Three milestones, like turning diary pages
+   FIXED: Faster handwriting (title stagger 0.05, desc stagger 0.022)
+   FIXED: Shorter gaps between cards (0.4), end padding 0.3
+   FIXED: Title font changed to serif italic (diary handwriting feel)
    ═══════════════════════════════════════════════════════════ */
 function TimelineSection() {
   const sectionRef = useRef<HTMLDivElement>(null)
@@ -682,7 +752,7 @@ function TimelineSection() {
       if (timelineLine) gsap.set(timelineLine, { scaleY: 0, transformOrigin: 'top center' })
       if (progressBar) gsap.set(progressBar, { scaleX: 0, transformOrigin: 'left center' })
 
-      // === STEP 4: Build master timeline with scroll scrub (SLOWER) ===
+      // === STEP 4: Build master timeline with scroll scrub ===
       const masterTl = gsap.timeline({
         scrollTrigger: {
           trigger: section,
@@ -788,36 +858,38 @@ function TimelineSection() {
           }, '<')
         }
 
-        // Title handwriting
+        // Title handwriting — FIXED: faster stagger 0.05
         if (titleChars && titleChars.length > 0) {
           masterTl.to(titleChars, {
             opacity: 1,
             y: 0,
             rotation: 0,
             duration: 0.3,
-            stagger: 0.09,
+            stagger: 0.05,
             ease: 'power2.out',
           }, '-=0.75')
         }
 
-        // Description handwriting
+        // Description handwriting — FIXED: faster stagger 0.022
         if (descChars && descChars.length > 0) {
           masterTl.to(descChars, {
             opacity: 1,
             y: 0,
             rotation: 0,
             duration: 0.12,
-            stagger: 0.035,
+            stagger: 0.022,
             ease: 'power1.out',
           }, '-=0.3')
         }
 
+        // FIXED: Shorter gap between cards (0.4 instead of 0.75)
         if (index < WEDDING.timeline.length - 1) {
-          masterTl.to({}, { duration: 0.75 })
+          masterTl.to({}, { duration: 0.4 })
         }
       })
 
-      masterTl.to({}, { duration: 0.5 })
+      // FIXED: Shorter end padding (0.3 instead of 0.5)
+      masterTl.to({}, { duration: 0.3 })
     })
 
     return () => ctx.revert()
@@ -833,7 +905,8 @@ function TimelineSection() {
       />
 
       <div ref={wrapperRef} className="max-w-4xl mx-auto text-center">
-        <h2 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
+        {/* FIXED: Title font changed to serif italic — diary handwriting feel */}
+        <h2 className="text-3xl sm:text-4xl mb-2 italic" style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold-dark)' }}>
           Love Journey
         </h2>
         <div className="ornament-divider max-w-xs mx-auto mb-16">
@@ -945,291 +1018,7 @@ function TimelineSection() {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   6. LAMARAN — The Proposal
-   Sacred moment, soft photo, no distractions
-   ═══════════════════════════════════════════════════════════ */
-function LamaranSection() {
-  const sectionRef = useRef<HTMLDivElement>(null)
-  const contentRef = useRef<HTMLDivElement>(null)
-  const textRef = useRef<HTMLDivElement>(null)
-  const titleRef = useRef<HTMLHeadingElement>(null)
-  const dateRef = useRef<HTMLParagraphElement>(null)
-  const photoRef = useRef<HTMLDivElement>(null)
-  const hasAnimated = useRef(false)
-
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      fadeIn(sectionRef.current!, { duration: 1.2, y: 20 })
-
-      // Soft zoom on photo
-      if (photoRef.current) {
-        gsap.fromTo(photoRef.current,
-          { scale: 1.15, opacity: 0 },
-          {
-            scale: 1.05,
-            opacity: 1,
-            duration: 2,
-            ease: 'power2.out',
-            scrollTrigger: {
-              trigger: sectionRef.current!,
-              start: 'top 85%',
-              toggleActions: 'play none none none',
-            },
-          }
-        )
-      }
-
-      // Title — Cormorant Garamond uppercase
-      if (titleRef.current) {
-        gsap.fromTo(titleRef.current,
-          { opacity: 0, y: 20, letterSpacing: '0.5em' },
-          {
-            opacity: 1,
-            y: 0,
-            letterSpacing: '0.3em',
-            duration: 1.2,
-            ease: 'power2.out',
-            scrollTrigger: {
-              trigger: sectionRef.current!,
-              start: 'top 85%',
-              toggleActions: 'play none none none',
-            },
-          }
-        )
-      }
-
-      // Date fade in
-      if (dateRef.current) {
-        gsap.fromTo(dateRef.current,
-          { opacity: 0, y: 10 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 1,
-            delay: 0.3,
-            ease: 'power2.out',
-            scrollTrigger: {
-              trigger: sectionRef.current!,
-              start: 'top 85%',
-              toggleActions: 'play none none none',
-            },
-          }
-        )
-      }
-
-      // Handwriting reveal — SLOW stagger 0.035
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting && !hasAnimated.current) {
-              hasAnimated.current = true
-              handwritingReveal(textRef.current!, 0.035, 0.1, 0.3)
-            }
-          })
-        },
-        { threshold: 0.3 }
-      )
-
-      if (sectionRef.current) {
-        observer.observe(sectionRef.current)
-      }
-
-      return () => observer.disconnect()
-    })
-
-    return () => ctx.revert()
-  }, [])
-
-  return (
-    <section ref={sectionRef} className="relative py-28 px-6 text-center overflow-hidden" style={{ opacity: 0 }}>
-      {/* Background with soft zoom */}
-      <div
-        ref={photoRef}
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: "url('/images/quote-bg.jpg')", opacity: 0 }}
-      />
-      {/* Cream overlay at 88% opacity */}
-      <div className="absolute inset-0" style={{ background: 'var(--cream-dark)', opacity: 0.88 }} />
-
-      <div ref={contentRef} className="relative z-10 max-w-2xl mx-auto">
-        <h3
-          ref={titleRef}
-          className="text-2xl sm:text-3xl tracking-[0.3em] uppercase mb-4"
-          style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold-dark)', opacity: 0 }}
-        >
-          Lamaran
-        </h3>
-
-        <p
-          ref={dateRef}
-          className="text-sm tracking-wider mb-10"
-          style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)', opacity: 0 }}
-        >
-          31 Agustus 2025
-        </p>
-
-        <div className="ornament-divider max-w-xs mx-auto mb-10">
-          <span className="text-[var(--gold)] text-lg">&#10047;</span>
-        </div>
-
-        <p
-          ref={textRef}
-          className="text-base sm:text-lg italic leading-relaxed min-h-[6em]"
-          style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown)' }}
-        >
-          Kehendak-Nya menuntun kami pada pertemuan yang tak pernah disangka hingga akhirnya membawa kami pada sebuah ikatan suci yang dicintai-Nya, kami melangsungkan acara lamaran pada 31 Agustus 2025.
-        </p>
-      </div>
-    </section>
-  )
-}
-
-/* ═══════════════════════════════════════════════════════════
-   7. MENIKAH — The Wedding (cinematic climax)
-   The peak of the emotional journey
-   ═══════════════════════════════════════════════════════════ */
-function MenikahSection() {
-  const sectionRef = useRef<HTMLDivElement>(null)
-  const contentRef = useRef<HTMLDivElement>(null)
-  const textRef = useRef<HTMLDivElement>(null)
-  const titleRef = useRef<HTMLHeadingElement>(null)
-  const dateRef = useRef<HTMLParagraphElement>(null)
-  const bgRef = useRef<HTMLDivElement>(null)
-  const hasAnimated = useRef(false)
-
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      fadeIn(sectionRef.current!, { duration: 1.2, y: 20 })
-
-      // Cinematic slow zoom on background — scale 1 → 1.1 over 25s
-      if (bgRef.current) {
-        gsap.fromTo(bgRef.current,
-          { scale: 1 },
-          {
-            scale: 1.1,
-            duration: 25,
-            ease: 'none',
-            scrollTrigger: {
-              trigger: sectionRef.current!,
-              start: 'top bottom',
-              end: 'bottom top',
-              scrub: true,
-            },
-          }
-        )
-      }
-
-      // Title — cinematic blur reveal
-      if (titleRef.current) {
-        gsap.fromTo(titleRef.current,
-          { opacity: 0, y: 20, scale: 0.95, filter: 'blur(10px)' },
-          {
-            opacity: 1,
-            y: 0,
-            scale: 1,
-            filter: 'blur(0px)',
-            duration: 2,
-            ease: 'power3.out',
-            scrollTrigger: {
-              trigger: sectionRef.current!,
-              start: 'top 85%',
-              toggleActions: 'play none none none',
-            },
-          }
-        )
-      }
-
-      // Date fade in
-      if (dateRef.current) {
-        gsap.fromTo(dateRef.current,
-          { opacity: 0, y: 10 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 1.2,
-            delay: 0.5,
-            ease: 'power2.out',
-            scrollTrigger: {
-              trigger: sectionRef.current!,
-              start: 'top 85%',
-              toggleActions: 'play none none none',
-            },
-          }
-        )
-      }
-
-      // Handwriting reveal
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting && !hasAnimated.current) {
-              hasAnimated.current = true
-              handwritingReveal(textRef.current!, 0.035, 0.1, 0.5)
-            }
-          })
-        },
-        { threshold: 0.3 }
-      )
-
-      if (sectionRef.current) {
-        observer.observe(sectionRef.current)
-      }
-
-      return () => observer.disconnect()
-    })
-
-    return () => ctx.revert()
-  }, [])
-
-  return (
-    <section ref={sectionRef} className="relative py-32 px-6 text-center overflow-hidden" style={{ opacity: 0 }}>
-      {/* Background with slow zoom */}
-      <div
-        ref={bgRef}
-        className="absolute inset-[-5%] bg-cover bg-center"
-        style={{ backgroundImage: "url('/images/countdown-bg.jpg')" }}
-      />
-      {/* Heavy dark overlay — brown/85 */}
-      <div className="absolute inset-0 bg-[var(--brown)]/85" />
-
-      {/* Gold light leak overlay */}
-      <div className="gold-light-leak absolute inset-0 pointer-events-none" />
-
-      <div ref={contentRef} className="relative z-10 max-w-2xl mx-auto">
-        <h3
-          ref={titleRef}
-          className="text-3xl sm:text-5xl tracking-[0.3em] uppercase mb-6"
-          style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold-light)', opacity: 0 }}
-        >
-          Menikah
-        </h3>
-
-        <p
-          ref={dateRef}
-          className="text-lg sm:text-xl tracking-wider mb-10"
-          style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold)', opacity: 0 }}
-        >
-          05 Juli 2026
-        </p>
-
-        <div className="ornament-divider max-w-xs mx-auto mb-10">
-          <span className="text-[var(--gold)] text-lg">&#10047;</span>
-        </div>
-
-        <p
-          ref={textRef}
-          className="text-base sm:text-lg italic leading-relaxed min-h-[8em]"
-          style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold-light)' }}
-        >
-          Percayalah, bukan karena bertemu lalu berjodoh, tapi karena berjodohlah kami dipertemukan. Atas izin Allah kami memutuskan untuk mengikrarkan janji suci pernikahan pada 05 Juli 2026.
-        </p>
-      </div>
-    </section>
-  )
-}
-
-/* ═══════════════════════════════════════════════════════════
-   8. COUNTDOWN — Waiting Together
+   6. COUNTDOWN — Waiting Together
    Every second brings us closer
    ═══════════════════════════════════════════════════════════ */
 function CountdownSection() {
@@ -1291,7 +1080,7 @@ function CountdownSection() {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   9. EVENT — The Details
+   7. EVENT — The Details
    Simple, clean, no flip animation
    ═══════════════════════════════════════════════════════════ */
 function EventSection() {
@@ -1416,8 +1205,9 @@ function EventSection() {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   10. GALLERY — Polaroid Memories
+   8. GALLERY — Polaroid Memories
    Captured moments, held in hand
+   ADDED: GSAP ScrollTrigger stagger reveal for polaroid frames
    ═══════════════════════════════════════════════════════════ */
 function GallerySection() {
   const sectionRef = useRef<HTMLDivElement>(null)
@@ -1432,6 +1222,27 @@ function GallerySection() {
   useEffect(() => {
     const ctx = gsap.context(() => {
       fadeIn(sectionRef.current!, { duration: 1.2, y: 20 })
+
+      // Animate each polaroid with stagger reveal
+      const polaroids = sectionRef.current!.querySelectorAll('.polaroid-frame')
+      if (polaroids.length > 0) {
+        gsap.fromTo(polaroids,
+          { opacity: 0, y: 40, scale: 0.9 },
+          {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            duration: 0.8,
+            stagger: 0.15,
+            ease: 'power2.out',
+            scrollTrigger: {
+              trigger: sectionRef.current!,
+              start: 'top 80%',
+              toggleActions: 'play none none none',
+            },
+          }
+        )
+      }
     })
     return () => ctx.revert()
   }, [])
@@ -1598,7 +1409,7 @@ function GallerySection() {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   12. CLOSING — Diary Ending
+   9. CLOSING — Diary Ending
    The last page of this chapter, the first of forever
    ═══════════════════════════════════════════════════════════ */
 function ClosingSection() {
@@ -1750,7 +1561,7 @@ function ClosingSection() {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   13. FOOTER — The End
+   10. FOOTER — The End
    Very minimal, very elegant
    ═══════════════════════════════════════════════════════════ */
 function FooterSection() {
@@ -1788,12 +1599,16 @@ function FooterSection() {
 /* ═══════════════════════════════════════════════════════════
    HOME — The Main Experience
    "Jangan buat website. Buat perasaan."
+   DELETED: LamaranSection and MenikahSection (covered in Timeline)
+   ADDED: Auto-scroll cinematic experience
    ═══════════════════════════════════════════════════════════ */
 export default function Home() {
   const [isLoading, setIsLoading] = useState(true)
   const [isOpen, setIsOpen] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const audioRef = useRef<HTMLAudioElement>(null)
+  const autoScrollRef = useRef<number | null>(null)
+  const userScrollingRef = useRef(false)
 
   const handlePreloaderComplete = useCallback(() => setIsLoading(false), [])
 
@@ -1814,6 +1629,60 @@ export default function Home() {
       audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {})
     }
   }, [isPlaying])
+
+  // Auto-scroll cinematic experience
+  useEffect(() => {
+    if (!isOpen) return
+
+    let animationId: number
+    let resumeTimeout: ReturnType<typeof setTimeout>
+
+    const autoScroll = () => {
+      if (userScrollingRef.current) return
+      window.scrollBy(0, 0.5) // 0.5px per frame, very slow
+      animationId = requestAnimationFrame(autoScroll)
+    }
+
+    // Start auto-scroll after a short delay
+    const startTimeout = setTimeout(() => {
+      animationId = requestAnimationFrame(autoScroll)
+    }, 1000)
+
+    // Detect manual scroll — stop auto-scroll
+    const onWheel = () => {
+      userScrollingRef.current = true
+      cancelAnimationFrame(animationId)
+      clearTimeout(resumeTimeout)
+
+      // Resume after 4 seconds of no interaction
+      resumeTimeout = setTimeout(() => {
+        userScrollingRef.current = false
+        animationId = requestAnimationFrame(autoScroll)
+      }, 4000)
+    }
+
+    const onTouchStart = () => {
+      userScrollingRef.current = true
+      cancelAnimationFrame(animationId)
+      clearTimeout(resumeTimeout)
+
+      resumeTimeout = setTimeout(() => {
+        userScrollingRef.current = false
+        animationId = requestAnimationFrame(autoScroll)
+      }, 4000)
+    }
+
+    window.addEventListener('wheel', onWheel, { passive: true })
+    window.addEventListener('touchstart', onTouchStart, { passive: true })
+
+    return () => {
+      clearTimeout(startTimeout)
+      cancelAnimationFrame(animationId)
+      clearTimeout(resumeTimeout)
+      window.removeEventListener('wheel', onWheel)
+      window.removeEventListener('touchstart', onTouchStart)
+    }
+  }, [isOpen])
 
   return (
     <>
@@ -1842,8 +1711,7 @@ export default function Home() {
             <CoupleSection />
             <DiaryIntroSection />
             <TimelineSection />
-            <LamaranSection />
-            <MenikahSection />
+            {/* LamaranSection and MenikahSection REMOVED — covered in Timeline */}
             <CountdownSection />
             <EventSection />
             <GallerySection />
