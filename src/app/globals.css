@@ -813,24 +813,26 @@ html {
 /* ========================================
    22. GALLERY MEMORIES
    Photos pinned to the diary page — organic, not gridded
-   Like memories returning one by one
+   Like memories returning one by one from a dream
+   Cinematic: emerge from fog → focus → gentle breathing float
    ======================================== */
 .gallery-memories {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 1.2rem;
+  gap: 1.0rem;
   padding: 0 0.5rem;
 }
 
 @media (min-width: 640px) {
   .gallery-memories {
-    gap: 1.8rem;
+    gap: 1.4rem;
     padding: 0 1rem;
   }
 }
 
 /* Memory photo — like a polaroid floating to the surface of a dream */
+/* Starts hidden in fog, animation brings it into focus */
 .memory-photo {
   background: white;
   padding: 6px 6px 24px 6px;
@@ -842,6 +844,8 @@ html {
     4px 5px 0 rgba(166, 123, 61, 0.02);
   transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.6s ease;
   will-change: transform, opacity, filter;
+  /* Initial state: hidden in fog, animation will reveal */
+  opacity: 0;
 }
 
 .memory-photo:hover {

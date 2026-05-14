@@ -715,12 +715,14 @@ function DiaryStorySection() {
   // Like someone writing memories slowly in a journal
   // Each character breathes into existence with emotional pacing
   // Word boundaries get extra pause — the pen lifts between words
-  const doHandwritingReveal = (el: HTMLDivElement, text: string, stagger: number = 0.035, charDuration: number = 0.12, delay: number = 0) => {
+  // Sentence boundaries get breathing space — the writer pauses, thinks, continues
+  const doHandwritingReveal = (el: HTMLDivElement, text: string, stagger: number = 0.05, charDuration: number = 0.18, delay: number = 0) => {
     if (!el) return
     el.innerHTML = ''
 
     const allChars: HTMLSpanElement[] = []
     const wordBoundaries: number[] = [] // indices where new words start
+    const sentenceBoundaryIndices: number[] = [] // indices after sentence-ending chars
     const words = text.split(' ')
     words.forEach((word, wi) => {
       const ws = document.createElement('span')
@@ -736,6 +738,11 @@ function DiaryStorySection() {
         cs.textContent = word[j]
         ws.appendChild(cs)
         allChars.push(cs)
+        // Detect sentence endings — comma, period, etc — for breathing pauses
+        const ch = word[j]
+        if (ch === '.' || ch === ',' || ch === '...' || ch === ';') {
+          sentenceBoundaryIndices.push(allChars.length - 1)
+        }
       }
       el.appendChild(ws)
       if (wi < words.length - 1) {
@@ -746,12 +753,20 @@ function DiaryStorySection() {
       }
     })
 
-    // Build stagger array with word-boundary pauses
-    // Each word boundary gets a slightly longer pause (pen lifts between words)
+    // Build stagger array with word-boundary pauses AND sentence breathing pauses
+    // Each word boundary: pen lifts briefly between words
+    // Each sentence boundary: writer pauses, breathes, then continues
     const staggerValues: number[] = allChars.map((_, i) => {
       const isWordStart = wordBoundaries.includes(i)
-      // Word start: slightly longer pause — the pen lifts, breathes, then writes again
-      return isWordStart ? stagger * 1.8 : stagger
+      const isAfterSentence = sentenceBoundaryIndices.includes(i)
+      if (isAfterSentence) {
+        // After punctuation: longer breathing pause — the writer gathers thought
+        // Periods get longer than commas
+        const prevChar = i > 0 ? allChars[i - 1]?.textContent : ''
+        return prevChar === '.' ? stagger * 5 : stagger * 3
+      }
+      // Word start: pen lifts, breathes, then writes again
+      return isWordStart ? stagger * 2.2 : stagger
     })
 
     // Convert to cumulative delay array for gsap
@@ -759,7 +774,7 @@ function DiaryStorySection() {
     const delays: number[] = []
     for (let i = 0; i < allChars.length; i++) {
       delays.push(cumulativeDelay)
-      cumulativeDelay += staggerValues[i] + charDuration * 0.3
+      cumulativeDelay += staggerValues[i] + charDuration * 0.25
     }
 
     // Animate each character individually with its own timing
@@ -773,6 +788,9 @@ function DiaryStorySection() {
         delay: delays[i],
       })
     })
+
+    // Return total duration so we can sync other animations
+    return cumulativeDelay + charDuration
   }
 
   useEffect(() => {
@@ -808,17 +826,17 @@ function DiaryStorySection() {
 
       // Title — slow, emotional handwriting reveal, serif italic
       // Like the chapter heading being written first
-      const titleStagger = isMobile ? 0.04 : 0.05
-      const titleCharDur = isMobile ? 0.1 : 0.14
-      doHandwritingReveal(titleEl, item.title, titleStagger, titleCharDur)
+      const titleStagger = isMobile ? 0.05 : 0.07
+      const titleCharDur = isMobile ? 0.14 : 0.2
+      const titleWriteTime = doHandwritingReveal(titleEl, item.title, titleStagger, titleCharDur) ?? calcWriteDuration(item.title, titleStagger, titleCharDur)
 
-      // Description — slower still, each word breathes
-      // Delayed: let the title finish before the story begins
-      const descStagger = isMobile ? 0.025 : 0.035
-      const descCharDur = isMobile ? 0.08 : 0.11
-      const titleWriteTime = calcWriteDuration(item.title, titleStagger, titleCharDur)
+      // Description — slower still, each word breathes, each sentence pauses
+      // Delayed: let the title finish, then breathe, then the story begins
+      const descStagger = isMobile ? 0.035 : 0.05
+      const descCharDur = isMobile ? 0.1 : 0.16
       // Emotional pause after title before description begins — breathing space
-      const descDelay = titleWriteTime + (isMobile ? 0.4 : 0.6)
+      // The pen rests. The writer looks up. Then continues.
+      const descDelay = titleWriteTime + (isMobile ? 0.8 : 1.2)
       doHandwritingReveal(descEl, item.description, descStagger, descCharDur, descDelay)
     }
 
@@ -836,26 +854,28 @@ function DiaryStorySection() {
         }
       })
 
-      // Mobile: dissolve without blur filter (expensive on mobile GPUs)
+      // Ink dissolve — text fades like disappearing ink on old paper
+      // Softer, more emotional than abrupt cut
       tl.to([titleEl, descEl], {
         opacity: 0,
-        ...(isMobile ? {} : { filter: 'blur(1.5px)' }),
-        duration: isMobile ? 0.4 : 0.5,
+        ...(isMobile ? {} : { filter: 'blur(2px)' }),
+        duration: isMobile ? 0.6 : 0.8,
         ease: 'power2.inOut',
-        stagger: 0.03,
+        stagger: 0.05,
       })
 
-      // Year badge fades
+      // Year badge fades softly
       if (yearBadge) {
         tl.to(yearBadge, {
           opacity: 0,
-          duration: 0.25,
+          duration: 0.4,
           ease: 'power2.in',
-        }, '-=0.3')
+        }, '-=0.5')
       }
 
       // The space between thoughts — a breath before the next memory
-      tl.to({}, { duration: isMobile ? 0.3 : 0.5 })
+      // Longer pause: let the old memory fade before the new one arrives
+      tl.to({}, { duration: isMobile ? 0.5 : 0.8 })
 
       // Reset and reveal next paragraph
       tl.call(() => {
@@ -1177,29 +1197,47 @@ function GallerySection() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [touchStart, setTouchStart] = useState<number | null>(null)
 
-  // Organic rotations — slightly different each time, like scattered photos
+  // Detect mobile once
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
+
+  // Organic rotations — slightly different each time, like scattered photos on a table
   const rotations = useRef(
-    WEDDING.galleryImages.map(() => Math.round((Math.random() - 0.5) * 10))
+    WEDDING.galleryImages.map(() => Math.round((Math.random() - 0.5) * 12))
   )
 
-  // Organic depth offsets — some photos slightly overlap, creating layered memory feel
+  // Organic depth offsets — memories overlap and layer like a dream collage
+  // Featured photos are closer (bigger scale), background memories are further
   const depthOffsets = useRef(
-    WEDDING.galleryImages.map((_, i) => ({
-      x: (Math.random() - 0.5) * 12,
-      y: (Math.random() - 0.5) * 8,
-      scale: 0.88 + Math.random() * 0.12,
-      z: i * 2, // z-index layering
-    }))
+    WEDDING.galleryImages.map((_, i) => {
+      // Featured memories (every 4th) — closer, bigger, more vivid
+      const isFeatured = i % 4 === 0
+      return {
+        x: (Math.random() - 0.5) * (isFeatured ? 8 : 16),
+        y: (Math.random() - 0.5) * (isFeatured ? 6 : 12),
+        scale: isFeatured ? 0.95 + Math.random() * 0.05 : 0.82 + Math.random() * 0.1,
+        z: isFeatured ? 10 + i : i,
+        opacity: isFeatured ? 1 : 0.85 + Math.random() * 0.15,
+      }
+    })
   )
 
-  // Varied sizes — memories are not all the same size
+  // Varied sizes — memories are not all the same size, some are closer, some further
   const photoSizes = useRef(
     WEDDING.galleryImages.map((_, i) => {
-      // Featured memories: 1st, 5th, 9th — bigger, closer, more important
-      if (i % 4 === 0) return 280
-      if (i % 3 === 0) return 240
-      if (i % 2 === 0) return 200
-      return 170 + Math.round(Math.random() * 30)
+      if (i === 0) return 300 // First memory — biggest, most vivid
+      if (i % 4 === 0) return 260 // Featured memories — prominent
+      if (i % 3 === 0) return 220 // Medium memories
+      if (i % 2 === 0) return 180 // Smaller memories
+      return 150 + Math.round(Math.random() * 30) // Background memories
+    })
+  )
+
+  // Organic vertical offsets — some memories are slightly higher or lower
+  // Like photos scattered on a table, not perfectly aligned
+  const verticalOffsets = useRef(
+    WEDDING.galleryImages.map((_, i) => {
+      if (i === 0) return 0 // First memory: center anchor
+      return (Math.random() - 0.5) * 30
     })
   )
 
@@ -1207,73 +1245,89 @@ function GallerySection() {
     const ctx = gsap.context(() => {
       fadeIn(sectionRef.current!, { duration: 1.2, y: 20 })
 
-      // Each memory returns one by one — from depth, from blur, from forgetting
+      // Each memory surfaces one by one — from depth, from blur, from forgetting
+      // The rhythm is organic, like memories returning in a dream
       const memories = sectionRef.current!.querySelectorAll('.memory-photo')
       if (memories.length > 0) {
         memories.forEach((memory, i) => {
           const depth = depthOffsets.current[i]
+          const isFeatured = i % 4 === 0
+
           // Organic rhythm — not linear, each memory surfaces in its own time
-          // Use a sine wave to create natural breathing rhythm between arrivals
-          const baseDelay = 0.35 * i
-          const organicBreath = Math.sin(i * 0.8 + 0.5) * 0.2
-          const staggerDelay = baseDelay + organicBreath
+          // Featured memories arrive slightly later (more important = more anticipation)
+          const baseDelay = isMobile ? 0.25 * i : 0.4 * i
+          const organicBreath = Math.sin(i * 0.7 + 1.2) * 0.3
+          const featuredExtraDelay = isFeatured ? 0.2 : 0
+          const staggerDelay = baseDelay + organicBreath + featuredExtraDelay
 
-          // Each memory arrives from a different direction — organic, not uniform
-          const arriveFromX = depth.x * 3
-          const arriveFromY = 60 + i * 6
-          const arriveScale = (depth.scale || 0.9) * 0.75
-          const arriveRotation = depth.x * 0.5
+          // Each memory arrives from a unique direction — like surfacing from fog
+          const arriveFromX = depth.x * 4 + (Math.random() - 0.5) * 30
+          const arriveFromY = (isMobile ? 40 : 60) + i * 4 + Math.random() * 20
+          const arriveScale = (depth.scale || 0.9) * 0.65
+          const arriveRotation = (Math.random() - 0.5) * 15
 
-          gsap.fromTo(memory,
+          // CINEMATIC ENTRANCE — three phases:
+          // 1. Emerge from fog (blur + scale + opacity)
+          // 2. Focus (de-blur + scale up)  
+          // 3. Settle into final position with gentle floating
+
+          const tl = gsap.timeline({
+            scrollTrigger: {
+              trigger: sectionRef.current!,
+              start: 'top 80%',
+              toggleActions: 'play none none none',
+            },
+            delay: staggerDelay,
+          })
+
+          // Phase 1: Emerge from fog
+          tl.fromTo(memory,
             {
               opacity: 0,
               x: arriveFromX,
               y: arriveFromY,
               scale: arriveScale,
               rotation: arriveRotation,
-              filter: 'blur(8px)',
+              filter: 'blur(12px)',
             },
             {
-              opacity: 1,
-              x: depth.x,
-              y: depth.y,
-              scale: depth.scale,
-              rotation: rotations.current[i],
-              filter: 'blur(0px)',
-              duration: 1.8,
-              delay: staggerDelay,
-              ease: 'power3.out',
-              scrollTrigger: {
-                trigger: sectionRef.current!,
-                start: 'top 75%',
-                toggleActions: 'play none none none',
-              },
-              onComplete: () => {
-                // After arriving — gentle floating, like the memory is alive and breathing
-                gsap.to(memory, {
-                  y: `+=${2 + Math.random() * 2}`,
-                  x: `+=${(Math.random() - 0.5) * 2}`,
-                  duration: 3 + Math.random() * 3,
-                  ease: 'sine.inOut',
-                  yoyo: true,
-                  repeat: -1,
-                  delay: Math.random() * 2,
-                })
-              },
+              opacity: depth.opacity * 0.6,
+              x: depth.x * 1.5,
+              y: (verticalOffsets.current[i] || 0) + depth.y * 1.5,
+              scale: depth.scale * 0.9,
+              rotation: rotations.current[i] + (Math.random() - 0.5) * 3,
+              filter: 'blur(4px)',
+              duration: isMobile ? 0.8 : 1.2,
+              ease: 'power2.out',
             }
           )
 
-          // Cinematic zoom before placement — a brief moment of focus
-          // Each photo does a tiny zoom-in after it arrives, like the eye focusing
-          gsap.fromTo(memory,
-            { scale: arriveScale },
-            {
-              scale: depth.scale,
-              duration: 0.6,
-              delay: staggerDelay + 1.4,
-              ease: 'back.out(1.2)',
-            }
-          )
+          // Phase 2: Focus — cinematic zoom, like the eye adjusting
+          tl.to(memory, {
+            opacity: depth.opacity,
+            x: depth.x,
+            y: (verticalOffsets.current[i] || 0) + depth.y,
+            scale: depth.scale,
+            rotation: rotations.current[i],
+            filter: 'blur(0px)',
+            duration: isMobile ? 0.6 : 0.8,
+            ease: isFeatured ? 'back.out(1.4)' : 'power3.out',
+          })
+
+          // Phase 3: Settle — gentle breathing float, memory is alive
+          tl.call(() => {
+            const floatDistance = isFeatured ? 3 : 2
+            const floatDuration = isFeatured ? 4 : 3 + Math.random() * 2
+            gsap.to(memory, {
+              y: `+=${floatDistance}`,
+              x: `+=${(Math.random() - 0.5) * 1.5}`,
+              duration: floatDuration,
+              ease: 'sine.inOut',
+              yoyo: true,
+              repeat: -1,
+              delay: Math.random() * 2,
+            })
+          })
         })
       }
     })
@@ -1343,6 +1397,8 @@ function GallerySection() {
         <div className="gallery-memories">
           {WEDDING.galleryImages.map((img, index) => {
             const depth = depthOffsets.current[index]
+            const isFeatured = index % 4 === 0
+            const verticalOffset = verticalOffsets.current[index] || 0
             return (
             <div
               key={index}
@@ -1351,14 +1407,17 @@ function GallerySection() {
                 // Organic placement — each photo drifts to its own position
                 transform: `rotate(${rotations.current[index]}deg)`,
                 maxWidth: `${photoSizes.current[index]}px`,
-                // Layered depth — some photos overlap slightly, like scattered memories
-                marginLeft: index % 3 === 0 ? 'auto' : index % 3 === 1 ? '6%' : '3%',
-                marginRight: index % 3 === 0 ? '3%' : index % 3 === 1 ? 'auto' : '6%',
-                // Organic vertical spacing — not perfectly aligned, like a journal page
-                marginBottom: index % 2 === 0 ? '-18px' : '-8px',
-                // Layered z-index for overlap depth feel
+                // Layered depth — organic horizontal offset, not rigid grid
+                marginLeft: index % 3 === 0 ? 'auto' : index % 3 === 1 ? '5%' : '2%',
+                marginRight: index % 3 === 0 ? '2%' : index % 3 === 1 ? 'auto' : '5%',
+                // Organic vertical spacing — deeper overlap for layered memory feel
+                marginBottom: isFeatured ? '-12px' : index % 2 === 0 ? '-20px' : '-10px',
+                marginTop: `${verticalOffset}px`,
+                // Layered z-index for overlap depth feel — featured on top
                 zIndex: depth.z,
                 position: 'relative',
+                // Featured memories get slightly more prominent shadow
+                filter: 'blur(12px)', // Start blurred, animation will clear it
               }}
               onClick={() => openLightbox(index)}
               role="button"
@@ -1602,82 +1661,95 @@ function ClosingSection() {
 
                   // After handwriting completes — ALL ending text dissolves together
                   // Like the entire page being carried away by warm wind
-                  const writingDuration = words.length * 0.4 + words.reduce((a, w) => a + w.length * 0.08, 0) + 2.5
+                  const writingDuration = words.length * 0.4 + words.reduce((a, w) => a + w.length * 0.08, 0) + 3.0
                   setTimeout(() => {
-                    // Collect ALL text elements in the closing section that should dissolve
+                    // === DUST DISSOLVE — ALL text elements dissolve together ===
+                    // Collect the primary content containers that hold ALL text
                     const contentEl = sectionRef.current?.querySelector('.relative.z-10') as HTMLDivElement | null
                     if (!contentEl) return
 
-                    // Get all direct children that contain text
-                    const allTextElements = contentEl.querySelectorAll('div > div, div > p')
-                    // Also include the final line word spans
-                    const dissolveElements: HTMLElement[] = []
-
-                    allTextElements.forEach((el) => {
-                      if (el instanceof HTMLElement && el.textContent && el.textContent.trim()) {
-                        dissolveElements.push(el)
+                    // Build a flat list of ALL dissolve-able elements in top-to-bottom order
+                    // Include: title div, subtitle div, doa div, footerLine div, finalLine, date
+                    const dissolveTargets: HTMLElement[] = []
+                    
+                    // Add all the ref'd elements that contain text
+                    const refsToDissolve = [titleRef.current, subtitleRef.current, doaRef.current, footerLineRef.current, finalLineRef.current]
+                    refsToDissolve.forEach(ref => {
+                      if (ref && ref.textContent && ref.textContent.trim()) {
+                        dissolveTargets.push(ref)
                       }
                     })
 
-                    // Add final line word spans
-                    wordSpans.forEach(ws => dissolveElements.push(ws))
+                    // Also add the final line word spans individually for organic dissolve
+                    wordSpans.forEach(ws => dissolveTargets.push(ws))
 
-                    // Dust dissolve — ALL text dissolves progressively from back to front
-                    // Each element turns to dust and drifts away on warm wind
-                    const reversedElements = [...dissolveElements].reverse()
-                    reversedElements.forEach((el, ri) => {
-                      // Spawn tiny golden dust particles
+                    // Dust dissolve — ALL text dissolves progressively from bottom to top
+                    // Like a page being consumed by warm wind from the bottom up
+                    // Reverse order: bottom elements dissolve first (closer to the wind)
+                    const reversedTargets = [...dissolveTargets].reverse()
+                    
+                    reversedTargets.forEach((el, ri) => {
+                      // Spawn tiny golden dust particles around each element
                       const spawnDustParticles = () => {
                         if (isMobile) return // Skip on mobile for performance
                         const rect = el.getBoundingClientRect()
                         const sectionRect = sectionRef.current?.getBoundingClientRect()
                         if (!sectionRect) return
-                        const particleCount = 2 + Math.floor(Math.random() * 2)
+                        const particleCount = 3 + Math.floor(Math.random() * 3)
                         for (let p = 0; p < particleCount; p++) {
                           const particle = document.createElement('span')
+                          const size = 1 + Math.random() * 3
                           particle.style.cssText = `
                             position:absolute;
-                            width:${1 + Math.random() * 2.5}px;
-                            height:${1 + Math.random() * 2.5}px;
+                            width:${size}px;
+                            height:${size}px;
                             border-radius:50%;
-                            background:rgba(201,169,110,${0.2 + Math.random() * 0.3});
+                            background:rgba(201,169,110,${0.15 + Math.random() * 0.35});
                             pointer-events:none;
                             top:${rect.top - sectionRect.top + Math.random() * rect.height}px;
                             left:${rect.left - sectionRect.left + Math.random() * rect.width}px;
+                            z-index:15;
                           `
-                          sectionRef.current?.querySelector('.relative.z-10')?.appendChild(particle)
+                          contentEl.appendChild(particle)
 
+                          // Dust particles drift softly in warm wind
                           gsap.to(particle, {
                             opacity: 0,
-                            x: 10 + Math.random() * 25, // drift right-ish, like warm wind
-                            y: -(10 + Math.random() * 25),
-                            duration: 1.8 + Math.random() * 0.8,
+                            x: (8 + Math.random() * 30) * (Math.random() > 0.3 ? 1 : -1),
+                            y: -(8 + Math.random() * 20),
+                            scale: 0.3 + Math.random() * 0.4,
+                            rotation: Math.random() * 40 - 20,
+                            duration: 2.0 + Math.random() * 1.0,
                             ease: 'power1.out',
-                            delay: ri * 0.35 + Math.random() * 0.2,
+                            delay: ri * 0.4 + Math.random() * 0.3,
                             onComplete: () => particle.remove(),
                           })
                         }
                       }
 
-                      // Main dissolve — soft opacity fade with gentle drift
-                      // Like text turning to dust and being carried by warm wind
-                      const windDriftX = 8 + Math.random() * 20  // wind blows right
-                      const windDriftY = -(5 + Math.random() * 12) // gentle upward
+                      // Organic dissolve timing — not perfectly even
+                      // Each element has slightly different dissolve speed and drift
+                      const organicDelay = ri * 0.4 + Math.random() * 0.15
+                      const windDriftX = (10 + Math.random() * 25) * (Math.random() > 0.4 ? 1 : -0.6)  // mostly right, sometimes left
+                      const windDriftY = -(6 + Math.random() * 15) // always drift upward softly
+                      const dissolveDuration = isMobile ? 1.2 : 1.6 + Math.random() * 0.3
 
                       gsap.to(el, {
                         opacity: 0,
                         x: `+=${windDriftX}`,
                         y: `+=${windDriftY}`,
-                        scale: 0.96,
-                        duration: isMobile ? 1.0 : 1.4,
+                        scale: 0.94 + Math.random() * 0.04,
+                        rotation: (Math.random() - 0.5) * 3, // tiny organic rotation
+                        ...(isMobile ? {} : { filter: 'blur(1.5px)' }),
+                        duration: dissolveDuration,
                         ease: 'power1.inOut',
-                        delay: ri * 0.35,
+                        delay: organicDelay,
                         onStart: spawnDustParticles,
                       })
                     })
 
                     // After all elements have dissolved — warm empty moment, then fade to darkness
-                    const dissolveDuration = reversedElements.length * 0.35 + 1.5 + 0.8
+                    const dissolveDuration = reversedTargets.length * 0.4 + 2.0 + 1.0
                     setTimeout(() => {
                       // Golden shimmer sweep — last light of golden hour
                       if (shimmerRef.current) {
@@ -1698,7 +1770,7 @@ function ClosingSection() {
                                 if (contentEl) {
                                   gsap.to(contentEl, {
                                     ...(isMobile ? {} : { filter: 'blur(2px)' }),
-                                    opacity: 0.7,
+                                    opacity: 0.6,
                                     duration: isMobile ? 3 : 4,
                                     ease: 'power2.inOut',
                                   })
@@ -1713,7 +1785,7 @@ function ClosingSection() {
                                 const fadeOverlay = sectionRef.current?.querySelector('.ending-fade-overlay') as HTMLDivElement | null
                                 if (fadeOverlay) {
                                   gsap.to(fadeOverlay, {
-                                    opacity: 0.85,
+                                    opacity: 0.88,
                                     duration: isMobile ? 5 : 6,
                                     ease: 'power2.inOut',
                                   })
@@ -1730,7 +1802,7 @@ function ClosingSection() {
                                     })
                                   }
                                 }, isMobile ? 3000 : 4000)
-                              }, 1000) // warm empty moment before darkness
+                              }, 1500) // longer warm empty moment before darkness
                             },
                           }
                         )
@@ -2072,6 +2144,7 @@ export default function Home() {
 
   // Music fade-out during closing section — emotional synchronization
   // The story slowly disappears into silence, not cut off abruptly
+  // Gradual fade synced with dust dissolve, then brief silence at the end
   useEffect(() => {
     if (!isOpen || !audioRef.current) return
 
@@ -2081,6 +2154,7 @@ export default function Home() {
     const audio = audioRef.current
     let fadeInterval: ReturnType<typeof setInterval> | null = null
     let hasStartedFade = false
+    let silenceTimeout: ReturnType<typeof setTimeout> | null = null
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -2088,28 +2162,34 @@ export default function Home() {
           if (entry.isIntersecting && !hasStartedFade && isPlaying) {
             hasStartedFade = true
             // Gradual volume reduction — slow, emotional, synchronized with text dissolve
-            // Takes about 8-10 seconds to fully fade, like a story fading into silence
+            // Three-phase fade: barely perceptible → getting quieter → final whispers → silence
             fadeInterval = setInterval(() => {
               if (audio.volume > 0.02) {
-                // Non-linear fade: slower at first, then accelerating
-                // This creates a more natural, emotional fade curve
-                const reduction = audio.volume > 0.5
-                  ? 0.008  // Slow at first — barely perceptible
-                  : audio.volume > 0.2
-                    ? 0.012  // Getting quieter
-                    : 0.02   // Final whispers fade faster
+                // Non-linear fade: slower at first (barely perceptible), then gradually faster
+                // This mirrors how we perceive sound fading — the first drops are hardest to notice
+                const reduction = audio.volume > 0.6
+                  ? 0.004  // Phase 1: Barely perceptible — audience doesn't notice yet
+                  : audio.volume > 0.35
+                    ? 0.006  // Phase 2: Getting quieter — the room is dimming
+                    : audio.volume > 0.15
+                      ? 0.01  // Phase 3: Fading into whispers
+                      : 0.018 // Phase 4: Last breaths of sound — almost silence
                 audio.volume = Math.max(0, audio.volume - reduction)
               } else {
+                // Sound has faded to near-zero
                 audio.volume = 0
-                audio.pause()
-                setIsPlaying(false)
+                // Brief moment of silence before full pause — let the absence of sound be felt
                 if (fadeInterval) clearInterval(fadeInterval)
+                silenceTimeout = setTimeout(() => {
+                  audio.pause()
+                  setIsPlaying(false)
+                }, 1500) // 1.5s of pure silence before full pause — the emotional breath
               }
-            }, 100) // Smooth 100ms intervals
+            }, 80) // Smooth 80ms intervals for imperceptible steps
           }
         })
       },
-      { threshold: 0.2 } // Start fading when 20% of closing section is visible
+      { threshold: 0.15 } // Start fading slightly earlier (15%) for more gradual transition
     )
 
     observer.observe(closingSection)
@@ -2117,6 +2197,7 @@ export default function Home() {
     return () => {
       observer.disconnect()
       if (fadeInterval) clearInterval(fadeInterval)
+      if (silenceTimeout) clearTimeout(silenceTimeout)
     }
   }, [isOpen, isPlaying])
 
