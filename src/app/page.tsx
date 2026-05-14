@@ -610,24 +610,27 @@ function DiaryIntroSection() {
         }
       }
 
-      // Handwriting reveal — FIXED: faster speed
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting && !hasAnimated.current) {
-              hasAnimated.current = true
-              handwritingReveal(textRef.current!, 0.022, 0.08)
-            }
-          })
-        },
-        { threshold: 0.3 }
-      )
-
-      if (sectionRef.current) {
-        observer.observe(sectionRef.current)
+      // Handwriting reveal — triggered by ScrollTrigger top 50% (consistent with ink strokes)
+      if (textRef.current) {
+        gsap.fromTo(textRef.current,
+          { opacity: 0 },
+          {
+            opacity: 0.85,
+            duration: 0.3,
+            scrollTrigger: {
+              trigger: sectionRef.current!,
+              start: 'top 50%',
+              toggleActions: 'play none none none',
+              onEnter: () => {
+                if (!hasAnimated.current) {
+                  hasAnimated.current = true
+                  handwritingReveal(textRef.current!, 0.022, 0.08)
+                }
+              },
+            },
+          }
+        )
       }
-
-      return () => observer.disconnect()
     })
 
     return () => ctx.revert()
@@ -1345,7 +1348,7 @@ function GallerySection() {
           const tl = gsap.timeline({
             scrollTrigger: {
               trigger: sectionRef.current!,
-              start: 'top 80%',
+              start: 'top 50%',
               toggleActions: 'play none none none',
             },
             delay: staggerDelay,
@@ -1598,85 +1601,75 @@ function ClosingSection() {
   const shimmerRef = useRef<HTMLDivElement>(null)
   const hasFinalAnimated = useRef(false)
 
+  // Handwriting reveal for closing — per letter stagger 0.04s
+  // Returns total duration so next element knows when to start
+  const doClosingHandwriting = (
+    el: HTMLDivElement,
+    stagger: number = 0.04,
+    charDuration: number = 0.08,
+    delay: number = 0,
+  ): number => {
+    if (!el) return 0
+    const isMobile = window.innerWidth < 768
+    const fullText = el.textContent || ''
+    el.innerHTML = ''
+
+    const allChars: HTMLSpanElement[] = []
+    const words = fullText.split(' ')
+    words.forEach((word, wi) => {
+      const ws = document.createElement('span')
+      ws.style.cssText = 'white-space:nowrap;display:inline;'
+      for (let j = 0; j < word.length; j++) {
+        const cs = document.createElement('span')
+        cs.className = 'hw-char'
+        cs.style.cssText = isMobile
+          ? `display:inline-block;opacity:0;transform:translateY(2px);min-width:0.08em;`
+          : `display:inline-block;will-change:opacity,transform;opacity:0;transform:translateY(3px) rotate(-1deg);min-width:0.08em;`
+        cs.textContent = word[j]
+        ws.appendChild(cs)
+        allChars.push(cs)
+      }
+      el.appendChild(ws)
+      if (wi < words.length - 1) {
+        const sp = document.createElement('span')
+        sp.innerHTML = '\u00A0'
+        sp.style.display = 'inline'
+        el.appendChild(sp)
+      }
+    })
+
+    gsap.to(allChars, {
+      opacity: 1,
+      y: 0,
+      rotation: 0,
+      duration: charDuration,
+      stagger,
+      ease: 'power2.out',
+      delay,
+    })
+
+    // Return total duration
+    return delay + allChars.length * stagger + charDuration
+  }
+
   useEffect(() => {
     const ctx = gsap.context(() => {
-      fadeIn(sectionRef.current!, { duration: 1.2, y: 20 })
+      // Section fade-in — ScrollTrigger top 80%
+      gsap.fromTo(sectionRef.current!,
+        { opacity: 0 },
+        {
+          opacity: 1,
+          duration: 1.2,
+          scrollTrigger: {
+            trigger: sectionRef.current!,
+            start: 'top 80%',
+            toggleActions: 'play none none none',
+          },
+        }
+      )
 
-      // Title — cinematic blur reveal (slower pacing)
-      if (titleRef.current) {
-        gsap.fromTo(titleRef.current,
-          { opacity: 0, filter: 'blur(8px)', y: 20 },
-          {
-            opacity: 1,
-            filter: 'blur(0px)',
-            y: 0,
-            duration: 2.5,
-            delay: 0.8,
-            ease: 'power3.out',
-            scrollTrigger: {
-              trigger: sectionRef.current!,
-              start: 'top 85%',
-              toggleActions: 'play none none none',
-            },
-          }
-        )
-      }
-
-      if (subtitleRef.current) {
-        gsap.fromTo(subtitleRef.current,
-          { opacity: 0, y: 15 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 1.5,
-            delay: 1.2,
-            ease: 'power3.out',
-            scrollTrigger: {
-              trigger: sectionRef.current!,
-              start: 'top 85%',
-              toggleActions: 'play none none none',
-            },
-          }
-        )
-      }
-
-      if (doaRef.current) {
-        gsap.fromTo(doaRef.current,
-          { opacity: 0, y: 15 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 1.5,
-            delay: 1.8,
-            ease: 'power3.out',
-            scrollTrigger: {
-              trigger: sectionRef.current!,
-              start: 'top 85%',
-              toggleActions: 'play none none none',
-            },
-          }
-        )
-      }
-
-      if (footerLineRef.current) {
-        gsap.fromTo(footerLineRef.current,
-          { opacity: 0 },
-          {
-            opacity: 1,
-            duration: 1,
-            delay: 2.5,
-            ease: 'power2.out',
-            scrollTrigger: {
-              trigger: sectionRef.current!,
-              start: 'top 85%',
-              toggleActions: 'play none none none',
-            },
-          }
-        )
-      }
-
-      // Final handwriting sentence — the emotional peak
-      // Then ALL ending text dissolves together like dust carried by warm wind
+      // ALL elements get handwriting — sequential from paragraph 1
+      // IntersectionObserver threshold 0.3 to trigger the sequence
       const observer = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
@@ -1684,204 +1677,194 @@ function ClosingSection() {
               hasFinalAnimated.current = true
               const isMobile = window.innerWidth < 768
 
-              setTimeout(() => {
-                if (finalLineRef.current) {
-                  gsap.set(finalLineRef.current, { opacity: 1 })
+              // Sequential handwriting — each element starts after the previous finishes
+              // Element 1: Title ("Dan seperti semua cerita indah...")
+              const charStagger = 0.04
+              const charDuration = 0.08
+              const breathingGap = 0.6 // pause between elements
 
-                  // Custom handwriting reveal for closing final line
-                  const fullText = finalLineRef.current.textContent || ''
-                  finalLineRef.current.innerHTML = ''
+              let cumulativeDelay = 0.3 // initial delay after section fades in
 
-                  const wordSpans: HTMLSpanElement[] = []
-                  const words = fullText.split(' ')
-                  words.forEach((word, wi) => {
-                    const ws = document.createElement('span')
-                    ws.style.cssText = 'display:inline-block;white-space:nowrap;position:relative;'
-                    const charSpans: HTMLSpanElement[] = []
-                    for (let j = 0; j < word.length; j++) {
-                      const cs = document.createElement('span')
-                      cs.className = 'hw-char'
-                      cs.style.cssText = isMobile
-                        ? `display:inline-block;opacity:0;transform:translateY(2px);min-width:0.08em;`
-                        : `display:inline-block;will-change:opacity,transform;opacity:0;transform:translateY(3px) rotate(-1deg);min-width:0.08em;`
-                      cs.textContent = word[j]
-                      ws.appendChild(cs)
-                      charSpans.push(cs)
-                    }
-                    finalLineRef.current!.appendChild(ws)
-                    wordSpans.push(ws)
+              // 1. Title handwriting
+              if (titleRef.current) {
+                gsap.set(titleRef.current, { opacity: 1 })
+                const titleDuration = doClosingHandwriting(titleRef.current, charStagger, charDuration, cumulativeDelay)
+                cumulativeDelay = titleDuration + breathingGap
+              }
 
-                    if (wi < words.length - 1) {
-                      const sp = document.createElement('span')
-                      sp.innerHTML = '\u00A0'
-                      sp.style.display = 'inline'
-                      finalLineRef.current!.appendChild(sp)
-                    }
+              // 2. Subtitle handwriting
+              if (subtitleRef.current) {
+                gsap.set(subtitleRef.current, { opacity: 1 })
+                const subtitleDuration = doClosingHandwriting(subtitleRef.current, charStagger, charDuration, cumulativeDelay)
+                cumulativeDelay = subtitleDuration + breathingGap
+              }
 
-                    // Handwriting animation — slow, emotional, each word breathes
-                    gsap.to(charSpans, {
-                      opacity: 1,
-                      y: 0,
-                      rotation: 0,
-                      duration: 0.25,
-                      stagger: isMobile ? 0.06 : 0.08,
-                      ease: 'power2.out',
-                      delay: wi * 0.4 + 0.5,
-                    })
-                  })
-
-                  // After handwriting completes — ALL ending text dissolves together
-                  // Like the entire page being carried away by warm wind
-                  const writingDuration = words.length * 0.4 + words.reduce((a, w) => a + w.length * 0.08, 0) + 3.0
-                  setTimeout(() => {
-                    // === DUST DISSOLVE — ALL text elements dissolve together ===
-                    // Collect the primary content containers that hold ALL text
-                    const contentEl = sectionRef.current?.querySelector('.relative.z-10') as HTMLDivElement | null
-                    if (!contentEl) return
-
-                    // Build a flat list of ALL dissolve-able elements in top-to-bottom order
-                    // Include: title div, subtitle div, doa div, footerLine div, finalLine, date
-                    const dissolveTargets: HTMLElement[] = []
-                    
-                    // Add all the ref'd elements that contain text
-                    const refsToDissolve = [titleRef.current, subtitleRef.current, doaRef.current, footerLineRef.current, finalLineRef.current]
-                    refsToDissolve.forEach(ref => {
-                      if (ref && ref.textContent && ref.textContent.trim()) {
-                        dissolveTargets.push(ref)
-                      }
-                    })
-
-                    // Also add the final line word spans individually for organic dissolve
-                    wordSpans.forEach(ws => dissolveTargets.push(ws))
-
-                    // Dust dissolve — ALL text dissolves progressively from bottom to top
-                    // Like a page being consumed by warm wind from the bottom up
-                    // Reverse order: bottom elements dissolve first (closer to the wind)
-                    const reversedTargets = [...dissolveTargets].reverse()
-                    
-                    reversedTargets.forEach((el, ri) => {
-                      // Spawn tiny golden dust particles around each element
-                      const spawnDustParticles = () => {
-                        if (isMobile) return // Skip on mobile for performance
-                        const rect = el.getBoundingClientRect()
-                        const sectionRect = sectionRef.current?.getBoundingClientRect()
-                        if (!sectionRect) return
-                        const particleCount = 3 + Math.floor(Math.random() * 3)
-                        for (let p = 0; p < particleCount; p++) {
-                          const particle = document.createElement('span')
-                          const size = 1 + Math.random() * 3
-                          particle.style.cssText = `
-                            position:absolute;
-                            width:${size}px;
-                            height:${size}px;
-                            border-radius:50%;
-                            background:rgba(201,169,110,${0.15 + Math.random() * 0.35});
-                            pointer-events:none;
-                            top:${rect.top - sectionRect.top + Math.random() * rect.height}px;
-                            left:${rect.left - sectionRect.left + Math.random() * rect.width}px;
-                            z-index:15;
-                          `
-                          contentEl.appendChild(particle)
-
-                          // Dust particles drift softly in warm wind
-                          gsap.to(particle, {
-                            opacity: 0,
-                            x: (8 + Math.random() * 30) * (Math.random() > 0.3 ? 1 : -1),
-                            y: -(8 + Math.random() * 20),
-                            scale: 0.3 + Math.random() * 0.4,
-                            rotation: Math.random() * 40 - 20,
-                            duration: 2.0 + Math.random() * 1.0,
-                            ease: 'power1.out',
-                            delay: ri * 0.4 + Math.random() * 0.3,
-                            onComplete: () => particle.remove(),
-                          })
-                        }
-                      }
-
-                      // Organic dissolve timing — not perfectly even
-                      // Each element has slightly different dissolve speed and drift
-                      const organicDelay = ri * 0.4 + Math.random() * 0.15
-                      const windDriftX = (10 + Math.random() * 25) * (Math.random() > 0.4 ? 1 : -0.6)  // mostly right, sometimes left
-                      const windDriftY = -(6 + Math.random() * 15) // always drift upward softly
-                      const dissolveDuration = isMobile ? 1.2 : 1.6 + Math.random() * 0.3
-
-                      gsap.to(el, {
-                        opacity: 0,
-                        x: `+=${windDriftX}`,
-                        y: `+=${windDriftY}`,
-                        scale: 0.94 + Math.random() * 0.04,
-                        rotation: (Math.random() - 0.5) * 3, // tiny organic rotation
-                        ...(isMobile ? {} : { filter: 'blur(1.5px)' }),
-                        duration: dissolveDuration,
-                        ease: 'power1.inOut',
-                        delay: organicDelay,
-                        onStart: spawnDustParticles,
-                      })
-                    })
-
-                    // After all elements have dissolved — warm empty moment, then fade to darkness
-                    const dissolveDuration = reversedTargets.length * 0.4 + 2.0 + 1.0
-                    setTimeout(() => {
-                      // Golden shimmer sweep — last light of golden hour
-                      if (shimmerRef.current) {
-                        gsap.fromTo(shimmerRef.current,
-                          { opacity: 0, x: -100 },
-                          {
-                            opacity: 0.08,
-                            x: window.innerWidth,
-                            duration: 2.5,
-                            ease: 'power1.inOut',
-                            onComplete: () => {
-                              gsap.set(shimmerRef.current!, { opacity: 0 })
-
-                              // Warm empty moment — brief silence before darkness
-                              setTimeout(() => {
-                                // Soft focus — content gently blurs like eyes closing
-                                const contentEl = sectionRef.current?.querySelector('.relative.z-10') as HTMLDivElement | null
-                                if (contentEl) {
-                                  gsap.to(contentEl, {
-                                    ...(isMobile ? {} : { filter: 'blur(2px)' }),
-                                    opacity: 0.6,
-                                    duration: isMobile ? 3 : 4,
-                                    ease: 'power2.inOut',
-                                  })
-                                  gsap.to(contentEl, {
-                                    scale: 0.98,
-                                    duration: isMobile ? 3 : 4,
-                                    ease: 'power2.inOut',
-                                  })
-                                }
-
-                                // Fade to warm darkness
-                                const fadeOverlay = sectionRef.current?.querySelector('.ending-fade-overlay') as HTMLDivElement | null
-                                if (fadeOverlay) {
-                                  gsap.to(fadeOverlay, {
-                                    opacity: 0.88,
-                                    duration: isMobile ? 5 : 6,
-                                    ease: 'power2.inOut',
-                                  })
-                                }
-
-                                // Date appears — the beginning of forever
-                                setTimeout(() => {
-                                  if (dateRef.current) {
-                                    gsap.set(dateRef.current, { opacity: 1 })
-                                    gsap.to(dateRef.current.querySelector('p'), {
-                                      opacity: 0.7,
-                                      duration: 2.5,
-                                      ease: 'power2.out',
-                                    })
-                                  }
-                                }, isMobile ? 3000 : 4000)
-                              }, 1500) // longer warm empty moment before darkness
-                            },
-                          }
-                        )
-                      }
-                    }, dissolveDuration * 1000)
-                  }, writingDuration * 1000)
+              // 3. Doa handwriting — two paragraphs separately (Arabic + transliteration)
+              if (doaRef.current) {
+                gsap.set(doaRef.current, { opacity: 1 })
+                const doaParagraphs = doaRef.current.querySelectorAll('p')
+                if (doaParagraphs.length > 1) {
+                  // Arabic line
+                  const arabicEl = doaParagraphs[0] as HTMLParagraphElement
+                  const arabicDur = doClosingHandwriting(arabicEl, charStagger, charDuration, cumulativeDelay)
+                  cumulativeDelay = arabicDur + breathingGap * 0.5
+                  // Transliteration line
+                  const latinEl = doaParagraphs[1] as HTMLParagraphElement
+                  const latinDur = doClosingHandwriting(latinEl, charStagger, charDuration, cumulativeDelay)
+                  cumulativeDelay = latinDur + breathingGap
+                } else {
+                  const doaDuration = doClosingHandwriting(doaRef.current, charStagger, charDuration, cumulativeDelay)
+                  cumulativeDelay = doaDuration + breathingGap
                 }
-              }, 500)
+              }
+
+              // 4. Footer line handwriting
+              if (footerLineRef.current) {
+                gsap.set(footerLineRef.current, { opacity: 1 })
+                const footerDuration = doClosingHandwriting(footerLineRef.current, charStagger, charDuration, cumulativeDelay)
+                cumulativeDelay = footerDuration + breathingGap
+              }
+
+              // 5. Final line handwriting — emotional peak
+              if (finalLineRef.current) {
+                gsap.set(finalLineRef.current, { opacity: 1 })
+                const finalDuration = doClosingHandwriting(finalLineRef.current, charStagger, charDuration, cumulativeDelay)
+                cumulativeDelay = finalDuration + breathingGap + 1.0 // extra pause before dissolve
+              }
+
+              // ─── After ALL handwriting completes — dust dissolve ───
+              // Schedule the dust dissolve based on the total cumulative delay
+              const totalWritingTime = cumulativeDelay
+
+              setTimeout(() => {
+                // === DUST DISSOLVE — ALL text elements dissolve together ===
+                const contentEl = sectionRef.current?.querySelector('.relative.z-10') as HTMLDivElement | null
+                if (!contentEl) return
+
+                const dissolveTargets: HTMLElement[] = []
+
+                const refsToDissolve = [titleRef.current, subtitleRef.current, doaRef.current, footerLineRef.current, finalLineRef.current]
+                refsToDissolve.forEach(ref => {
+                  if (ref && ref.textContent && ref.textContent.trim()) {
+                    dissolveTargets.push(ref)
+                  }
+                })
+
+                // Reverse order: bottom elements dissolve first
+                const reversedTargets = [...dissolveTargets].reverse()
+
+                reversedTargets.forEach((el, ri) => {
+                  const spawnDustParticles = () => {
+                    if (isMobile) return
+                    const rect = el.getBoundingClientRect()
+                    const sectionRect = sectionRef.current?.getBoundingClientRect()
+                    if (!sectionRect) return
+                    const particleCount = 3 + Math.floor(Math.random() * 3)
+                    for (let p = 0; p < particleCount; p++) {
+                      const particle = document.createElement('span')
+                      const size = 1 + Math.random() * 3
+                      particle.style.cssText = `
+                        position:absolute;
+                        width:${size}px;
+                        height:${size}px;
+                        border-radius:50%;
+                        background:rgba(201,169,110,${0.15 + Math.random() * 0.35});
+                        pointer-events:none;
+                        top:${rect.top - sectionRect.top + Math.random() * rect.height}px;
+                        left:${rect.left - sectionRect.left + Math.random() * rect.width}px;
+                        z-index:15;
+                      `
+                      contentEl.appendChild(particle)
+
+                      gsap.to(particle, {
+                        opacity: 0,
+                        x: (8 + Math.random() * 30) * (Math.random() > 0.3 ? 1 : -1),
+                        y: -(8 + Math.random() * 20),
+                        scale: 0.3 + Math.random() * 0.4,
+                        rotation: Math.random() * 40 - 20,
+                        duration: 2.0 + Math.random() * 1.0,
+                        ease: 'power1.out',
+                        delay: ri * 0.4 + Math.random() * 0.3,
+                        onComplete: () => particle.remove(),
+                      })
+                    }
+                  }
+
+                  const organicDelay = ri * 0.4 + Math.random() * 0.15
+                  const windDriftX = (10 + Math.random() * 25) * (Math.random() > 0.4 ? 1 : -0.6)
+                  const windDriftY = -(6 + Math.random() * 15)
+                  const dissolveDuration = isMobile ? 1.2 : 1.6 + Math.random() * 0.3
+
+                  gsap.to(el, {
+                    opacity: 0,
+                    x: `+=${windDriftX}`,
+                    y: `+=${windDriftY}`,
+                    scale: 0.94 + Math.random() * 0.04,
+                    rotation: (Math.random() - 0.5) * 3,
+                    ...(isMobile ? {} : { filter: 'blur(1.5px)' }),
+                    duration: dissolveDuration,
+                    ease: 'power1.inOut',
+                    delay: organicDelay,
+                    onStart: spawnDustParticles,
+                  })
+                })
+
+                // After all elements dissolved — warm empty moment, then fade to darkness
+                const dissolveDuration = reversedTargets.length * 0.4 + 2.0 + 1.0
+                setTimeout(() => {
+                  if (shimmerRef.current) {
+                    gsap.fromTo(shimmerRef.current,
+                      { opacity: 0, x: -100 },
+                      {
+                        opacity: 0.08,
+                        x: window.innerWidth,
+                        duration: 2.5,
+                        ease: 'power1.inOut',
+                        onComplete: () => {
+                          gsap.set(shimmerRef.current!, { opacity: 0 })
+
+                          setTimeout(() => {
+                            const contentEl = sectionRef.current?.querySelector('.relative.z-10') as HTMLDivElement | null
+                            if (contentEl) {
+                              gsap.to(contentEl, {
+                                ...(isMobile ? {} : { filter: 'blur(2px)' }),
+                                opacity: 0.6,
+                                duration: isMobile ? 3 : 4,
+                                ease: 'power2.inOut',
+                              })
+                              gsap.to(contentEl, {
+                                scale: 0.98,
+                                duration: isMobile ? 3 : 4,
+                                ease: 'power2.inOut',
+                              })
+                            }
+
+                            const fadeOverlay = sectionRef.current?.querySelector('.ending-fade-overlay') as HTMLDivElement | null
+                            if (fadeOverlay) {
+                              gsap.to(fadeOverlay, {
+                                opacity: 0.88,
+                                duration: isMobile ? 5 : 6,
+                                ease: 'power2.inOut',
+                              })
+                            }
+
+                            setTimeout(() => {
+                              if (dateRef.current) {
+                                gsap.set(dateRef.current, { opacity: 1 })
+                                gsap.to(dateRef.current.querySelector('p'), {
+                                  opacity: 0.7,
+                                  duration: 2.5,
+                                  ease: 'power2.out',
+                                })
+                              }
+                            }, isMobile ? 3000 : 4000)
+                          }, 1500)
+                        },
+                      }
+                    )
+                  }
+                }, dissolveDuration * 1000)
+              }, totalWritingTime * 1000)
             }
           })
         },
