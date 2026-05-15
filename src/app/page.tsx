@@ -34,7 +34,7 @@ const WEDDING = {
   lamaranDate: '31 Agustus 2025',
   timeline: [
     {
-      year: '2022',
+      year: '2020',
       title: 'Mulai Dekat',
       description:
         'Seiring berjalan waktu kami semakin dekat. Latar belakang yang berbeda membuat kami saling melengkapi dan banyak menemukan hal baru. Satu dua langkah menuntun kami hingga ke perjalanan selajutnya.',
@@ -557,6 +557,7 @@ function CoupleSection() {
 function DiaryIntroSection() {
   const sectionRef = useRef<HTMLDivElement>(null)
   const textRef = useRef<HTMLDivElement>(null)
+  const subtitleRef = useRef<HTMLDivElement>(null)
   const topStrokeRef = useRef<HTMLDivElement>(null)
   const bottomStrokeRef = useRef<HTMLDivElement>(null)
   const hasAnimated = useRef(false)
@@ -625,6 +626,10 @@ function DiaryIntroSection() {
                 if (!hasAnimated.current) {
                   hasAnimated.current = true
                   handwritingReveal(textRef.current!, 0.08, 0.25)
+                  // Subtitle handwriting — "Cerita kami dimulai" after main quote
+                  if (subtitleRef.current) {
+                    handwritingReveal(subtitleRef.current!, 0.06, 0.2, 1.5)
+                  }
                 }
               },
             },
@@ -648,7 +653,16 @@ function DiaryIntroSection() {
           className="text-sm tracking-wider mb-10 text-left pl-16 sm:pl-20"
           style={{ fontFamily: 'var(--font-body)', color: 'var(--gold)', opacity: 0.6 }}
         >
-          2022
+          2020
+        </p>
+
+        {/* Subtitle — handwriting reveal */}
+        <p
+          ref={subtitleRef}
+          className="text-xs tracking-wider mb-8 text-left pl-16 sm:pl-20 min-h-[1.5em]"
+          style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold)', opacity: 0.7, fontStyle: 'italic' }}
+        >
+          Cerita kami dimulai
         </p>
 
         {/* Top ink stroke */}
@@ -1042,7 +1056,7 @@ function DiaryStorySection() {
       <div className="max-w-lg mx-auto">
         {/* Section heading */}
         <h2 className="text-3xl sm:text-4xl text-center mb-12" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
-          Cerita Kami
+          Waktu Kian Berlalu
         </h2>
 
         {/* The diary card — one page, one story */}
