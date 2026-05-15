@@ -2041,11 +2041,11 @@ export default function Home() {
       }
     }
 
-    // Start after 5 seconds — give time to read the Bismillah verse
+    // Start after 10 seconds — give time to read the Bismillah verse
     const startTimeout = setTimeout(() => {
       lastTime = 0
       animationId = requestAnimationFrame(tick)
-    }, 5000)
+    }, 10000)
 
     // ─── User scroll detection — pause then auto-resume ───
     const pauseAndResume = () => {
