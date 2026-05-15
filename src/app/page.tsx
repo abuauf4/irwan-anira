@@ -2039,11 +2039,25 @@ export default function Home() {
     let lastTime = 0
 
     // ─── Speed: pixels per millisecond ───
-    // 0.05 px/ms = ~3 px/frame at 60fps = ~50 px/s
+    // 0.025 px/ms = ~1.5 px/frame at 60fps = ~25 px/s (normal)
     // Very slow cinematic drift — like watching a story unfold page by page
+    // Gallery onwards: 2x speed = faster scroll through photo gallery + RSVP
     // Closing done: 0.3x speed = gentle drift to footer
     const isMobile = window.innerWidth < 768
     const pxPerMs = 0.025
+    const pxPerMsFast = pxPerMs * 2  // 2x speed from gallery onwards
+
+    // ─── Section-aware speed ───
+    // Cache gallery section offset once (it doesn't change after layout)
+    let galleryTop: number | null = null
+    const getGalleryTop = (): number => {
+      if (galleryTop !== null) return galleryTop
+      const galleryEl = document.querySelector('[data-section="gallery"]')
+      if (galleryEl) {
+        galleryTop = (galleryEl as HTMLElement).offsetTop
+      }
+      return galleryTop || Infinity
+    }
 
     // ─── State ───
     let cinematicLock = false
@@ -2077,7 +2091,16 @@ export default function Home() {
       }
 
       // ─── Accumulate fractional pixels ───
-      const speed = isClosingDone ? pxPerMs * 0.3 : pxPerMs  // Gentle drift after closing
+      // From gallery onwards → 2x speed (photos + RSVP scroll faster)
+      const pastGallery = window.scrollY >= getGalleryTop()
+      let speed: number
+      if (isClosingDone) {
+        speed = pxPerMs * 0.3  // Gentle drift after closing
+      } else if (pastGallery) {
+        speed = pxPerMsFast  // 2x from gallery onwards
+      } else {
+        speed = pxPerMs  // Normal cinematic drift
+      }
       accumulated += delta * speed
 
       // ─── Only scroll WHOLE pixels — avoids sub-pixel layout thrashing ───
