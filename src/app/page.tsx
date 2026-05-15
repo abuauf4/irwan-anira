@@ -65,29 +65,12 @@ const WEDDING = {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   SECTION-BASED AUTO-SCROLL CONFIG
-   Each section defines its own scroll behavior
-   speed: pixels per frame at 60fps baseline (0 = stop)
-   cinematic: if true, auto-scroll FULLY PAUSES until section signals completion
+   AUTO-SCROLL NOTE:
+   Speed is defined in the Home component's useEffect.
+   Only diary/closing get cinematic lock (full stop via custom events),
+   everything else glides at constant speed.
+   No per-section speed config — one constant speed = no stutter.
    ═══════════════════════════════════════════════════════════ */
-// UNIFORM speed for all sections — no speed changes = no stutter
-// Only diary/closing get cinematic lock (full stop), everything else glides at the same pace
-const SCROLL_SPEED = 2.0  // px/frame — smooth consistent glide
-const SECTION_SCROLL: Record<string, { speed: number; cinematic: boolean }> = {
-  cover:      { speed: SCROLL_SPEED,  cinematic: false },
-  bismillah:  { speed: SCROLL_SPEED,  cinematic: false },
-  couple:     { speed: SCROLL_SPEED,  cinematic: false },
-  diaryIntro: { speed: SCROLL_SPEED,  cinematic: false },
-  diaryStory: { speed: 0,             cinematic: true  },  // LOCK — diary controls its own timeline
-  countdown:  { speed: SCROLL_SPEED,  cinematic: false },
-  events:     { speed: SCROLL_SPEED,  cinematic: false },
-  gallery:    { speed: SCROLL_SPEED,  cinematic: false },
-  rsvp:       { speed: SCROLL_SPEED,  cinematic: false },
-  envelope:   { speed: SCROLL_SPEED,  cinematic: false },
-  wishes:     { speed: SCROLL_SPEED,  cinematic: false },
-  closing:    { speed: 0,             cinematic: true  },  // LOCK — closing has dissolve animation
-  footer:     { speed: 0,             cinematic: false },  // STOP — end of page
-}
 
 /* ═══════════════════════════════════════════════════════════
    COUNTDOWN HOOK
@@ -989,20 +972,22 @@ function DiaryStorySection() {
       // Mark sequence as complete — signal auto-scroll to resume
       sequenceCompleteRef.current = true
 
-      // Kill the ScrollTrigger pin so the section returns to normal flow
-      // This removes the extra scroll space created by pinning
-      if (pinTriggerRef.current) {
-        pinTriggerRef.current.kill()
-        pinTriggerRef.current = null
-        // Refresh all ScrollTriggers to recalculate positions after pin removal
-        ScrollTrigger.refresh()
-      }
+      // Signal that diary section is done — auto-scroll can resume
+      // Dispatch FIRST before killing the pin, so auto-scroll starts
+      // accumulating again and is ready to scroll when pin space vanishes
+      window.dispatchEvent(new CustomEvent('diary-sequence-complete'))
 
-      // Signal that diary section is done — auto-scroll can resume smoothly
-      // 800ms delay to let ScrollTrigger.refresh() settle after pin removal
+      // Wait a beat for auto-scroll to resume, THEN kill pin
+      // This way the page can smoothly scroll past the diary section
+      // instead of experiencing a sudden layout shift
       setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('diary-sequence-complete'))
-      }, 800)
+        if (pinTriggerRef.current) {
+          pinTriggerRef.current.kill()
+          pinTriggerRef.current = null
+          // Refresh all ScrollTriggers to recalculate positions after pin removal
+          ScrollTrigger.refresh()
+        }
+      }, 200)
     }
 
     // ─── IntersectionObserver: detect entry ───
@@ -1982,71 +1967,86 @@ export default function Home() {
     }
   }, [isPlaying])
 
-  // Auto-scroll — pure constant velocity, no observer
-  // Speed NEVER changes between sections — that's what was causing the stutter
-  // Only 2 things can stop it: cinematic lock (diary/closing) and user scroll
-  // Cinematic lock is triggered by ScrollTrigger events at top 0%
+  // ═══════════════════════════════════════════════════════════
+  // AUTO-SCROLL — Time accumulator approach
+  //
+  // WHY THIS WORKS (and the old approach didn't):
+  // - Old: velocity ramp + lerp + dt normalization = varying scroll per frame = STUTTER
+  // - New: fixed px/s rate + time accumulator = constant scroll speed = BUTTER SMOOTH
+  //
+  // The key insight: stuttering comes from UNEQUAL scroll amounts per frame.
+  // When velocity changes every frame (ramp/lerp/decay), each frame scrolls
+  // a different amount → visible jerkiness. By using a time accumulator that
+  // only scrolls WHOLE pixels, the browser gets a consistent scroll delta
+  // every frame, eliminating stutter completely.
+  //
+  // Only 2 things pause the scroll:
+  // 1. Cinematic lock (diary/closing) — triggered by custom events
+  // 2. User manual scroll — pauses for 2.5s then resumes
+  // ═══════════════════════════════════════════════════════════
   useEffect(() => {
     if (!isOpen) return
 
     let animationId: number
     let resumeTimeout: ReturnType<typeof setTimeout>
     let lastTime = 0
+
+    // ─── Speed: pixels per millisecond ───
+    // 0.12 px/ms = ~7.2 px/frame at 60fps = ~120 px/s
+    // Feels like a gentle, constant drift — like floating downstream
     const isMobile = window.innerWidth < 768
-    const mobileMultiplier = isMobile ? 2.0 : 1.0
-    const baseSpeed = SCROLL_SPEED * mobileMultiplier
+    const pxPerMs = isMobile ? 0.18 : 0.12  // Mobile slightly faster
 
-    // Simple state — just current velocity and a lock flag
-    let velocity = baseSpeed * 0.5  // Start gentle, ramp up
+    // ─── State ───
     let cinematicLock = false
-    let isClosingDone = false  // After closing completes, drift slowly to end
+    let isClosingDone = false
+    let accumulated = 0  // Fractional pixel accumulator
 
-    // Auto-scroll loop — constant speed, nothing to stutter
-    const autoScroll = (time: number) => {
-      animationId = requestAnimationFrame(autoScroll)
+    // ─── rAF tick ───
+    const tick = (time: number) => {
+      animationId = requestAnimationFrame(tick)
 
-      const dt = lastTime === 0 ? 1 : Math.min((time - lastTime) / 16.67, 3)
+      // First frame — seed lastTime, don't scroll
+      if (lastTime === 0) {
+        lastTime = time
+        return
+      }
+
+      const delta = Math.min(time - lastTime, 50)  // Cap at 50ms to prevent huge jumps after tab switch
       lastTime = time
 
-      // Cinematic lock — smooth deceleration to stop
-      if (cinematicLock) {
-        velocity *= Math.pow(0.92, dt)  // Exponential decay
-        if (velocity < 0.01) velocity = 0
-        if (velocity > 0.05) window.scrollBy(0, velocity * dt)
+      // ─── Paused states — don't accumulate ───
+      if (cinematicLock || userScrollingRef.current) {
+        accumulated = 0  // Reset accumulator so resume doesn't cause a jump
         return
       }
 
-      // User scroll pause — same smooth deceleration
-      if (userScrollingRef.current) {
-        velocity *= Math.pow(0.90, dt)
-        if (velocity < 0.01) velocity = 0
+      // ─── At bottom? Stay alive but don't scroll ───
+      const atBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 2)
+      if (atBottom) {
+        accumulated = 0
         return
       }
 
-      // At bottom? Keep alive but don't scroll
-      const atBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 1)
-      if (atBottom) return
+      // ─── Accumulate fractional pixels ───
+      const speed = isClosingDone ? pxPerMs * 0.2 : pxPerMs  // Slow drift after closing
+      accumulated += delta * speed
 
-      // After closing completes — drift slowly to end, don't ramp back up
-      const targetSpeed = isClosingDone ? baseSpeed * 0.15 : baseSpeed
-
-      // Smooth ramp toward target — simple exponential approach
-      const diff = targetSpeed - velocity
-      velocity += diff * (1 - Math.pow(0.92, dt))
-
-      // Apply scroll
-      if (velocity > 0.05) {
-        window.scrollBy(0, velocity * dt)
+      // ─── Only scroll WHOLE pixels — avoids sub-pixel layout thrashing ───
+      const wholePixels = Math.floor(accumulated)
+      if (wholePixels > 0) {
+        accumulated -= wholePixels
+        window.scrollBy(0, wholePixels)
       }
     }
 
     // Start after a brief delay
     const startTimeout = setTimeout(() => {
       lastTime = 0
-      animationId = requestAnimationFrame(autoScroll)
-    }, 500)
+      animationId = requestAnimationFrame(tick)
+    }, 400)
 
-    // User scroll detection — pause then resume
+    // ─── User scroll detection — pause then auto-resume ───
     const pauseAndResume = () => {
       if (cinematicLock) return
       userScrollingRef.current = true
@@ -2054,8 +2054,8 @@ export default function Home() {
       resumeTimeout = setTimeout(() => {
         if (cinematicLock) return
         userScrollingRef.current = false
-        velocity = baseSpeed * 0.4  // Resume gently
-      }, 2000)
+        // No velocity to reset — accumulator starts from 0, constant speed resumes
+      }, 2500)
     }
 
     const onWheel = () => pauseAndResume()
@@ -2064,22 +2064,22 @@ export default function Home() {
     window.addEventListener('wheel', onWheel, { passive: true })
     window.addEventListener('touchstart', onTouchStart, { passive: true })
 
-    // ═══ Cinematic locks — ONLY from ScrollTrigger events ═══
-    // diary-sequence-start: dispatched by DiaryStorySection at top 0%
-    // closing-sequence-start: dispatched by ClosingSection at top 0%
+    // ═══ Cinematic locks — ONLY from custom events ═══
+    // diary-sequence-start: dispatched by DiaryStorySection when scroll reaches top 0%
+    // closing-sequence-start: dispatched by ClosingSection when scroll reaches top 0%
     const onDiaryStart = () => { cinematicLock = true }
     const onClosingStart = () => { cinematicLock = true }
 
     const onDiaryComplete = () => {
       cinematicLock = false
       userScrollingRef.current = false
-      velocity = baseSpeed * 0.5  // Gentle resume
+      // Resume at same constant speed — no velocity ramp needed
     }
 
     const onClosingComplete = () => {
       cinematicLock = false
       isClosingDone = true
-      velocity = baseSpeed * 0.15  // Slow drift to end
+      // Resume at slow drift speed
     }
 
     window.addEventListener('diary-sequence-start', onDiaryStart)
