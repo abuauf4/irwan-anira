@@ -337,7 +337,7 @@ function CoverSectionInner({ onOpen }: CoverSectionProps) {
             hover:bg-[var(--gold)]/10 hover:border-[var(--gold)]/80 transition-all duration-700 cursor-pointer"
           style={{ fontFamily: 'var(--font-body)' }}
         >
-          {isOpening ? '' : 'Wujuhna Ati — Buka Undangan'}
+          {isOpening ? '' : 'Buka Undangan'}
         </button>
       </div>
     </section>
