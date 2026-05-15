@@ -1992,13 +1992,11 @@ export default function Home() {
     let lastTime = 0
 
     // ─── Speed: pixels per millisecond ───
-    // 0.10 px/ms = ~6 px/frame at 60fps = ~100 px/s (desktop)
-    // Slow cinematic drift — like watching a story unfold
-    // Previously felt slow because scroll-behavior:smooth caused stutter,
-    // now with scroll-behavior:auto it should feel smooth at this speed
+    // 0.05 px/ms = ~3 px/frame at 60fps = ~50 px/s
+    // Very slow cinematic drift — like watching a story unfold page by page
     // Closing done: 0.3x speed = gentle drift to footer
     const isMobile = window.innerWidth < 768
-    const pxPerMs = isMobile ? 0.15 : 0.10
+    const pxPerMs = isMobile ? 0.05 : 0.05
 
     // ─── State ───
     let cinematicLock = false
