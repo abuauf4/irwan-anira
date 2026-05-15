@@ -1,12 +1,16 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 
 interface CoverSectionProps {
   onOpen: () => void
 }
 
-export default function CoverSection({ onOpen }: CoverSectionProps) {
+function CoverSectionInner({ onOpen }: CoverSectionProps) {
+  const searchParams = useSearchParams();
+  const guestName = searchParams.get('to') || 'Tamu Undangan';
   const [isOpening, setIsOpening] = useState(false)
   const [phase, setPhase] = useState<'idle' | 'leaning' | 'blooming' | 'breathing' | 'dissolving' | 'darkness'>('idle')
   const containerRef = useRef<HTMLDivElement>(null)
@@ -300,7 +304,7 @@ export default function CoverSection({ onOpen }: CoverSectionProps) {
 
         <p className="tracking-[0.35em] uppercase text-[10px] sm:text-xs mb-4"
           style={{ fontFamily: 'var(--font-body)', color: 'var(--gold-light)', opacity: 0.7 }}>
-          The Wedding Invitation of
+          Kitab Cinta — Undangan Pernikahan
         </p>
 
         {/* Names with handwriting reveal */}
@@ -320,6 +324,7 @@ export default function CoverSection({ onOpen }: CoverSectionProps) {
           <div className="h-px w-full" style={{ background: 'linear-gradient(90deg, transparent, var(--gold), transparent)' }} />
         </div>
 
+        <p className="text-sm tracking-[0.2em] mb-4" style={{ fontFamily: 'var(--font-serif)', color: 'var(--cream)', opacity: 0.8 }}>Kepada Yth. {guestName}</p>
         <p className="text-sm tracking-[0.2em] mb-10" style={{ fontFamily: 'var(--font-serif)', color: 'var(--cream)', opacity: 0.7 }}>
           05 . 07 . 2026
         </p>
@@ -332,9 +337,17 @@ export default function CoverSection({ onOpen }: CoverSectionProps) {
             hover:bg-[var(--gold)]/10 hover:border-[var(--gold)]/80 transition-all duration-700 cursor-pointer"
           style={{ fontFamily: 'var(--font-body)' }}
         >
-          {isOpening ? '' : 'Buka Undangan'}
+          {isOpening ? '' : 'Wujuhna Ati — Buka Undangan'}
         </button>
       </div>
     </section>
+  )
+}
+
+export default function CoverSection({ onOpen }: CoverSectionProps) {
+  return (
+    <Suspense fallback={null}>
+      <CoverSectionInner onOpen={onOpen} />
+    </Suspense>
   )
 }

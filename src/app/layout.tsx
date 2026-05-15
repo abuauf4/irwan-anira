@@ -30,16 +30,16 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Irwan & Anira - Wedding Invitation",
-  description: "Undangan pernikahan Irwan Pratomo & Anira Tri Agustini - 5 Juli 2026",
+  title: "Kitab Cinta — Irwan & Anira",
+  description: "Undangan pernikahan Kitab Cinta — Irwan Pratomo & Anira Tri Agustini — 5 Juli 2026",
   keywords: ["wedding", "undangan", "pernikahan", "Irwan", "Anira"],
   authors: [{ name: "Irwan & Anira" }],
   icons: {
     icon: "/images/hero-poster.jpg",
   },
   openGraph: {
-    title: "Irwan & Anira - Wedding Invitation",
-    description: "Undangan pernikahan Irwan Pratomo & Anira Tri Agustini - 5 Juli 2026",
+    title: "Kitab Cinta — Irwan & Anira",
+    description: "Undangan pernikahan Kitab Cinta — Irwan Pratomo & Anira Tri Agustini — 5 Juli 2026",
     type: "website",
   },
 };

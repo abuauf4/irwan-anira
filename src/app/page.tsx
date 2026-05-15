@@ -32,24 +32,25 @@ const WEDDING = {
   venue: 'Rumah Mempelai Wanita',
   address: 'Villa Mutiara Bogor 2 Blok C2 No.36, Kel. Waringin Jaya, Kec. Bojonggede, Kab. Bogor',
   lamaranDate: '31 Agustus 2025',
+  mapUrl: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3965.5!2d106.7!3d-6.5!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2sVilla+Mutiara+Bogor!5e0!3m2!1sid!2sid!4v1',
   timeline: [
     {
       year: '2022',
-      title: 'Mulai Dekat',
+      title: 'Sahabat Tapi Tak Terlihat',
       description:
-        'Seiring berjalan waktu kami semakin dekat. Latar belakang yang berbeda membuat kami saling melengkapi dan banyak menemukan hal baru. Satu dua langkah menuntun kami hingga ke perjalanan selajutnya.',
+        'Uwis taun-taun aku ngerti kowe, nanging aku durung ngerti yen kowe iku garis takdir kang wis ditulisake kanggo aku. Latar mburi kang beda ndadekake aku lan kowe padha nglengkapi. Saben langkah katon mbawa aku luwih cedhak karo wong kang pancene wis dadi bagane atiku.',
     },
     {
       year: '2025',
-      title: 'Lamaran',
+      title: 'Titimangsa Cinta',
       description:
-        'Kehendak-Nya menuntun kami pada pertemuan yang tak pernah disangka hingga akhirnya membawa kami pada sebuah ikatan suci yang dicintai-Nya, kami melangsungkan acara lamaran pada 31 Agustus 2025.',
+        'Ing wayah maghrib, kowe mangkat nggawa sekar melati. Aku krungu gamelan saka atiku dhewe. Kanggo kaping pisanan, aku muni — iki mungkin dudu kebetelan. Gusti kang nitahake rasa iki supaya wis wayahe aku lan kowe dadi siji.',
     },
     {
       year: '2026',
-      title: 'Menikah',
+      title: 'Gegayuhan — Menuju Pelaminan',
       description:
-        'Percayalah, bukan karena bertemu lalu berjodoh, tapi karena berjodohlah kami dipertemukan. Atas izin Allah kami memutuskan untuk mengikrarkan janji suci pernikahan pada 05 Juli 2026.',
+        'Saiki aku nulis iki kanthi jenengmu ing saben doaku. Ora ana maneh cangkriman — mung siji tembung kang aku tandhani: SAYANG. Atas izin Allah, kita mengikrarkan janji suci pernikahan, nyawisake awak dan ati dadi siji ing sandhing Gusti.',
     },
   ],
   galleryImages: [
@@ -59,7 +60,7 @@ const WEDDING = {
     '/images/gallery-10.jpg', '/images/gallery-11.jpg',
   ],
   galleryCaptions: [
-    'Pertama kali', 'Bersama', 'Kenangan', 'Tawa', 'Bahagia',
+    'Titimangsa Pertama', 'Bersama', 'Kenangan', 'Tawa', 'Bahagia',
     'Cinta', 'Semesta', 'Harapan', 'Janji', 'Selamanya', 'Kita',
   ],
 }
@@ -297,6 +298,7 @@ function BismillahSection() {
       {/* Soft golden light spots */}
       <div className="gold-light-leak absolute inset-0 pointer-events-none" />
       <div className="max-w-2xl mx-auto relative z-10">
+        <p className="text-xs tracking-[0.3em] uppercase mb-6" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold)', opacity: 0.4 }}>Sabda Gusti — Titimangsa Cinta</p>
         <p
           ref={arabicRef}
           className="text-3xl sm:text-4xl md:text-5xl mb-8 leading-relaxed"
@@ -501,9 +503,9 @@ function CoupleSection() {
 
       <div className="max-w-4xl mx-auto text-center relative z-10">
         <h2 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-light)' }}>
-          Mempelai
+          Pengantin
         </h2>
-        <p className="text-sm italic mb-10" style={{ fontFamily: 'var(--font-serif)', color: 'var(--cream)', opacity: 0.6 }}>Dua jiwa, satu kisah</p>
+        <p className="text-sm italic mb-10" style={{ fontFamily: 'var(--font-serif)', color: 'var(--cream)', opacity: 0.6 }}>Loro jiwa, siji garis takdir</p>
         <div className="ornament-divider max-w-xs mx-auto mb-14">
           <span className="text-[var(--gold)] text-lg">&#10047;</span>
         </div>
@@ -664,14 +666,14 @@ function DiaryIntroSection() {
             className="text-sm tracking-wider"
             style={{ fontFamily: 'var(--font-body)', color: 'var(--gold)', opacity: 0.6 }}
           >
-            2020
+            2022
           </p>
           <p
             ref={subtitleRef}
             className="text-sm sm:text-base tracking-wider min-h-[1.5em]"
             style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold)', opacity: 0.7, fontStyle: 'italic' }}
           >
-            Cerita kami dimulai
+            Kitab Cinta — Cathetan Ati
           </p>
         </div>
 
@@ -694,7 +696,7 @@ function DiaryIntroSection() {
           className="text-base sm:text-lg italic leading-relaxed min-h-[10em]"
           style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown)', opacity: 0.85 }}
         >
-          Tidak ada yang kebetulan di dunia ini, semua sudah tersusun rapih oleh sang maha kuasa, kita tidak bisa memilih kepada siapa kita akan jatuh cinta, awal kami bertemu pada tahun 2020. Tidak ada yang pernah meyangka bahwa pertemuan itu membawa kami pada suatu ikatan yang suci.
+          Ora ana sing kebetulan ing donya iki, kabeh wis kasusun rapi dening Sing Maha Kuasa. Kita ora bisa milih marang sapa kita bakal katresnan. Pawiyating atiku kowe, mula bukan saka rasa, nanging saka garis takdir kang wis dawa ditemokake. Lan saiki, aku nulis iki — supaya donya ngerti yen cinta sejati iku nyata.
         </p>
 
         {/* Bottom ink stroke */}
@@ -1068,7 +1070,7 @@ function DiaryStorySection() {
       <div className="max-w-lg mx-auto">
         {/* Section heading */}
         <h2 className="text-3xl sm:text-4xl text-center mb-12" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
-          Waktu Kian Berlalu
+          Wektu Tansah Mlaku — Waktu Kian Berlalu
         </h2>
 
         {/* The diary card — one page, one story */}
@@ -1127,7 +1129,7 @@ function CountdownSection() {
     <section ref={sectionRef} data-section="countdown" className="batik-kawung cinema-depth py-28 px-6 text-center" style={{ opacity: 0 }}>
       <div className="max-w-2xl mx-auto">
         <h2 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
-          Menghitung Hari
+          Etungan Wulan
         </h2>
         <div className="ornament-divider max-w-xs mx-auto mb-14">
           <span className="text-[var(--gold)] text-lg">&#10047;</span>
@@ -1163,7 +1165,7 @@ function CountdownSection() {
         </div>
 
         <p className="text-sm italic" style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}>
-          menuju hari bahagia kami
+          menuju gegayuhan kita
         </p>
       </div>
     </section>
@@ -1227,7 +1229,7 @@ function EventSection() {
     <section ref={sectionRef} data-section="events" className="py-28 px-6" style={{ background: 'var(--cream-dark)', opacity: 0 }}>
       <div className="max-w-2xl mx-auto text-center">
         <h2 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
-          Acara
+          Gegayuhan — Acara Pernikahan
         </h2>
         <div className="ornament-divider max-w-xs mx-auto mb-14">
           <span className="text-[var(--gold)] text-lg">&#10047;</span>
@@ -1289,6 +1291,17 @@ function EventSection() {
           <p className="text-sm leading-relaxed max-w-md mx-auto" style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}>
             {WEDDING.address}
           </p>
+          <div className="mt-6 rounded-lg overflow-hidden border border-[var(--gold)]/20" style={{ maxHeight: '200px' }}>
+            <iframe
+              src={WEDDING.mapUrl}
+              className="w-full"
+              style={{ height: '200px', border: 0 }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Lokasi Acara"
+            />
+          </div>
         </div>
       </div>
     </section>
@@ -1544,7 +1557,7 @@ function GallerySection() {
     <section ref={sectionRef} data-section="gallery" className="diary-paper-bg cinema-depth py-28 px-6" style={{ opacity: 0 }}>
       <div className="max-w-4xl mx-auto text-center">
         <h2 className="gallery-title text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
-          Momen Kami
+          Momen Kita — Cathetan Kenangan
         </h2>
         <div className="gallery-ornament ornament-divider max-w-xs mx-auto mb-14">
           <span className="text-[var(--gold)] text-lg">&#10047;</span>
@@ -1889,12 +1902,12 @@ function ClosingSection() {
       <div className="relative z-10 max-w-2xl mx-auto">
         {/* Title — handwriting reveal, then dust dissolve */}
         <div ref={titleRef} className="text-lg sm:text-xl leading-relaxed mb-8" style={{ fontFamily: "'Cormorant Garamond', serif", color: '#ffffff', fontStyle: 'italic' }}>
-          Dan seperti semua cerita indah yang dituliskan semesta, kisah kami baru saja dimulai.
+          Lan kaya kabeh crita indah kang ditulisake semesta, crita atiku kanggo kowe baru saja dimulai.
         </div>
 
         {/* Subtitle — handwriting, then dust */}
         <div ref={subtitleRef} className="text-sm sm:text-base leading-relaxed mb-10" style={{ fontFamily: "'Cormorant Garamond', serif", color: '#ffffff', opacity: 0.85, fontStyle: 'italic' }}>
-          Terima kasih telah menjadi bagian dari perjalanan kecil kami menuju selamanya.
+          Matur nuwun sampun dados bagian saking perjalanan kita menuju selamanya.
         </div>
 
         {/* Doa — Arabic appears immediately (no handwriting), transliteration gets handwriting */}
@@ -1919,12 +1932,12 @@ function ClosingSection() {
 
         {/* Footer line — handwriting, then dust */}
         <div ref={footerRef} className="text-sm mb-16" style={{ fontFamily: "'Cormorant Garamond', serif", color: '#ffffff', opacity: 0.6, fontStyle: 'italic' }}>
-          Forever starts with Bismillah.
+          Selamanya dimulai kanthi Bismillah.
         </div>
 
         {/* Final emotional line — handwriting, then dust */}
         <div ref={finalRef} className="text-2xl sm:text-3xl min-h-[2em]" style={{ fontFamily: "'Cormorant Garamond', serif", color: '#ffffff', fontWeight: 300, fontStyle: 'italic' }}>
-          Cerita mereka belum selesai...
+          Crita durung rampung...
         </div>
 
         {/* The date — appears after dust settles, the only thing left */}
@@ -1975,6 +1988,9 @@ function FooterSection() {
           style={{ fontFamily: 'var(--font-body)', color: 'var(--gold)', opacity: 0.5 }}
         >
           05 . 07 . 2026
+        </p>
+        <p className="text-[10px] tracking-[0.3em] mt-3" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold)', opacity: 0.3 }}>
+          Matur Nuwun — Terima Kasih
         </p>
       </div>
     </footer>

@@ -1528,3 +1528,98 @@ section::after {
   [style*="goldenFlash"] { animation: none !important; opacity: 0 !important; }
   [style*="handwritingReveal"] { animation: none !important; clip-path: none !important; }
 }
+
+/* ========================================
+   WAYANG SHADOW SILHOUETTE — section dividers
+   Like wayang kulit projected on the diary page
+   ======================================== */
+.wayang-divider {
+  position: relative;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.15;
+}
+
+.wayang-divider::before {
+  content: '';
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+
+.wayang-divider svg {
+  position: relative;
+  z-index: 1;
+}
+
+/* ========================================
+   AKSARA JAWA — decorative Javanese script
+   Ancient letters as ornamental elements
+   ======================================== */
+.aksara-jawa {
+  font-family: 'Noto Sans Javanese', 'Cormorant Garamond', serif;
+  opacity: 0.12;
+  letter-spacing: 0.2em;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* ========================================
+   DIARY CHAPTER HEADING
+   Like a chapter title in an old manuscript
+   ======================================== */
+.diary-chapter-number {
+  font-family: 'var(--font-serif)';
+  font-style: italic;
+  font-size: 0.65rem;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--gold);
+  opacity: 0.5;
+  margin-bottom: 0.25rem;
+}
+
+/* ========================================
+   BATIK PARANG PATTERN — Javanese heritage
+   Deeper cultural motif for special sections
+   ======================================== */
+.batik-parang-dark {
+  background-color: var(--brown);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cpath d='M40 10 L50 20 L40 15 L30 20 Z' fill='none' stroke='%23C9A96E' stroke-width='0.5' opacity='0.08'/%3E%3Cpath d='M40 70 L50 60 L40 65 L30 60 Z' fill='none' stroke='%23C9A96E' stroke-width='0.5' opacity='0.08'/%3E%3Cpath d='M10 40 L20 30 L15 40 L20 50 Z' fill='none' stroke='%23C9A96E' stroke-width='0.5' opacity='0.08'/%3E%3Cpath d='M70 40 L60 30 L65 40 L60 50 Z' fill='none' stroke='%23C9A96E' stroke-width='0.5' opacity='0.08'/%3E%3Cpath d='M20 20 L30 10 L25 20 L30 25 Z' fill='none' stroke='%23C9A96E' stroke-width='0.3' opacity='0.05'/%3E%3Cpath d='M60 60 L50 70 L55 60 L50 55 Z' fill='none' stroke='%23C9A96E' stroke-width='0.3' opacity='0.05'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 80px 80px;
+}
+
+/* ========================================
+   CANDLE GLOW — flickering warm light
+   Like a candle illuminating a diary page
+   ======================================== */
+.candle-glow {
+  position: relative;
+}
+
+.candle-glow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(201, 169, 110, 0.1) 0%, rgba(201, 169, 110, 0.04) 30%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+  animation: warmGlow 6s ease-in-out infinite;
+}
+
+/* ========================================
+   INK BLOT — decorative ink stain
+   Like an accidental ink drop on diary paper
+   ======================================== */
+.ink-blot {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(44, 34, 24, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
