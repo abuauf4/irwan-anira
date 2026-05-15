@@ -183,7 +183,7 @@ export default function GuestWishes() {
   }
 
   return (
-    <section ref={sectionRef} className="py-20 px-6" style={{ background: 'var(--cream-dark)', opacity: 0 }}>
+    <section ref={sectionRef} data-section="wishes" className="py-20 px-6" style={{ background: 'var(--cream-dark)', opacity: 0 }}>
       <div className="max-w-4xl mx-auto text-center">
         <h2 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
           Ucapan & Doa

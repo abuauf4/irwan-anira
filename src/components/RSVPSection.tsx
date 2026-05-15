@@ -119,7 +119,7 @@ export default function RSVPSection() {
   }
 
   return (
-    <section ref={sectionRef} className="py-20 px-6 cinema-depth" style={{ background: 'var(--cream)', opacity: 0 }}>
+    <section ref={sectionRef} data-section="rsvp" className="py-20 px-6 cinema-depth" style={{ background: 'var(--cream)', opacity: 0 }}>
       <div className="max-w-4xl mx-auto text-center">
         <h2 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
           Konfirmasi Kehadiran

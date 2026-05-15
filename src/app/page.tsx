@@ -65,6 +65,27 @@ const WEDDING = {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   SECTION-BASED AUTO-SCROLL CONFIG
+   Each section defines its own scroll behavior
+   speed: pixels per frame at 60fps baseline (0 = stop)
+   cinematic: if true, auto-scroll FULLY PAUSES until section signals completion
+   ═══════════════════════════════════════════════════════════ */
+const SECTION_SCROLL: Record<string, { speed: number; cinematic: boolean }> = {
+  bismillah:  { speed: 1.0,  cinematic: false },
+  couple:     { speed: 1.2,  cinematic: false },
+  diaryIntro: { speed: 1.0,  cinematic: false },
+  diaryStory: { speed: 0,    cinematic: true  },  // PAUSE — diary controls its own timeline
+  countdown:  { speed: 1.2,  cinematic: false },
+  events:     { speed: 1.2,  cinematic: false },
+  gallery:    { speed: 1.8,  cinematic: false },
+  rsvp:       { speed: 1.0,  cinematic: false },
+  envelope:   { speed: 1.0,  cinematic: false },
+  wishes:     { speed: 1.0,  cinematic: false },
+  closing:    { speed: 0,    cinematic: true  },  // PAUSE — closing has dissolve animation
+  footer:     { speed: 0,    cinematic: false },  // STOP — end of page
+}
+
+/* ═══════════════════════════════════════════════════════════
    COUNTDOWN HOOK
    ═══════════════════════════════════════════════════════════ */
 function useCountdown(targetDate: string) {
@@ -285,7 +306,7 @@ function BismillahSection() {
   }, [])
 
   return (
-    <section ref={sectionRef} className="cinema-dark-section cinema-vignette cinema-bloom cinema-dust py-28 px-6 text-center relative overflow-hidden" style={{ opacity: 0 }}>
+    <section ref={sectionRef} data-section="bismillah" className="cinema-dark-section cinema-vignette cinema-bloom cinema-dust py-28 px-6 text-center relative overflow-hidden" style={{ opacity: 0 }}>
       {/* Soft golden light spots */}
       <div className="gold-light-leak absolute inset-0 pointer-events-none" />
       <div className="max-w-2xl mx-auto relative z-10">
@@ -487,7 +508,7 @@ function CoupleSection() {
   }, [])
 
   return (
-    <section ref={sectionRef} className="cinema-dark-section cinema-vignette cinema-bloom cinema-dust py-28 px-6 relative overflow-hidden" style={{ opacity: 0 }}>
+    <section ref={sectionRef} data-section="couple" className="cinema-dark-section cinema-vignette cinema-bloom cinema-dust py-28 px-6 relative overflow-hidden" style={{ opacity: 0 }}>
       {/* Soft golden light spots */}
       <div className="gold-light-leak absolute inset-0 pointer-events-none" />
 
@@ -644,6 +665,7 @@ function DiaryIntroSection() {
   return (
     <section
       ref={sectionRef}
+      data-section="diaryIntro"
       className="diary-paper-bg diary-lines diary-margin cinema-depth py-28 px-6 text-center relative overflow-hidden"
       style={{ opacity: 0 }}
     >
@@ -1046,7 +1068,7 @@ function DiaryStorySection() {
   }, [])
 
   return (
-    <section ref={sectionRef} className="diary-paper-bg diary-lines diary-margin cinema-depth py-28 px-6 relative" style={{ opacity: 0 }}>
+    <section ref={sectionRef} data-section="diaryStory" className="diary-paper-bg diary-lines diary-margin cinema-depth py-28 px-6 relative" style={{ opacity: 0 }}>
       {/* Progress bar — thin gold line at top */}
       <div
         ref={progressRef}
@@ -1113,7 +1135,7 @@ function CountdownSection() {
   }, [])
 
   return (
-    <section ref={sectionRef} className="batik-kawung cinema-depth py-28 px-6 text-center" style={{ opacity: 0 }}>
+    <section ref={sectionRef} data-section="countdown" className="batik-kawung cinema-depth py-28 px-6 text-center" style={{ opacity: 0 }}>
       <div className="max-w-2xl mx-auto">
         <h2 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
           Menghitung Hari
@@ -1213,7 +1235,7 @@ function EventSection() {
   }, [])
 
   return (
-    <section ref={sectionRef} className="py-28 px-6" style={{ background: 'var(--cream-dark)', opacity: 0 }}>
+    <section ref={sectionRef} data-section="events" className="py-28 px-6" style={{ background: 'var(--cream-dark)', opacity: 0 }}>
       <div className="max-w-2xl mx-auto text-center">
         <h2 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
           Acara
@@ -1482,7 +1504,7 @@ function GallerySection() {
   }
 
   return (
-    <section ref={sectionRef} className="diary-paper-bg cinema-depth py-28 px-6" style={{ opacity: 0 }}>
+    <section ref={sectionRef} data-section="gallery" className="diary-paper-bg cinema-depth py-28 px-6" style={{ opacity: 0 }}>
       <div className="max-w-4xl mx-auto text-center">
         <h2 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
           Momen Kami
@@ -1779,12 +1801,19 @@ function ClosingSection() {
         if (dateRef.current) {
           gsap.to(dateRef.current, { opacity: 1, duration: 2, ease: 'power2.out', delay: afterDust })
         }
+
+        // Signal closing sequence complete after all animations finish
+        // Date animation takes 2s starting at afterDust
+        const closingEndTime = (afterDust + 2.0 + 1.0) * 1000  // +1s buffer
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('closing-sequence-complete'))
+        }, closingEndTime)
       },
     })
   }, [])
 
   return (
-    <section ref={sectionRef} className="batik-kawung-dark cinema-vignette cinema-bloom cinema-dust diary-page-close relative py-28 px-6 text-center overflow-hidden" style={{ opacity: 0 }}>
+    <section ref={sectionRef} data-section="closing" className="batik-kawung-dark cinema-vignette cinema-bloom cinema-dust diary-page-close relative py-28 px-6 text-center overflow-hidden" style={{ opacity: 0 }}>
       {/* Gold light leak */}
       <div className="gold-light-leak absolute inset-0 pointer-events-none" />
 
@@ -1876,7 +1905,7 @@ function ClosingSection() {
    ═══════════════════════════════════════════════════════════ */
 function FooterSection() {
   return (
-    <footer className="relative py-10 px-6 text-center" style={{ background: '#2C2218' }}>
+    <footer data-section="footer" className="relative py-10 px-6 text-center" style={{ background: '#2C2218' }}>
       {/* Sidomukti pattern border at top */}
       <div
         className="absolute top-0 left-0 right-0 h-3"
@@ -1918,11 +1947,7 @@ export default function Home() {
   const [isPlaying, setIsPlaying] = useState(false)
   const audioRef = useRef<HTMLAudioElement>(null)
   const autoScrollState = useRef({
-    active: false,
-    paused: false,
     currentSpeed: 0,
-    targetSpeed: 1.0,
-    diaryActive: false, // When true, auto-scroll is fully controlled by diary — nothing else can resume it
   })
   const userScrollingRef = useRef(false)
 
@@ -1946,123 +1971,125 @@ export default function Home() {
     }
   }, [isPlaying])
 
-  // Auto-scroll — cinematic breathing rhythm, mobile-first
-  // NO Lenis — Lenis was fighting with window.scrollBy() causing "macet"
-  // Auto-scroll handles its own smooth transitions via lerp
-  // Diary section has PRIORITY: when diary is active, nothing else can resume auto-scroll
+  // Auto-scroll — section-based cinematic experience
+  // Uses IntersectionObserver to detect active section and adjust speed accordingly
+  // Cinematic sections (diary, closing) fully pause auto-scroll until they signal completion
   useEffect(() => {
     if (!isOpen) return
 
     let animationId: number
     let resumeTimeout: ReturnType<typeof setTimeout>
     let lastTime = 0
-
     const isMobile = window.innerWidth < 768
+    const mobileMultiplier = isMobile ? 2.0 : 1.0
 
-    // Speed zones — smooth lerp transitions between sections
-    // Diary zone uses very slow speed (0.15) instead of 0 — the diaryActive flag
-    // handles the actual pause, but the slow speed prevents abrupt stops that feel "macet"
-    // Gallery = 2x speed for fast browsing through photos
-    const getSpeedForPosition = (scrollY: number, docHeight: number) => {
-      const progress = scrollY / docHeight
-      if (isMobile) {
-        if (progress < 0.04) return 4.0    // Cover
-        if (progress < 0.10) return 6.4    // Transition
-        if (progress < 0.16) return 4.8    // Bismillah
-        if (progress < 0.24) return 6.0    // Transition
-        if (progress < 0.32) return 5.2    // Couple
-        if (progress < 0.40) return 6.0    // Diary Intro
-        if (progress < 0.48) return 0.3    // Diary Story — very slow (diaryActive handles pause)
-        if (progress < 0.55) return 6.0    // Countdown/events
-        if (progress < 0.62) return 5.6    // Events
-        if (progress < 0.70) return 14.0   // Gallery — fast!
-        if (progress < 0.76) return 5.2    // RSVP
-        if (progress < 0.82) return 5.2    // Amplop Digital
-        if (progress < 0.90) return 4.8    // Wishes
-        return 3.0                          // Closing — slow, emotional
-      } else {
-        if (progress < 0.04) return 2.8    // Cover
-        if (progress < 0.10) return 4.8    // Transition
-        if (progress < 0.16) return 3.6    // Bismillah
-        if (progress < 0.24) return 4.4    // Transition
-        if (progress < 0.32) return 3.6    // Couple
-        if (progress < 0.40) return 4.4    // Diary Intro
-        if (progress < 0.48) return 0.2    // Diary Story — very slow (diaryActive handles pause)
-        if (progress < 0.55) return 4.4    // Countdown/events
-        if (progress < 0.62) return 4.0    // Events
-        if (progress < 0.70) return 12.0   // Gallery — fast!
-        if (progress < 0.76) return 4.0    // RSVP
-        if (progress < 0.82) return 4.0    // Amplop Digital
-        if (progress < 0.90) return 3.6    // Wishes
-        return 2.0                          // Closing
-      }
+    // Velocity state
+    const velocity = {
+      current: isMobile ? 2.0 : 1.0,
+      target: isMobile ? 2.0 : 1.0,
     }
+    let cinematicLock = false
+    let activeSection = ''
 
-    const state = autoScrollState.current
+    // Section detection via IntersectionObserver
+    const sectionRatios = new Map<string, number>()
+    const allSections = document.querySelectorAll('[data-section]')
 
-    // ═══ AUTO-SCROLL LOOP — NEVER DIES, DELTA-TIME NORMALIZED ═══
-    // The loop ALWAYS runs via requestAnimationFrame
-    // Delta-time normalization ensures consistent speed at any frame rate
-    // When diary/user takes control, loop keeps running but skips scrolling
+    const sectionObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const name = entry.target.getAttribute('data-section') || ''
+          if (name) {
+            sectionRatios.set(name, entry.intersectionRatio)
+          }
+        })
+
+        // Find section with highest intersection ratio
+        let maxRatio = 0
+        let bestSection = ''
+        sectionRatios.forEach((ratio, name) => {
+          if (ratio > maxRatio) {
+            maxRatio = ratio
+            bestSection = name
+          }
+        })
+
+        if (bestSection && bestSection !== activeSection) {
+          activeSection = bestSection
+          const behavior = SECTION_SCROLL[activeSection]
+          if (behavior) {
+            if (behavior.cinematic) {
+              cinematicLock = true
+              velocity.target = 0
+            } else {
+              // Only unlock if we're moving to a non-cinematic section
+              // Cinematic sections are unlocked by their own completion events
+              cinematicLock = false
+              velocity.target = behavior.speed * mobileMultiplier
+            }
+          }
+        }
+      },
+      {
+        threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+        rootMargin: '-10% 0px -10% 0px',
+      }
+    )
+
+    allSections.forEach((s) => sectionObserver.observe(s))
+
+    // Auto-scroll loop — NEVER DIES
     const autoScroll = (time: number) => {
-      // ALWAYS schedule next frame — loop must never die
       animationId = requestAnimationFrame(autoScroll)
 
-      // Calculate delta time — normalize to 60fps baseline
       const dt = lastTime === 0 ? 1 : Math.min((time - lastTime) / 16.67, 3)
       lastTime = time
 
-      // Skip scrolling if diary controls or user is scrolling
-      // But keep the loop alive!
-      if (state.diaryActive || userScrollingRef.current) {
-        // Decay speed smoothly so when control returns, we ramp up from near-zero
-        state.currentSpeed *= Math.pow(0.92, dt)
+      // Cinematic lock or user scrolling — decay velocity to zero
+      if (cinematicLock || userScrollingRef.current) {
+        const decayRate = 1 - Math.pow(0.88, dt)
+        velocity.current += (0 - velocity.current) * decayRate
+        if (Math.abs(velocity.current) < 0.01) velocity.current = 0
         return
       }
 
-      // At bottom? Just don't scroll, but loop stays alive
+      // At bottom? Don't scroll, but keep loop alive
       const atBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 1)
       if (atBottom) return
 
-      // Calculate target speed based on current position
-      state.targetSpeed = getSpeedForPosition(window.scrollY, document.documentElement.scrollHeight)
+      // Smooth velocity transition
+      const diff = velocity.target - velocity.current
+      if (Math.abs(diff) > 0.01) {
+        const isRampingUp = diff > 0
+        const factor = isRampingUp ? 0.06 : 0.10  // Ramp up: 0.06 (gentle), Ramp down: 0.10 (responsive)
+        const frameFactor = 1 - Math.pow(1 - factor, dt)
+        velocity.current += diff * frameFactor
+      }
 
-      // Smooth lerp — frame-rate independent
-      // Higher lerp = faster transitions; lower = smoother/slower transitions
-      const lerpFactor = isMobile ? 0.04 : 0.03
-      const frameLerp = 1 - Math.pow(1 - lerpFactor, dt)
-      state.currentSpeed += (state.targetSpeed - state.currentSpeed) * frameLerp
-
-      // Only scroll if speed is meaningful (avoids micro-scrolls)
-      if (state.currentSpeed > 0.05) {
-        window.scrollBy(0, state.currentSpeed * dt)
+      // Apply scroll
+      if (velocity.current > 0.05) {
+        window.scrollBy(0, velocity.current * dt)
+        autoScrollState.current.currentSpeed = velocity.current
       }
     }
 
-    // Start after the story breathes in
+    // Start after a brief delay
     const startTimeout = setTimeout(() => {
-      state.currentSpeed = isMobile ? 3.0 : 2.0
+      velocity.current = isMobile ? 1.0 : 0.5
       lastTime = 0
       animationId = requestAnimationFrame(autoScroll)
     }, isMobile ? 600 : 800)
 
-    // User takes control — loop keeps running, just skips scrolling
-    // When user stops, auto-scroll resumes smoothly
+    // User scroll detection
     const pauseAndResume = () => {
-      if (state.diaryActive) return
-
+      if (cinematicLock) return  // Don't override cinematic lock
       userScrollingRef.current = true
-      state.paused = true
       clearTimeout(resumeTimeout)
-
       resumeTimeout = setTimeout(() => {
-        if (state.diaryActive) return
-
+        if (cinematicLock) return  // Double check
         userScrollingRef.current = false
-        state.paused = false
-        // Gentle resume — reduce speed so lerp can ramp up smoothly
-        state.currentSpeed *= 0.3
-      }, isMobile ? 1500 : 2500)
+        velocity.current *= 0.3  // Gentle resume
+      }, isMobile ? 1500 : 2000)
     }
 
     const onWheel = () => pauseAndResume()
@@ -2071,44 +2098,34 @@ export default function Home() {
     window.addEventListener('wheel', onWheel, { passive: true })
     window.addEventListener('touchstart', onTouchStart, { passive: true })
 
-    // ─── Diary section integration — DIARY HAS PRIORITY ───
-    const onDiaryStart = () => {
-      state.diaryActive = true
-      state.currentSpeed = 0
-      clearTimeout(resumeTimeout)
-    }
-
+    // Cinematic section completion events
     const onDiaryComplete = () => {
-      // Clear diary flag — loop resumes scrolling automatically
-      state.diaryActive = false
+      cinematicLock = false
       userScrollingRef.current = false
-      state.paused = false
-      // Start with gentle speed — will lerp up to zone speed naturally
-      state.currentSpeed = isMobile ? 1.6 : 1.0
-
-      // After pin removal, ensure we're past the diary section
-      setTimeout(() => {
-        const diarySection = document.querySelector('.diary-paper-bg.diary-lines.cinema-depth')
-        if (diarySection) {
-          const diaryBottom = diarySection.getBoundingClientRect().bottom + window.scrollY
-          if (window.scrollY < diaryBottom - window.innerHeight * 0.5) {
-            window.scrollTo(0, diaryBottom + 100)
-          }
-        }
-      }, 600)
+      // Determine target based on current section
+      const behavior = SECTION_SCROLL[activeSection] || SECTION_SCROLL.countdown
+      velocity.target = behavior.speed * mobileMultiplier
+      velocity.current = 0.5 * mobileMultiplier  // Start gentle
     }
 
-    window.addEventListener('diary-sequence-start', onDiaryStart)
+    const onClosingComplete = () => {
+      cinematicLock = false
+      // Footer is next — speed 0, just drift to a stop naturally
+      velocity.target = 0.3 * mobileMultiplier  // Slow drift to footer
+    }
+
     window.addEventListener('diary-sequence-complete', onDiaryComplete)
+    window.addEventListener('closing-sequence-complete', onClosingComplete)
 
     return () => {
       clearTimeout(startTimeout)
       cancelAnimationFrame(animationId)
       clearTimeout(resumeTimeout)
+      sectionObserver.disconnect()
       window.removeEventListener('wheel', onWheel)
       window.removeEventListener('touchstart', onTouchStart)
-      window.removeEventListener('diary-sequence-start', onDiaryStart)
       window.removeEventListener('diary-sequence-complete', onDiaryComplete)
+      window.removeEventListener('closing-sequence-complete', onClosingComplete)
     }
   }, [isOpen])
 
@@ -2132,18 +2149,18 @@ export default function Home() {
           if (entry.isIntersecting && !hasStartedFade && isPlaying) {
             hasStartedFade = true
             // Gradual volume reduction — slow, emotional, synchronized with text dissolve
-            // Three-phase fade: barely perceptible → getting quieter → final whispers → silence
+            // Five-phase fade: barely perceptible → slowly getting quieter → noticeable → fading → last whispers
             fadeInterval = setInterval(() => {
               if (audio.volume > 0.02) {
-                // Non-linear fade: slower at first (barely perceptible), then gradually faster
-                // This mirrors how we perceive sound fading — the first drops are hardest to notice
-                const reduction = audio.volume > 0.6
-                  ? 0.004  // Phase 1: Barely perceptible — audience doesn't notice yet
-                  : audio.volume > 0.35
-                    ? 0.006  // Phase 2: Getting quieter — the room is dimming
-                    : audio.volume > 0.15
-                      ? 0.01  // Phase 3: Fading into whispers
-                      : 0.018 // Phase 4: Last breaths of sound — almost silence
+                const reduction = audio.volume > 0.7
+                  ? 0.002   // Phase 1: Barely perceptible
+                  : audio.volume > 0.5
+                    ? 0.003  // Phase 2: Slowly getting quieter
+                    : audio.volume > 0.3
+                      ? 0.005 // Phase 3: Noticeable fade
+                      : audio.volume > 0.15
+                        ? 0.008 // Phase 4: Fading
+                        : 0.012 // Phase 5: Last whispers
                 audio.volume = Math.max(0, audio.volume - reduction)
               } else {
                 // Sound has faded to near-zero
@@ -2153,13 +2170,13 @@ export default function Home() {
                 silenceTimeout = setTimeout(() => {
                   audio.pause()
                   setIsPlaying(false)
-                }, 1500) // 1.5s of pure silence before full pause — the emotional breath
+                }, 2500) // 2.5s of pure silence before full pause — the emotional breath
               }
-            }, 80) // Smooth 80ms intervals for imperceptible steps
+            }, 120) // Slower interval for smoother fade
           }
         })
       },
-      { threshold: 0.15 } // Start fading slightly earlier (15%) for more gradual transition
+      { threshold: 0.1 } // Start fading earlier (10%) for more gradual transition
     )
 
     observer.observe(closingSection)

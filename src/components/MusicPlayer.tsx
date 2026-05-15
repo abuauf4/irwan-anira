@@ -55,8 +55,9 @@ export default function MusicPlayer({ isPlaying, onToggle, audioRef }: MusicPlay
           onToggle()
           if (!isPlaying) setExpanded(true)
         }}
-        className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full border-2 border-[var(--gold)] flex items-center justify-center
-          shadow-lg transition-all duration-300 cursor-pointer music-pulse ${isPlaying ? 'playing' : ''}`}
+        className={`fixed bottom-6 right-6 z-[9999] w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-[var(--gold)] flex items-center justify-center
+          shadow-[0_0_20px_rgba(201,169,110,0.3)] transition-all duration-300 cursor-pointer music-pulse
+          hover:shadow-[0_0_30px_rgba(201,169,110,0.5)] hover:scale-110 ${isPlaying ? 'playing' : ''}`}
         style={{ background: 'var(--cream)', color: 'var(--gold-dark)' }}
         title={isPlaying ? 'Matikan Musik' : 'Putar Musik'}
       >
