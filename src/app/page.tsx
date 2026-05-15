@@ -1630,7 +1630,7 @@ function ClosingSection() {
   const hasAnimated = useRef(false)
 
   // ─── WORD FLY-IN — kata terbang dari belakang ───
-  // Each word flies in from depth (blur + scale + z-offset)
+  // Each word flies in from depth (blur + scale + y-offset)
   // Like the final words of a diary writing themselves
   const wordFlyIn = (el: HTMLDivElement, stagger: number = 0.15, wordDuration: number = 0.6, delay: number = 0) => {
     if (!el) return 0
@@ -1642,16 +1642,15 @@ function ClosingSection() {
     words.forEach((word, wi) => {
       const ws = document.createElement('span')
       ws.className = 'hw-word'
-      ws.style.cssText = 'display:inline-block;will-change:opacity,transform,filter;opacity:0;transform:translateZ(-30px) translateY(8px) scale(0.85);filter:blur(6px);margin-right:0.3em;'
+      ws.style.cssText = 'display:inline-block;will-change:opacity,transform,filter;opacity:0;transform:translateY(12px) scale(0.85);filter:blur(4px);margin-right:0.3em;color:inherit;'
       ws.textContent = word
       el.appendChild(ws)
       allWords.push(ws)
     })
 
-    // Animate each word — fly in from behind (depth → surface)
+    // Animate each word — fly in from behind
     gsap.to(allWords, {
       opacity: 1,
-      z: 0,
       y: 0,
       scale: 1,
       filter: 'blur(0px)',
@@ -1714,21 +1713,19 @@ function ClosingSection() {
               const transliterationEl = doaRef.current?.querySelector('.doa-transliteration') as HTMLParagraphElement | null
               if (transliterationEl) {
                 nextDelay = subtitleDur + gapBetweenElements
-                // Reset and re-wrap the transliteration as a fly-in element
                 const transliterationText = transliterationEl.textContent || ''
                 transliterationEl.innerHTML = ''
                 const transWords: HTMLSpanElement[] = []
                 transliterationText.split(' ').forEach(word => {
                   const ws = document.createElement('span')
                   ws.className = 'hw-word'
-                  ws.style.cssText = 'display:inline-block;will-change:opacity,transform,filter;opacity:0;transform:translateZ(-30px) translateY(6px) scale(0.85);filter:blur(6px);margin-right:0.25em;'
+                  ws.style.cssText = 'display:inline-block;will-change:opacity,transform,filter;opacity:0;transform:translateY(8px) scale(0.85);filter:blur(4px);margin-right:0.25em;color:inherit;'
                   ws.textContent = word
                   transliterationEl.appendChild(ws)
                   transWords.push(ws)
                 })
                 gsap.to(transWords, {
                   opacity: 0.7,
-                  z: 0,
                   y: 0,
                   scale: 1,
                   filter: 'blur(0px)',
@@ -1828,19 +1825,17 @@ function ClosingSection() {
 
       <div ref={contentRef} className="relative z-10 max-w-2xl mx-auto">
         {/* Title — first to enter */}
-        <div ref={titleRef}>
+        <div ref={titleRef} style={{ color: '#ffffff' }}>
           <p
             className="text-lg sm:text-xl italic leading-relaxed mb-8"
             style={{ fontFamily: 'var(--font-serif)', color: '#ffffff' }}
           >
-            Dan seperti semua cerita indah yang dituliskan semesta, kisah
-            <span className="gold-shimmer"> kami </span>
-            baru saja dimulai.
+            Dan seperti semua cerita indah yang dituliskan semesta, kisah kami baru saja dimulai.
           </p>
         </div>
 
         {/* Subtitle — enters after title */}
-        <div ref={subtitleRef}>
+        <div ref={subtitleRef} style={{ color: '#ffffff' }}>
           <p
             className="text-sm sm:text-base leading-relaxed mb-10"
             style={{ fontFamily: 'var(--font-serif)', color: '#ffffff', opacity: 0.8 }}
@@ -1874,9 +1869,9 @@ function ClosingSection() {
         </div>
 
         {/* Footer line — enters after doa */}
-        <div ref={footerLineRef}>
+        <div ref={footerLineRef} style={{ color: '#ffffff' }}>
           <p
-            className="text-sm italic gold-shimmer-text"
+            className="text-sm italic"
             style={{ fontFamily: 'var(--font-serif)', color: '#ffffff', opacity: 0.6 }}
           >
             Forever starts with Bismillah.
@@ -1887,9 +1882,10 @@ function ClosingSection() {
         <div
           ref={finalLineRef}
           className="mt-16 min-h-[2em]"
+          style={{ color: '#ffffff' }}
         >
           <p
-            className="text-2xl sm:text-3xl gold-shimmer-text"
+            className="text-2xl sm:text-3xl"
             style={{ fontFamily: 'var(--font-script)', color: '#ffffff' }}
           >
             Cerita mereka belum selesai...
@@ -1900,6 +1896,7 @@ function ClosingSection() {
         <div
           ref={dateRef}
           className="mt-8"
+          style={{ color: '#ffffff' }}
         >
           <p
             className="text-sm tracking-[0.4em]"
