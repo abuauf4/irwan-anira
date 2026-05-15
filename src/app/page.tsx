@@ -2009,35 +2009,35 @@ export default function Home() {
     const getSpeedForPosition = (scrollY: number, docHeight: number) => {
       const progress = scrollY / docHeight
       if (isMobile) {
-        if (progress < 0.04) return 2.0    // Cover
-        if (progress < 0.10) return 3.2    // Transition
-        if (progress < 0.16) return 2.4    // Bismillah
-        if (progress < 0.24) return 3.0    // Transition
-        if (progress < 0.32) return 2.6    // Couple
-        if (progress < 0.40) return 3.0    // Diary Intro
-        if (progress < 0.48) return 0.15   // Diary Story — very slow (diaryActive handles pause)
-        if (progress < 0.55) return 3.0    // Countdown/events
-        if (progress < 0.62) return 2.8    // Events
-        if (progress < 0.70) return 7.0    // Gallery — 2x speed!
-        if (progress < 0.76) return 2.6    // RSVP
-        if (progress < 0.82) return 2.6    // Amplop Digital
-        if (progress < 0.90) return 2.4    // Wishes
-        return 1.5                          // Closing — slow, emotional
+        if (progress < 0.04) return 4.0    // Cover
+        if (progress < 0.10) return 6.4    // Transition
+        if (progress < 0.16) return 4.8    // Bismillah
+        if (progress < 0.24) return 6.0    // Transition
+        if (progress < 0.32) return 5.2    // Couple
+        if (progress < 0.40) return 6.0    // Diary Intro
+        if (progress < 0.48) return 0.3    // Diary Story — very slow (diaryActive handles pause)
+        if (progress < 0.55) return 6.0    // Countdown/events
+        if (progress < 0.62) return 5.6    // Events
+        if (progress < 0.70) return 14.0   // Gallery — fast!
+        if (progress < 0.76) return 5.2    // RSVP
+        if (progress < 0.82) return 5.2    // Amplop Digital
+        if (progress < 0.90) return 4.8    // Wishes
+        return 3.0                          // Closing — slow, emotional
       } else {
-        if (progress < 0.04) return 1.4    // Cover
-        if (progress < 0.10) return 2.4    // Transition
-        if (progress < 0.16) return 1.8    // Bismillah
-        if (progress < 0.24) return 2.2    // Transition
-        if (progress < 0.32) return 1.8    // Couple
-        if (progress < 0.40) return 2.2    // Diary Intro
-        if (progress < 0.48) return 0.1    // Diary Story — very slow (diaryActive handles pause)
-        if (progress < 0.55) return 2.2    // Countdown/events
-        if (progress < 0.62) return 2.0    // Events
-        if (progress < 0.70) return 6.0    // Gallery — 2x speed!
-        if (progress < 0.76) return 2.0    // RSVP
-        if (progress < 0.82) return 2.0    // Amplop Digital
-        if (progress < 0.90) return 1.8    // Wishes
-        return 1.0                          // Closing
+        if (progress < 0.04) return 2.8    // Cover
+        if (progress < 0.10) return 4.8    // Transition
+        if (progress < 0.16) return 3.6    // Bismillah
+        if (progress < 0.24) return 4.4    // Transition
+        if (progress < 0.32) return 3.6    // Couple
+        if (progress < 0.40) return 4.4    // Diary Intro
+        if (progress < 0.48) return 0.2    // Diary Story — very slow (diaryActive handles pause)
+        if (progress < 0.55) return 4.4    // Countdown/events
+        if (progress < 0.62) return 4.0    // Events
+        if (progress < 0.70) return 12.0   // Gallery — fast!
+        if (progress < 0.76) return 4.0    // RSVP
+        if (progress < 0.82) return 4.0    // Amplop Digital
+        if (progress < 0.90) return 3.6    // Wishes
+        return 2.0                          // Closing
       }
     }
 
@@ -2084,7 +2084,7 @@ export default function Home() {
 
     // Start after the story breathes in
     const startTimeout = setTimeout(() => {
-      state.currentSpeed = isMobile ? 1.5 : 1.0
+      state.currentSpeed = isMobile ? 3.0 : 2.0
       lastTime = 0
       animationId = requestAnimationFrame(autoScroll)
     }, isMobile ? 600 : 800)
@@ -2127,7 +2127,7 @@ export default function Home() {
       userScrollingRef.current = false
       state.paused = false
       // Start with gentle speed — will lerp up to zone speed naturally
-      state.currentSpeed = isMobile ? 0.8 : 0.5
+      state.currentSpeed = isMobile ? 1.6 : 1.0
 
       // After pin removal, ensure we're past the diary section
       setTimeout(() => {
