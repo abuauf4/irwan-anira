@@ -1315,66 +1315,135 @@ function EventSection() {
    ═══════════════════════════════════════════════════════════ */
 function GallerySection() {
   const sectionRef = useRef<HTMLDivElement>(null)
+  const [activeIndex, setActiveIndex] = useState(0)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [touchStart, setTouchStart] = useState<number | null>(null)
+  const [isTransitioning, setIsTransitioning] = useState(false)
+  const captionRef = useRef<HTMLDivElement>(null)
+  const slideRef = useRef<HTMLDivElement>(null)
+  const autoPlayRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const totalImages = WEDDING.galleryImages.length
 
   // Detect mobile once
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
 
-  // Organic rotations — slightly different each time, like scattered photos on a table
-  const rotations = useRef(
-    WEDDING.galleryImages.map(() => Math.round((Math.random() - 0.5) * 12))
-  )
+  // ─── Slide transition — cinematic crossfade like a film projector ───
+  const goToSlide = useCallback((nextIndex: number) => {
+    if (isTransitioning || nextIndex === activeIndex) return
+    setIsTransitioning(true)
 
-  // Organic depth offsets — memories overlap and layer like a dream collage
-  // Featured photos are closer (bigger scale), background memories are further
-  const depthOffsets = useRef(
-    WEDDING.galleryImages.map((_, i) => {
-      // Featured memories (every 4th) — closer, bigger, more vivid
-      const isFeatured = i % 4 === 0
-      return {
-        x: (Math.random() - 0.5) * (isFeatured ? 8 : 16),
-        y: (Math.random() - 0.5) * (isFeatured ? 6 : 12),
-        scale: isFeatured ? 0.95 + Math.random() * 0.05 : 0.82 + Math.random() * 0.1,
-        z: isFeatured ? 10 + i : i,
-        opacity: isFeatured ? 1 : 0.85 + Math.random() * 0.15,
+    const slide = slideRef.current
+    const caption = captionRef.current
+    if (!slide) { setIsTransitioning(false); return }
+
+    const tl = gsap.timeline({
+      onComplete: () => {
+        setActiveIndex(nextIndex)
+        setIsTransitioning(false)
       }
     })
-  )
 
-  // Varied sizes — memories are not all the same size, some are closer, some further
-  const photoSizes = useRef(
-    WEDDING.galleryImages.map((_, i) => {
-      if (i === 0) return 300 // First memory — biggest, most vivid
-      if (i % 4 === 0) return 260 // Featured memories — prominent
-      if (i % 3 === 0) return 220 // Medium memories
-      if (i % 2 === 0) return 180 // Smaller memories
-      return 150 + Math.round(Math.random() * 30) // Background memories
+    // Phase 1: Current photo dims out — like a projector bulb fading
+    tl.to(slide, {
+      opacity: 0,
+      scale: 0.96,
+      filter: 'blur(4px) brightness(0.6)',
+      duration: isMobile ? 0.4 : 0.6,
+      ease: 'power2.in',
     })
-  )
 
-  // Organic vertical offsets — some memories are slightly higher or lower
-  // Like photos scattered on a table, not perfectly aligned
-  const verticalOffsets = useRef(
-    WEDDING.galleryImages.map((_, i) => {
-      if (i === 0) return 0 // First memory: center anchor
-      return (Math.random() - 0.5) * 30
+    // Caption fades up
+    if (caption) {
+      tl.to(caption, {
+        opacity: 0,
+        y: -8,
+        duration: 0.3,
+        ease: 'power2.in',
+      }, '<')
+    }
+
+    // Phase 2: Swap image after fade out, then reveal new — projector clicks to next frame
+    tl.call(() => {
+      // Image swap happens when opacity is 0 (invisible)
     })
-  )
 
+    // Phase 3: New photo fades in — projector beam illuminates the new frame
+    tl.fromTo(slide,
+      { opacity: 0, scale: 1.04, filter: 'blur(4px) brightness(1.4)' },
+      {
+        opacity: 1,
+        scale: 1,
+        filter: 'blur(0px) brightness(1)',
+        duration: isMobile ? 0.5 : 0.8,
+        ease: 'power2.out',
+      }
+    )
+
+    // New caption writes in
+    if (caption) {
+      tl.fromTo(caption,
+        { opacity: 0, y: 6 },
+        { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' },
+        '-=0.3'
+      )
+    }
+  }, [activeIndex, isTransitioning, isMobile])
+
+  const nextSlide = useCallback(() => {
+    goToSlide((activeIndex + 1) % totalImages)
+  }, [activeIndex, totalImages, goToSlide])
+
+  const prevSlide = useCallback(() => {
+    goToSlide((activeIndex - 1 + totalImages) % totalImages)
+  }, [activeIndex, totalImages, goToSlide])
+
+  // ─── Auto-play — projector runs on its own, like a memory reel ───
+  const startAutoPlay = useCallback(() => {
+    if (autoPlayRef.current) clearInterval(autoPlayRef.current)
+    autoPlayRef.current = setInterval(() => {
+      nextSlide()
+    }, 4000) // 4s per slide — enough time to absorb each memory
+  }, [nextSlide])
+
+  const stopAutoPlay = useCallback(() => {
+    if (autoPlayRef.current) {
+      clearInterval(autoPlayRef.current)
+      autoPlayRef.current = null
+    }
+  }, [startAutoPlay])
+
+  // Start auto-play on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      startAutoPlay()
+    }, 2000)
+    return () => {
+      clearTimeout(timer)
+      stopAutoPlay()
+    }
+  }, [startAutoPlay, stopAutoPlay])
+
+  // Reset autoplay on slide change
+  useEffect(() => {
+    if (!isTransitioning) {
+      stopAutoPlay()
+      startAutoPlay()
+    }
+  }, [activeIndex, isTransitioning, startAutoPlay, stopAutoPlay])
+
+  // ─── Section entrance animation ───
   useEffect(() => {
     const ctx = gsap.context(() => {
       const section = sectionRef.current!
       fadeIn(section, { duration: 1.2, y: 20 })
 
-      // ─── Title & ornament entrance ───
       const titleEl = section.querySelector('.gallery-title')
       const ornamentEl = section.querySelector('.gallery-ornament')
       if (titleEl) {
         gsap.fromTo(titleEl,
           { opacity: 0, y: 30, filter: 'blur(6px)' },
           { opacity: 1, y: 0, filter: 'blur(0px)', duration: 1.0, ease: 'power3.out',
-            scrollTrigger: { trigger: section, start: 'top 0%', toggleActions: 'play none none none' }
+            scrollTrigger: { trigger: section, start: 'top 85%', toggleActions: 'play none none none' }
           }
         )
       }
@@ -1382,234 +1451,257 @@ function GallerySection() {
         gsap.fromTo(ornamentEl,
           { opacity: 0, scale: 0.5 },
           { opacity: 1, scale: 1, duration: 0.8, ease: 'back.out(2)', delay: 0.3,
-            scrollTrigger: { trigger: section, start: 'top 0%', toggleActions: 'play none none none' }
+            scrollTrigger: { trigger: section, start: 'top 85%', toggleActions: 'play none none none' }
           }
         )
       }
 
-      // ─── Golden light cascade — photos reveal one by one ───
-      const memories = section.querySelectorAll('.memory-photo')
-      if (memories.length > 0) {
-        memories.forEach((memory, i) => {
-          const depth = depthOffsets.current[i]
-          const isFeatured = i % 4 === 0
-          const isFirst = i === 0
-
-          // Stagger — cascade from left to right, like turning pages
-          const cascadeDelay = isMobile ? 0.15 * i : 0.22 * i
-          const featuredPulse = isFeatured ? 0.15 : 0
-          const staggerDelay = cascadeDelay + featuredPulse
-
-          // Parallax depth — closer memories rise faster
-          const depthSpeed = isFeatured ? 1.2 : isFirst ? 1.4 : 0.7 + Math.random() * 0.3
-          const startY = (isMobile ? 60 : 100) * depthSpeed
-          const startScale = (depth.scale || 0.9) * 0.4
-
-          // Each photo arrives from a unique angle
-          const arriveAngle = (Math.random() - 0.5) * 20
-          const arriveX = (Math.random() - 0.5) * 60
-
-          // CINEMATIC REVEAL — four phases:
-          // 1. Rise from depth (parallax fog)
-          // 2. Golden shimmer (opacity peak + scale overshoot)
-          // 3. Focus & settle (de-blur + final position)
-          // 4. Breathing float (alive, organic)
-
-          const tl = gsap.timeline({
-            scrollTrigger: {
-              trigger: section,
-              start: 'top 0%',
-              toggleActions: 'play none none none',
-            },
-            delay: staggerDelay,
-          })
-
-          // Phase 1: Rise from deep fog — like a memory surfacing from the dark
-          tl.fromTo(memory,
-            {
-              opacity: 0,
-              x: arriveX,
-              y: startY,
-              scale: startScale,
-              rotation: arriveAngle,
-              filter: 'blur(16px) brightness(0.3)',
-            },
-            {
-              opacity: depth.opacity * 0.4,
-              x: depth.x * 2,
-              y: (verticalOffsets.current[i] || 0) + depth.y * 2,
-              scale: depth.scale * 0.75,
-              rotation: rotations.current[i] + (Math.random() - 0.5) * 4,
-              filter: 'blur(8px) brightness(0.7)',
-              duration: isMobile ? 0.7 : 1.0,
-              ease: 'power2.out',
-            }
-          )
-
-          // Phase 2: Golden shimmer — light catches the photo, a brief flash
-          tl.to(memory, {
-            opacity: Math.min(depth.opacity * 1.1, 1),
-            scale: depth.scale * 1.06,
-            filter: 'blur(2px) brightness(1.3)',
-            duration: isMobile ? 0.3 : 0.4,
-            ease: 'power2.in',
-          })
-
-          // Phase 3: Focus & settle — eye adjusts, memory becomes clear
-          tl.to(memory, {
-            opacity: depth.opacity,
-            x: depth.x,
-            y: (verticalOffsets.current[i] || 0) + depth.y,
-            scale: depth.scale,
-            rotation: rotations.current[i],
+      // Projector reveal — first slide appears like a beam of light
+      const projector = section.querySelector('.projector-stage')
+      if (projector) {
+        gsap.fromTo(projector,
+          { opacity: 0, scale: 0.92, filter: 'blur(8px) brightness(0.3)' },
+          {
+            opacity: 1,
+            scale: 1,
             filter: 'blur(0px) brightness(1)',
-            duration: isMobile ? 0.5 : 0.7,
-            ease: isFeatured ? 'back.out(1.6)' : 'power3.out',
-          })
+            duration: 1.5,
+            ease: 'power3.out',
+            scrollTrigger: { trigger: section, start: 'top 75%', toggleActions: 'play none none none' },
+            delay: 0.5,
+          }
+        )
+      }
 
-          // Phase 4: Breathing float — the memory is alive, gently drifting
-          tl.call(() => {
-            const floatDistance = isFeatured ? 3.5 : 2
-            const floatDuration = isFeatured ? 4.5 : 3 + Math.random() * 2.5
-            const floatX = (Math.random() - 0.5) * 2
-            gsap.to(memory, {
-              y: `+=${floatDistance}`,
-              x: `+=${floatX}`,
-              duration: floatDuration,
-              ease: 'sine.inOut',
-              yoyo: true,
-              repeat: -1,
-              delay: Math.random() * 2,
-            })
-          })
-        })
+      // Film strip decoration slides in
+      const filmStrip = section.querySelector('.film-strip')
+      if (filmStrip) {
+        gsap.fromTo(filmStrip,
+          { opacity: 0, x: -20 },
+          {
+            opacity: 1,
+            x: 0,
+            duration: 1.0,
+            ease: 'power2.out',
+            scrollTrigger: { trigger: section, start: 'top 75%', toggleActions: 'play none none none' },
+            delay: 0.8,
+          }
+        )
+      }
 
-        // ─── Section-level golden light wash ───
-        // A warm glow pulses through the entire gallery after all photos settle
-        const lightWash = gsap.timeline({
-          scrollTrigger: {
-            trigger: section,
-            start: 'top 0%',
-            toggleActions: 'play none none none',
-          },
-          delay: memories.length * (isMobile ? 0.15 : 0.22) + 1.5,
-        })
-        lightWash.fromTo(section,
-          { filter: 'brightness(1)' },
-          { filter: 'brightness(1.08)', duration: 0.8, ease: 'power2.inOut', yoyo: true, repeat: 1 }
+      // Navigation controls fade in
+      const controls = section.querySelector('.projector-controls')
+      if (controls) {
+        gsap.fromTo(controls,
+          { opacity: 0, y: 10 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.8,
+            ease: 'power2.out',
+            scrollTrigger: { trigger: section, start: 'top 70%', toggleActions: 'play none none none' },
+            delay: 1.0,
+          }
         )
       }
     })
     return () => ctx.revert()
   }, [])
 
-  // Lightbox keyboard navigation
+  // ─── Touch/Swipe for carousel ───
+  const handleCarouselTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.touches[0].clientX)
+    stopAutoPlay()
+  }
+
+  const handleCarouselTouchEnd = (e: React.TouchEvent) => {
+    if (touchStart === null) return
+    const diff = e.changedTouches[0].clientX - touchStart
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) prevSlide()
+      else nextSlide()
+    }
+    setTouchStart(null)
+  }
+
+  // ─── Lightbox ───
   useEffect(() => {
     if (lightboxIndex === null) return
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setLightboxIndex(null)
       if (e.key === 'ArrowLeft') {
-        setLightboxIndex((prev) => prev !== null ? (prev - 1 + WEDDING.galleryImages.length) % WEDDING.galleryImages.length : null)
+        setLightboxIndex((prev) => prev !== null ? (prev - 1 + totalImages) % totalImages : null)
       }
       if (e.key === 'ArrowRight') {
-        setLightboxIndex((prev) => prev !== null ? (prev + 1) % WEDDING.galleryImages.length : null)
+        setLightboxIndex((prev) => prev !== null ? (prev + 1) % totalImages : null)
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [lightboxIndex])
+  }, [lightboxIndex, totalImages])
 
-  // Touch swipe for lightbox
-  const handleTouchStart = (e: React.TouchEvent) => {
+  const handleLightboxTouchStart = (e: React.TouchEvent) => {
     setTouchStart(e.touches[0].clientX)
   }
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
+  const handleLightboxTouchEnd = (e: React.TouchEvent) => {
     if (touchStart === null) return
     const diff = e.changedTouches[0].clientX - touchStart
     if (Math.abs(diff) > 50) {
       if (diff > 0 && lightboxIndex !== null) {
-        setLightboxIndex((lightboxIndex - 1 + WEDDING.galleryImages.length) % WEDDING.galleryImages.length)
+        setLightboxIndex((lightboxIndex - 1 + totalImages) % totalImages)
       } else if (diff < 0 && lightboxIndex !== null) {
-        setLightboxIndex((lightboxIndex + 1) % WEDDING.galleryImages.length)
+        setLightboxIndex((lightboxIndex + 1) % totalImages)
       }
     }
     setTouchStart(null)
   }
 
-  const openLightbox = (index: number) => setLightboxIndex(index)
   const closeLightbox = () => setLightboxIndex(null)
-  const prevImage = () => {
-    if (lightboxIndex !== null) {
-      setLightboxIndex((lightboxIndex - 1 + WEDDING.galleryImages.length) % WEDDING.galleryImages.length)
-    }
-  }
-  const nextImage = () => {
-    if (lightboxIndex !== null) {
-      setLightboxIndex((lightboxIndex + 1) % WEDDING.galleryImages.length)
-    }
-  }
 
   return (
-    <section ref={sectionRef} data-section="gallery" className="diary-paper-bg cinema-depth py-28 px-6" style={{ opacity: 0 }}>
-      <div className="max-w-4xl mx-auto text-center">
+    <section ref={sectionRef} data-section="gallery" className="diary-paper-bg cinema-depth py-20 px-6" style={{ opacity: 0 }}>
+      <div className="max-w-lg mx-auto text-center">
         <h2 className="gallery-title text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
           Momen Kami
         </h2>
-        <div className="gallery-ornament ornament-divider max-w-xs mx-auto mb-14">
+        <div className="gallery-ornament ornament-divider max-w-xs mx-auto mb-10">
           <span className="text-[var(--gold)] text-lg">&#10047;</span>
         </div>
 
-        {/* Memories returning one by one — like photos surfacing from a dream */}
-        <div className="gallery-memories">
-          {WEDDING.galleryImages.map((img, index) => {
-            const depth = depthOffsets.current[index]
-            const isFeatured = index % 4 === 0
-            const verticalOffset = verticalOffsets.current[index] || 0
-            return (
-            <div
-              key={index}
-              className="memory-photo cursor-pointer"
+        {/* ═══ Film Projector Stage ═══ */}
+        <div className="projector-stage relative">
+          {/* Film strip decoration — left side */}
+          <div className="film-strip absolute -left-3 sm:-left-5 top-0 bottom-0 w-4 sm:w-5 flex flex-col justify-between py-1 opacity-20 pointer-events-none"
+            style={{ zIndex: 2 }}>
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div key={i} className="w-full aspect-[3/2] border border-[var(--gold)]/30 rounded-[1px]"
+                style={{ background: 'rgba(201,169,110,0.03)' }} />
+            ))}
+          </div>
+
+          {/* Main projection — one photo at a time */}
+          <div
+            ref={slideRef}
+            className="projector-frame cursor-pointer relative overflow-hidden rounded-sm"
+            style={{
+              background: 'white',
+              padding: '4px 4px 0 4px',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06), 0 0 40px rgba(201,169,110,0.08)',
+            }}
+            onClick={() => setLightboxIndex(activeIndex)}
+            onTouchStart={handleCarouselTouchStart}
+            onTouchEnd={handleCarouselTouchEnd}
+            role="button"
+            tabIndex={0}
+            aria-label={`Lihat foto ${WEDDING.galleryCaptions[activeIndex]}`}
+            onKeyDown={(e) => { if (e.key === 'Enter') setLightboxIndex(activeIndex) }}
+          >
+            {/* Film grain overlay */}
+            <div className="absolute inset-0 pointer-events-none z-10"
               style={{
-                // Organic placement — each photo drifts to its own position
-                transform: `rotate(${rotations.current[index]}deg)`,
-                maxWidth: `${photoSizes.current[index]}px`,
-                // Layered depth — organic horizontal offset, not rigid grid
-                marginLeft: index % 3 === 0 ? 'auto' : index % 3 === 1 ? '5%' : '2%',
-                marginRight: index % 3 === 0 ? '2%' : index % 3 === 1 ? 'auto' : '5%',
-                // Organic vertical spacing — deeper overlap for layered memory feel
-                marginBottom: isFeatured ? '-12px' : index % 2 === 0 ? '-20px' : '-10px',
-                marginTop: `${verticalOffset}px`,
-                // Layered z-index for overlap depth feel — featured on top
-                zIndex: depth.z,
-                position: 'relative',
-                // Featured memories get slightly more prominent shadow
-              }}
-              onClick={() => openLightbox(index)}
-              role="button"
-              tabIndex={0}
-              aria-label={`Lihat foto ${WEDDING.galleryCaptions[index]}`}
-              onKeyDown={(e) => { if (e.key === 'Enter') openLightbox(index) }}
-            >
-              <div className="aspect-[4/5] overflow-hidden bg-[var(--cream-dark)]">
-                <img
-                  src={img}
-                  alt={WEDDING.galleryCaptions[index]}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-              </div>
-              <p
-                className="text-center text-xs sm:text-sm italic mt-1"
-                style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}
-              >
-                {WEDDING.galleryCaptions[index]}
-              </p>
+                background: 'repeating-conic-gradient(rgba(201,169,110,0.02) 0% 25%, transparent 0% 50%)',
+                backgroundSize: '3px 3px',
+                mixBlendMode: 'overlay',
+              }} />
+
+            {/* Projector beam — subtle vignette */}
+            <div className="absolute inset-0 pointer-events-none z-10"
+              style={{
+                background: 'radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.15) 100%)',
+              }} />
+
+            <div className="aspect-[4/5] overflow-hidden">
+              <img
+                key={activeIndex}
+                src={WEDDING.galleryImages[activeIndex]}
+                alt={WEDDING.galleryCaptions[activeIndex]}
+                className="w-full h-full object-cover"
+                style={{ display: 'block' }}
+              />
             </div>
-            )
-          })}
+
+            {/* Slide number — like film frame counter */}
+            <div className="absolute top-2 right-2 z-20 px-2 py-0.5 rounded-sm"
+              style={{
+                background: 'rgba(0,0,0,0.4)',
+                fontFamily: 'var(--font-body)',
+                fontSize: '9px',
+                letterSpacing: '0.15em',
+                color: 'rgba(255,255,255,0.5)',
+              }}>
+              {String(activeIndex + 1).padStart(2, '0')} / {String(totalImages).padStart(2, '0')}
+            </div>
+          </div>
+
+          {/* Caption — writes in like a diary entry under the photo */}
+          <div
+            ref={captionRef}
+            className="py-3 text-center"
+            style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}
+          >
+            <p className="text-sm sm:text-base italic">{WEDDING.galleryCaptions[activeIndex]}</p>
+          </div>
+        </div>
+
+        {/* ═══ Projector Controls ═══ */}
+        <div className="projector-controls flex items-center justify-center gap-4 mt-2">
+          {/* Prev button */}
+          <button
+            onClick={() => { stopAutoPlay(); prevSlide() }}
+            className="w-9 h-9 flex items-center justify-center rounded-full transition-all duration-300 cursor-pointer"
+            style={{
+              border: '1px solid var(--gold)',
+              color: 'var(--gold)',
+              background: 'transparent',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--gold)'; e.currentTarget.style.color = 'white' }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--gold)' }}
+            aria-label="Foto sebelumnya"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+
+          {/* Dot indicators — film perforations */}
+          <div className="flex items-center gap-2">
+            {WEDDING.galleryImages.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => { stopAutoPlay(); goToSlide(i) }}
+                className="transition-all duration-500 cursor-pointer"
+                style={{
+                  width: i === activeIndex ? '20px' : '6px',
+                  height: '6px',
+                  borderRadius: '3px',
+                  background: i === activeIndex ? 'var(--gold)' : 'var(--gold)',
+                  opacity: i === activeIndex ? 1 : 0.3,
+                }}
+                aria-label={`Foto ${i + 1}`}
+              />
+            ))}
+          </div>
+
+          {/* Next button */}
+          <button
+            onClick={() => { stopAutoPlay(); nextSlide() }}
+            className="w-9 h-9 flex items-center justify-center rounded-full transition-all duration-300 cursor-pointer"
+            style={{
+              border: '1px solid var(--gold)',
+              color: 'var(--gold)',
+              background: 'transparent',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--gold)'; e.currentTarget.style.color = 'white' }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--gold)' }}
+            aria-label="Foto selanjutnya"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -1619,12 +1711,11 @@ function GallerySection() {
           className="fixed inset-0 z-[100] flex items-center justify-center"
           style={{ background: 'rgba(0,0,0,0.95)' }}
           onClick={closeLightbox}
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
+          onTouchStart={handleLightboxTouchStart}
+          onTouchEnd={handleLightboxTouchEnd}
           role="dialog"
           aria-label="Gallery lightbox"
         >
-          {/* Close button */}
           <button
             className="absolute top-4 right-4 sm:top-6 sm:right-6 w-10 h-10 flex items-center justify-center text-white/70 hover:text-white transition-colors z-10 cursor-pointer"
             onClick={closeLightbox}
@@ -1635,10 +1726,9 @@ function GallerySection() {
             </svg>
           </button>
 
-          {/* Prev arrow */}
           <button
             className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-white/50 hover:text-white transition-colors z-10 cursor-pointer"
-            onClick={(e) => { e.stopPropagation(); prevImage() }}
+            onClick={(e) => { e.stopPropagation(); setLightboxIndex((lightboxIndex - 1 + totalImages) % totalImages) }}
             aria-label="Sebelumnya"
           >
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1646,10 +1736,9 @@ function GallerySection() {
             </svg>
           </button>
 
-          {/* Next arrow */}
           <button
             className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-white/50 hover:text-white transition-colors z-10 cursor-pointer"
-            onClick={(e) => { e.stopPropagation(); nextImage() }}
+            onClick={(e) => { e.stopPropagation(); setLightboxIndex((lightboxIndex + 1) % totalImages) }}
             aria-label="Selanjutnya"
           >
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1657,7 +1746,6 @@ function GallerySection() {
             </svg>
           </button>
 
-          {/* Image */}
           <div
             className="max-w-4xl max-h-[85vh] px-14 sm:px-16"
             onClick={(e) => e.stopPropagation()}
