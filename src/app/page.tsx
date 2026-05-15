@@ -647,23 +647,24 @@ function DiaryIntroSection() {
       className="diary-paper-bg diary-lines diary-margin cinema-depth py-28 px-6 text-center relative overflow-hidden"
       style={{ opacity: 0 }}
     >
-      {/* Diary entry date — top left like a journal */}
+      {/* Diary entry — year + subtitle side by side */}
       <div className="max-w-xl mx-auto relative">
-        <p
-          className="text-sm tracking-wider mb-10 text-left pl-16 sm:pl-20"
-          style={{ fontFamily: 'var(--font-body)', color: 'var(--gold)', opacity: 0.6 }}
-        >
-          2020
-        </p>
-
-        {/* Subtitle — handwriting reveal */}
-        <p
-          ref={subtitleRef}
-          className="text-xs tracking-wider mb-8 text-left pl-16 sm:pl-20 min-h-[1.5em]"
-          style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold)', opacity: 0.7, fontStyle: 'italic' }}
-        >
-          Cerita kami dimulai
-        </p>
+        {/* Year + Subtitle — side by side, handwriting reveal */}
+        <div className="flex items-baseline gap-3 mb-8 text-left pl-16 sm:pl-20">
+          <p
+            className="text-sm tracking-wider"
+            style={{ fontFamily: 'var(--font-body)', color: 'var(--gold)', opacity: 0.6 }}
+          >
+            2020
+          </p>
+          <p
+            ref={subtitleRef}
+            className="text-sm sm:text-base tracking-wider min-h-[1.5em]"
+            style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold)', opacity: 0.7, fontStyle: 'italic' }}
+          >
+            Cerita kami dimulai
+          </p>
+        </div>
 
         {/* Top ink stroke */}
         <div ref={topStrokeRef} className="ink-stroke-line mb-8 max-w-xs mx-auto">
@@ -1065,21 +1066,21 @@ function DiaryStorySection() {
           className="diary-note-card diary-note-card-vignette relative p-8 sm:p-10 rounded-lg bg-white/80 backdrop-blur-sm shadow-lg overflow-hidden"
           style={{ minHeight: '340px', opacity: 0, transform: 'translateY(15px)' }}
         >
-          {/* Year badge — fixed at top-left like a diary date */}
-          <div
-            ref={yearBadgeRef}
-            className="text-sm tracking-wider mb-6"
-            style={{ fontFamily: 'var(--font-body)', color: 'var(--gold)', opacity: 0 }}
-          >
-            {WEDDING.timeline[0]?.year}
+          {/* Year + Title — side by side like a diary date heading */}
+          <div className="flex items-baseline gap-3 mb-4 min-h-[2em]">
+            <div
+              ref={yearBadgeRef}
+              className="text-sm tracking-wider shrink-0"
+              style={{ fontFamily: 'var(--font-body)', color: 'var(--gold)', opacity: 0 }}
+            >
+              {WEDDING.timeline[0]?.year}
+            </div>
+            <div
+              ref={titleRef}
+              className="text-2xl sm:text-3xl"
+              style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold-dark)', fontStyle: 'italic' }}
+            />
           </div>
-
-          {/* Title — serif italic, handwriting reveal */}
-          <div
-            ref={titleRef}
-            className="text-2xl sm:text-3xl mb-4 min-h-[1.5em]"
-            style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold-dark)', fontStyle: 'italic' }}
-          />
 
           {/* Description — serif italic, handwriting reveal */}
           <div
@@ -1612,72 +1613,81 @@ function GallerySection() {
 /* ═══════════════════════════════════════════════════════════
    9. CLOSING — Diary Ending
    The last page of this chapter, the first of forever
-   HANDWRITING — kata per kata terbang dari belakang
-   Like the final words writing themselves into existence
-   Arabic بارك الله لكما appears immediately — no animation
+   Font: Inter (var(--font-body)) for all text
+   Exception: Arabic + transliteration stay gold with their fonts
+   Animation: Framer Motion word-by-word fly-in (reliable, no GSAP issues)
    ═══════════════════════════════════════════════════════════ */
+
+// Word-by-word fly-in component — each word animates in from below
+function FlyInWords({ text, className, style, delayOffset = 0, stagger = 0.1, duration = 0.5 }: {
+  text: string
+  className?: string
+  style?: React.CSSProperties
+  delayOffset?: number
+  stagger?: number
+  duration?: number
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  const hasAnimated = useRef(false)
+  const words = text.split(' ')
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el || hasAnimated.current) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !hasAnimated.current) {
+            hasAnimated.current = true
+            observer.disconnect()
+
+            const spans = el.querySelectorAll<HTMLElement>('.fly-word')
+            spans.forEach((span, i) => {
+              span.style.opacity = '0'
+              span.style.transform = 'translateY(18px) scale(0.9)'
+              span.style.transition = `opacity ${duration}s cubic-bezier(0.25, 0.46, 0.45, 0.94) ${delayOffset + i * stagger}s, transform ${duration}s cubic-bezier(0.25, 0.46, 0.45, 0.94) ${delayOffset + i * stagger}s`
+              // Force reflow then animate
+              requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                  span.style.opacity = '1'
+                  span.style.transform = 'translateY(0) scale(1)'
+                })
+              })
+            })
+          }
+        })
+      },
+      { threshold: 0.2 }
+    )
+    observer.observe(el)
+
+    return () => observer.disconnect()
+  }, [delayOffset, stagger, duration])
+
+  return (
+    <div ref={ref} className={className} style={style}>
+      {words.map((word, i) => (
+        <span
+          key={i}
+          className="fly-word inline-block mr-[0.3em]"
+          style={{ opacity: 0 }}
+        >
+          {word}
+        </span>
+      ))}
+    </div>
+  )
+}
+
 function ClosingSection() {
   const sectionRef = useRef<HTMLDivElement>(null)
-  const contentRef = useRef<HTMLDivElement>(null)
-  const titleRef = useRef<HTMLDivElement>(null)
-  const subtitleRef = useRef<HTMLDivElement>(null)
-  const doaRef = useRef<HTMLDivElement>(null)
-  const arabicTextRef = useRef<HTMLDivElement>(null)
-  const footerLineRef = useRef<HTMLDivElement>(null)
-  const finalLineRef = useRef<HTMLDivElement>(null)
   const dateRef = useRef<HTMLDivElement>(null)
-  const shimmerRef = useRef<HTMLDivElement>(null)
   const hasAnimated = useRef(false)
-
-  // ─── WORD FLY-IN — kata terbang dari belakang ───
-  // Simple: split text → word spans → gsap.fromTo() animate
-  // NO filter property (causes GSAP issues), NO CSS inline transform
-  // Returns total duration for scheduling next element
-  const wordFlyIn = (el: HTMLDivElement | null, stagger: number = 0.15, wordDuration: number = 0.6, delay: number = 0): number => {
-    if (!el) return delay
-
-    const fullText = el.textContent || ''
-    if (!fullText.trim()) return delay
-
-    // Split into word spans
-    el.innerHTML = ''
-    const allWords: HTMLSpanElement[] = []
-    fullText.split(' ').forEach((word) => {
-      const ws = document.createElement('span')
-      ws.textContent = word
-      ws.style.display = 'inline-block'
-      ws.style.marginRight = '0.3em'
-      ws.style.color = 'inherit'
-      el.appendChild(ws)
-      allWords.push(ws)
-    })
-
-    // Animate: from invisible/shifted → visible/normal
-    // Using fromTo — most reliable GSAP method, no separate set() needed
-    gsap.fromTo(allWords,
-      { opacity: 0, y: 20, scale: 0.8 },
-      {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        duration: wordDuration,
-        stagger: stagger,
-        ease: 'back.out(1.2)',
-        delay: delay,
-      }
-    )
-
-    return delay + allWords.length * stagger + wordDuration
-  }
 
   useEffect(() => {
     const section = sectionRef.current
     if (!section) return
-
-    const isMobile = window.innerWidth < 768
-    const wordStagger = isMobile ? 0.1 : 0.13
-    const wordDur = isMobile ? 0.4 : 0.5
-    const gap = isMobile ? 0.3 : 0.5
 
     // Section fade-in via IntersectionObserver
     const observer = new IntersectionObserver(
@@ -1690,31 +1700,9 @@ function ClosingSection() {
             // Fade section in
             gsap.to(section, { opacity: 1, duration: 1.5, ease: 'power2.out' })
 
-            // Word fly-in sequence — each element starts after previous finishes
-            const titleEnd = wordFlyIn(titleRef.current, wordStagger, wordDur, 0.5)
-            const subtitleEnd = wordFlyIn(subtitleRef.current, wordStagger, wordDur, titleEnd + gap)
-
-            const transEl = doaRef.current?.querySelector('.doa-transliteration') as HTMLDivElement | null
-            const transEnd = wordFlyIn(transEl, wordStagger * 0.8, wordDur * 0.8, subtitleEnd + gap)
-
-            const footerEnd = wordFlyIn(footerLineRef.current, wordStagger * 1.2, wordDur, transEnd + gap + 0.3)
-            const finalEnd = wordFlyIn(finalLineRef.current, wordStagger * 1.5, wordDur * 1.2, footerEnd + gap)
-
-            // Golden shimmer sweep
-            if (shimmerRef.current) {
-              gsap.fromTo(shimmerRef.current,
-                { opacity: 0, x: -100 },
-                { opacity: 0.06, x: window.innerWidth, duration: 3, ease: 'power1.inOut', delay: finalEnd + 2 }
-              )
-            }
-
-            // Date appears
+            // Date appears after all word animations finish (roughly 6-8s)
             if (dateRef.current) {
-              gsap.to(dateRef.current, { opacity: 1, duration: 1.5, ease: 'power2.out', delay: finalEnd + 3 })
-              const dateP = dateRef.current.querySelector('p')
-              if (dateP) {
-                gsap.to(dateP, { opacity: 0.7, duration: 2, ease: 'power2.out', delay: finalEnd + 3.3 })
-              }
+              gsap.to(dateRef.current, { opacity: 1, duration: 1.5, ease: 'power2.out', delay: 8 })
             }
           }
         })
@@ -1730,13 +1718,6 @@ function ClosingSection() {
     <section ref={sectionRef} className="batik-kawung-dark cinema-vignette cinema-bloom cinema-dust diary-page-close relative py-28 px-6 text-center overflow-hidden" style={{ opacity: 0 }}>
       {/* Gold light leak */}
       <div className="gold-light-leak absolute inset-0 pointer-events-none" />
-
-      {/* Golden shimmer sweep */}
-      <div
-        ref={shimmerRef}
-        className="absolute inset-0 pointer-events-none z-20"
-        style={{ background: 'linear-gradient(90deg, transparent, rgba(201,169,110,0.1), transparent)', opacity: 0 }}
-      />
 
       {/* Final petals — the last visible movement before silence */}
       <div className="absolute inset-0 pointer-events-none z-25 overflow-hidden">
@@ -1761,44 +1742,44 @@ function ClosingSection() {
         ))}
       </div>
 
-      <div ref={contentRef} className="relative z-10 max-w-2xl mx-auto">
-        {/* Title — first to enter */}
-        <div ref={titleRef} style={{ color: '#ffffff' }}>
-          <p
-            className="text-lg sm:text-xl italic leading-relaxed mb-8"
-            style={{ fontFamily: 'var(--font-serif)', color: '#ffffff' }}
-          >
-            Dan seperti semua cerita indah yang dituliskan semesta, kisah kami baru saja dimulai.
-          </p>
-        </div>
+      <div className="relative z-10 max-w-2xl mx-auto">
+        {/* Title — first to fly in */}
+        <FlyInWords
+          text="Dan seperti semua cerita indah yang dituliskan semesta, kisah kami baru saja dimulai."
+          className="text-lg sm:text-xl leading-relaxed mb-8"
+          style={{ fontFamily: 'var(--font-body)', color: '#ffffff' }}
+          delayOffset={0.5}
+          stagger={0.1}
+          duration={0.5}
+        />
 
-        {/* Subtitle — enters after title */}
-        <div ref={subtitleRef} style={{ color: '#ffffff' }}>
-          <p
-            className="text-sm sm:text-base leading-relaxed mb-10"
-            style={{ fontFamily: 'var(--font-serif)', color: '#ffffff', opacity: 0.8 }}
-          >
-            Terima kasih telah menjadi bagian dari perjalanan kecil kami menuju selamanya.
-          </p>
-        </div>
+        {/* Subtitle — flies in after title */}
+        <FlyInWords
+          text="Terima kasih telah menjadi bagian dari perjalanan kecil kami menuju selamanya."
+          className="text-sm sm:text-base leading-relaxed mb-10"
+          style={{ fontFamily: 'var(--font-body)', color: '#ffffff', opacity: 0.85 }}
+          delayOffset={3.0}
+          stagger={0.08}
+          duration={0.45}
+        />
 
-        {/* Doa — Arabic appears immediately, transliteration dissolves in */}
-        <div ref={doaRef}>
-          <div ref={arabicTextRef}>
-            <p
-              className="text-base sm:text-lg leading-relaxed mb-6"
-              style={{ fontFamily: 'var(--font-arabic)', color: 'var(--gold-light)' }}
-              dir="rtl"
-            >
-              بارك الله لكما وبارك عليكما وجمع بينكما في خير
-            </p>
-          </div>
+        {/* Doa — Arabic + transliteration in gold */}
+        <div className="mb-8">
           <p
-            className="doa-transliteration text-xs italic mb-8"
-            style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold)' }}
+            className="text-base sm:text-lg leading-relaxed mb-4"
+            style={{ fontFamily: 'var(--font-arabic)', color: 'var(--gold-light)' }}
+            dir="rtl"
           >
-            Barakallahu lakuma wa baraka &lsquo;alaikuma wa jama&lsquo;a bainakuma fi khair.
+            بارك الله لكما وبارك عليكما وجمع بينكما في خير
           </p>
+          <FlyInWords
+            text="Barakallahu lakuma wa baraka 'alaikuma wa jama'a bainakuma fi khair."
+            className="text-xs italic"
+            style={{ fontFamily: 'var(--font-body)', color: 'var(--gold)' }}
+            delayOffset={5.0}
+            stagger={0.06}
+            duration={0.4}
+          />
         </div>
 
         {/* Small divider */}
@@ -1806,39 +1787,35 @@ function ClosingSection() {
           <span className="text-[var(--gold)] text-xs">&#10047;</span>
         </div>
 
-        {/* Footer line — enters after doa */}
-        <div ref={footerLineRef} style={{ color: '#ffffff' }}>
-          <p
-            className="text-sm italic"
-            style={{ fontFamily: 'var(--font-serif)', color: '#ffffff', opacity: 0.6 }}
-          >
-            Forever starts with Bismillah.
-          </p>
-        </div>
+        {/* Footer line */}
+        <FlyInWords
+          text="Forever starts with Bismillah."
+          className="text-sm mb-16"
+          style={{ fontFamily: 'var(--font-body)', color: '#ffffff', opacity: 0.6 }}
+          delayOffset={6.0}
+          stagger={0.1}
+          duration={0.5}
+        />
 
-        {/* Final emotional line — enters last */}
-        <div
-          ref={finalLineRef}
-          className="mt-16 min-h-[2em]"
-          style={{ color: '#ffffff' }}
-        >
-          <p
-            className="text-2xl sm:text-3xl"
-            style={{ fontFamily: 'var(--font-script)', color: '#ffffff' }}
-          >
-            Cerita mereka belum selesai...
-          </p>
-        </div>
+        {/* Final emotional line */}
+        <FlyInWords
+          text="Cerita mereka belum selesai..."
+          className="text-2xl sm:text-3xl min-h-[2em]"
+          style={{ fontFamily: 'var(--font-body)', color: '#ffffff', fontWeight: 300 }}
+          delayOffset={7.0}
+          stagger={0.15}
+          duration={0.6}
+        />
 
         {/* The date — the beginning of forever */}
         <div
           ref={dateRef}
           className="mt-8"
-          style={{ color: '#ffffff' }}
+          style={{ opacity: 0 }}
         >
           <p
             className="text-sm tracking-[0.4em]"
-            style={{ fontFamily: 'var(--font-body)', color: '#ffffff', opacity: 0 }}
+            style={{ fontFamily: 'var(--font-body)', color: '#ffffff', opacity: 0.7 }}
           >
             05 . 07 . 2026
           </p>
