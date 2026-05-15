@@ -1611,135 +1611,176 @@ function GallerySection() {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   9. CLOSING — Diary Ending
-   The last page of this chapter, the first of forever
-   Font: Inter for all white text, Amiri for Arabic, gold for transliteration
-   Animation: GSAP from() — same proven approach as Bismillah/Couple sections
-   Word spans are in JSX directly — no innerHTML manipulation
-   ═══════════════════════════════════════════════════════════ */
+   9. CLOSING — The Last Page
+   "Cerita yang tertulis, lalu menguap menjadi debu"
 
-// Split text into word spans for GSAP animation — rendered in JSX, not innerHTML
-function WordSpan({ text }: { text: string }) {
-  return (
-    <>
-      {text.split(' ').map((word, i) => (
-        <span
-          key={i}
-          className="closing-word inline-block"
-          style={{ marginRight: '0.3em' }}
-        >
-          {word}
-        </span>
-      ))}
-    </>
-  )
-}
+   Phase 1: HANDWRITING — text writes itself in, character by character
+            Like the diary story, ink flowing onto the page
+            Exception: Arabic بارك الله لكما appears immediately (no animation)
+
+   Phase 2: DUST DISSOLVE — after all text is written,
+            words dissolve from back to front like dust in the wind
+            The story evaporates, leaving only the doa and the date
+            Like the ending of a film — the image fades, the feeling remains
+
+   Font: Inter for all white text, Amiri for Arabic, gold for transliteration
+   ═══════════════════════════════════════════════════════════ */
 
 function ClosingSection() {
   const sectionRef = useRef<HTMLDivElement>(null)
-  const dateRef = useRef<HTMLDivElement>(null)
-  const dividerRef = useRef<HTMLDivElement>(null)
+  const titleRef = useRef<HTMLDivElement>(null)
+  const subtitleRef = useRef<HTMLDivElement>(null)
+  const transRef = useRef<HTMLDivElement>(null)
+  const footerRef = useRef<HTMLDivElement>(null)
+  const finalRef = useRef<HTMLDivElement>(null)
   const arabicRef = useRef<HTMLDivElement>(null)
+  const dividerRef = useRef<HTMLDivElement>(null)
+  const dateRef = useRef<HTMLDivElement>(null)
+  const hasAnimated = useRef(false)
 
   useEffect(() => {
     const section = sectionRef.current
     if (!section) return
 
-    const ctx = gsap.context(() => {
-      // Section fade in
-      gsap.fromTo(section,
-        { opacity: 0 },
-        {
-          opacity: 1,
-          duration: 1.5,
-          ease: 'power2.out',
-          scrollTrigger: {
-            trigger: section,
-            start: 'top 80%',
-            toggleActions: 'play none none none',
-          },
+    // ─── CLOSING HANDWRITING REVEAL ───
+    // Same proven approach as DiaryStory — character by character
+    // Returns total duration for scheduling
+    const closingHandwriting = (
+      el: HTMLDivElement | null,
+      stagger: number = 0.03,
+      charDuration: number = 0.1,
+      delay: number = 0,
+    ): number => {
+      if (!el) return delay
+      const fullText = el.textContent || ''
+      if (!fullText.trim()) return delay
+
+      el.innerHTML = ''
+      const allChars: HTMLSpanElement[] = []
+      const words = fullText.split(' ')
+
+      words.forEach((word, wi) => {
+        const ws = document.createElement('span')
+        ws.style.cssText = 'white-space:nowrap;display:inline;'
+        for (let j = 0; j < word.length; j++) {
+          const cs = document.createElement('span')
+          cs.className = 'hw-char'
+          cs.style.cssText = 'display:inline-block;will-change:opacity,transform;opacity:0;transform:translateY(3px) rotate(-1deg);min-width:0.05em;'
+          cs.textContent = word[j]
+          ws.appendChild(cs)
+          allChars.push(cs)
         }
-      )
+        el.appendChild(ws)
+        if (wi < words.length - 1) {
+          const sp = document.createElement('span')
+          sp.innerHTML = '\u00A0'
+          sp.style.display = 'inline'
+          el.appendChild(sp)
+        }
+      })
 
-      // ─── WORD FLY-IN: All .closing-word spans animate from below ───
-      // This is the SAME pattern that works in Bismillah & Couple sections
-      // gsap.from() sets initial state and animates to current CSS state
-      const allWords = section.querySelectorAll<HTMLElement>('.closing-word')
+      gsap.to(allChars, {
+        opacity: 1,
+        y: 0,
+        rotation: 0,
+        duration: charDuration,
+        stagger,
+        ease: 'power2.out',
+        delay,
+      })
 
-      if (allWords.length > 0) {
-        gsap.from(allWords, {
+      return delay + allChars.length * stagger + charDuration
+    }
+
+    // ─── DUST DISSOLVE ───
+    // Words disintegrate like dust from back to front
+    // Last word disappears first, spreading upward like ash
+    // This is the ending: the story evaporates
+    const dustDissolve = (el: HTMLDivElement | null, delay: number = 0): number => {
+      if (!el) return delay
+      // Collect all word containers (the nowrap spans created by handwriting)
+      const wordSpans = el.querySelectorAll<HTMLElement>('span[style*="nowrap"]')
+      if (wordSpans.length === 0) return delay
+
+      // Reverse order — last word dissolves first
+      const reversed = Array.from(wordSpans).reverse()
+
+      const tl = gsap.timeline({ delay })
+
+      reversed.forEach((ws, i) => {
+        // Each word: blur + scale up + float away + fade
+        // Like dust particles catching light and dispersing
+        tl.to(ws, {
           opacity: 0,
-          y: 25,
-          scale: 0.85,
-          duration: 0.6,
-          stagger: 0.08,
-          ease: 'back.out(1.4)',
-          scrollTrigger: {
-            trigger: section,
-            start: 'top 80%',
-            toggleActions: 'play none none none',
-          },
-        })
-      }
+          scale: 1.15,
+          y: -(8 + Math.random() * 15),
+          rotation: (Math.random() - 0.5) * 6,
+          filter: 'blur(3px)',
+          duration: 0.7,
+          ease: 'power2.in',
+        }, i * 0.08)
+      })
 
-      // Arabic text — gentle fade in
-      if (arabicRef.current) {
-        gsap.fromTo(arabicRef.current,
-          { opacity: 0, y: 10 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 1.2,
-            delay: 2.5,
-            ease: 'power2.out',
-            scrollTrigger: {
-              trigger: section,
-              start: 'top 80%',
-              toggleActions: 'play none none none',
-            },
-          }
-        )
-      }
+      return delay + reversed.length * 0.08 + 0.7
+    }
 
-      // Divider ornament
-      if (dividerRef.current) {
-        gsap.fromTo(dividerRef.current,
-          { opacity: 0, scale: 0.5 },
-          {
-            opacity: 1,
-            scale: 1,
-            duration: 0.8,
-            delay: 3.5,
-            ease: 'back.out(2)',
-            scrollTrigger: {
-              trigger: section,
-              start: 'top 80%',
-              toggleActions: 'play none none none',
-            },
-          }
-        )
-      }
+    // ScrollTrigger — proven to work in all other sections
+    ScrollTrigger.create({
+      trigger: section,
+      start: 'top 80%',
+      onEnter: () => {
+        if (hasAnimated.current) return
+        hasAnimated.current = true
 
-      // Date — appears last
-      if (dateRef.current) {
-        gsap.fromTo(dateRef.current,
-          { opacity: 0 },
-          {
-            opacity: 1,
-            duration: 1.5,
-            delay: 5,
-            ease: 'power2.out',
-            scrollTrigger: {
-              trigger: section,
-              start: 'top 80%',
-              toggleActions: 'play none none none',
-            },
-          }
-        )
-      }
+        // Fade section in
+        gsap.to(section, { opacity: 1, duration: 1, ease: 'power2.out' })
+
+        // ═══ PHASE 1: HANDWRITING ═══
+        const titleEnd = closingHandwriting(titleRef.current, 0.035, 0.1, 0.3)
+        const subtitleEnd = closingHandwriting(subtitleRef.current, 0.03, 0.09, titleEnd + 0.5)
+
+        // Arabic appears gently — no handwriting
+        if (arabicRef.current) {
+          gsap.to(arabicRef.current, { opacity: 1, duration: 1.2, ease: 'power2.out', delay: subtitleEnd + 0.3 })
+        }
+
+        const transEnd = closingHandwriting(transRef.current, 0.025, 0.08, subtitleEnd + 1.0)
+
+        // Divider appears
+        if (dividerRef.current) {
+          gsap.to(dividerRef.current, { opacity: 1, scale: 1, duration: 0.8, ease: 'back.out(2)', delay: transEnd + 0.3 })
+        }
+
+        const footerEnd = closingHandwriting(footerRef.current, 0.035, 0.1, transEnd + 0.8)
+        const finalEnd = closingHandwriting(finalRef.current, 0.06, 0.15, footerEnd + 0.8)
+
+        // ═══ PHASE 2: DUST DISSOLVE ═══
+        // After everything is written, hold for a moment...
+        // Then the story evaporates like dust
+        const dustDelay = finalEnd + 2.5 // hold 2.5s to let it sink in
+
+        const titleDust = dustDissolve(titleRef.current, dustDelay)
+        const subtitleDust = dustDissolve(subtitleRef.current, dustDelay + 0.4)
+        const transDust = dustDissolve(transRef.current, dustDelay + 0.8)
+        const footerDust = dustDissolve(footerRef.current, dustDelay + 1.2)
+        const finalDust = dustDissolve(finalRef.current, dustDelay + 1.6)
+
+        // Divider fades
+        if (dividerRef.current) {
+          gsap.to(dividerRef.current, { opacity: 0, duration: 0.8, ease: 'power2.in', delay: dustDelay + 1.0 })
+        }
+
+        // ═══ AFTER DUST: Only the doa remains ═══
+        // The story is gone, but the prayer stays
+        // Arabic text stays visible (it's permanent — the doa doesn't dissolve)
+        // Date appears — the only thing left after the dust settles
+        const afterDust = Math.max(titleDust, subtitleDust, transDust, footerDust, finalDust) + 1.0
+
+        if (dateRef.current) {
+          gsap.to(dateRef.current, { opacity: 1, duration: 2, ease: 'power2.out', delay: afterDust })
+        }
+      },
     })
-
-    return () => ctx.revert()
   }, [])
 
   return (
@@ -1771,17 +1812,17 @@ function ClosingSection() {
       </div>
 
       <div className="relative z-10 max-w-2xl mx-auto">
-        {/* Title — first to fly in */}
-        <p className="text-lg sm:text-xl leading-relaxed mb-8" style={{ fontFamily: 'Inter, sans-serif', color: '#ffffff' }}>
-          <WordSpan text="Dan seperti semua cerita indah yang dituliskan semesta, kisah kami baru saja dimulai." />
-        </p>
+        {/* Title — handwriting reveal, then dust dissolve */}
+        <div ref={titleRef} className="text-lg sm:text-xl leading-relaxed mb-8" style={{ fontFamily: 'Inter, sans-serif', color: '#ffffff' }}>
+          Dan seperti semua cerita indah yang dituliskan semesta, kisah kami baru saja dimulai.
+        </div>
 
-        {/* Subtitle — flies in after title */}
-        <p className="text-sm sm:text-base leading-relaxed mb-10" style={{ fontFamily: 'Inter, sans-serif', color: '#ffffff', opacity: 0.85 }}>
-          <WordSpan text="Terima kasih telah menjadi bagian dari perjalanan kecil kami menuju selamanya." />
-        </p>
+        {/* Subtitle — handwriting, then dust */}
+        <div ref={subtitleRef} className="text-sm sm:text-base leading-relaxed mb-10" style={{ fontFamily: 'Inter, sans-serif', color: '#ffffff', opacity: 0.85 }}>
+          Terima kasih telah menjadi bagian dari perjalanan kecil kami menuju selamanya.
+        </div>
 
-        {/* Doa — Arabic fades in, transliteration flies in */}
+        {/* Doa — Arabic appears immediately (no handwriting), transliteration gets handwriting */}
         <div className="mb-8">
           <p
             ref={arabicRef}
@@ -1791,27 +1832,27 @@ function ClosingSection() {
           >
             بارك الله لكما وبارك عليكما وجمع بينكما في خير
           </p>
-          <p className="text-xs italic" style={{ fontFamily: 'Inter, sans-serif', color: 'var(--gold)' }}>
-            <WordSpan text="Barakallahu lakuma wa baraka 'alaikuma wa jama'a bainakuma fi khair." />
-          </p>
+          <div ref={transRef} className="text-xs italic" style={{ fontFamily: 'Inter, sans-serif', color: 'var(--gold)' }}>
+            Barakallahu lakuma wa baraka&lsquo;alaikuma wa jama&lsquo;a bainakuma fi khair.
+          </div>
         </div>
 
         {/* Small divider */}
-        <div ref={dividerRef} className="ornament-divider max-w-[120px] mx-auto mb-6" style={{ opacity: 0 }}>
+        <div ref={dividerRef} className="ornament-divider max-w-[120px] mx-auto mb-6" style={{ opacity: 0, transform: 'scale(0.5)' }}>
           <span className="text-[var(--gold)] text-xs">&#10047;</span>
         </div>
 
-        {/* Footer line */}
-        <p className="text-sm mb-16" style={{ fontFamily: 'Inter, sans-serif', color: '#ffffff', opacity: 0.6 }}>
-          <WordSpan text="Forever starts with Bismillah." />
-        </p>
+        {/* Footer line — handwriting, then dust */}
+        <div ref={footerRef} className="text-sm mb-16" style={{ fontFamily: 'Inter, sans-serif', color: '#ffffff', opacity: 0.6 }}>
+          Forever starts with Bismillah.
+        </div>
 
-        {/* Final emotional line */}
-        <p className="text-2xl sm:text-3xl min-h-[2em]" style={{ fontFamily: 'Inter, sans-serif', color: '#ffffff', fontWeight: 300 }}>
-          <WordSpan text="Cerita mereka belum selesai..." />
-        </p>
+        {/* Final emotional line — handwriting, then dust */}
+        <div ref={finalRef} className="text-2xl sm:text-3xl min-h-[2em]" style={{ fontFamily: 'Inter, sans-serif', color: '#ffffff', fontWeight: 300 }}>
+          Cerita mereka belum selesai...
+        </div>
 
-        {/* The date — the beginning of forever */}
+        {/* The date — appears after dust settles, the only thing left */}
         <div
           ref={dateRef}
           className="mt-8"
