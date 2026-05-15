@@ -1630,8 +1630,8 @@ function ClosingSection() {
   const hasAnimated = useRef(false)
 
   // ─── WORD FLY-IN — kata terbang dari belakang ───
-  // Each word flies in from depth (blur + scale + y-offset)
-  // Like the final words of a diary writing themselves
+  // Each word flies in from below with blur dissolve
+  // Uses gsap.set() for initial state (NOT CSS inline transform — GSAP can't parse those)
   const wordFlyIn = (el: HTMLDivElement, stagger: number = 0.15, wordDuration: number = 0.6, delay: number = 0) => {
     if (!el) return 0
     const fullText = el.textContent || ''
@@ -1639,14 +1639,17 @@ function ClosingSection() {
 
     const allWords: HTMLSpanElement[] = []
     const words = fullText.split(' ')
-    words.forEach((word, wi) => {
+    words.forEach((word) => {
       const ws = document.createElement('span')
       ws.className = 'hw-word'
-      ws.style.cssText = 'display:inline-block;will-change:opacity,transform,filter;opacity:0;transform:translateY(12px) scale(0.85);filter:blur(4px);margin-right:0.3em;color:inherit;'
+      ws.style.cssText = 'display:inline-block;margin-right:0.3em;color:inherit;'
       ws.textContent = word
       el.appendChild(ws)
       allWords.push(ws)
     })
+
+    // Set initial state via GSAP (not CSS — avoids transform parsing conflicts)
+    gsap.set(allWords, { opacity: 0, y: 15, scale: 0.85, filter: 'blur(4px)' })
 
     // Animate each word — fly in from behind
     gsap.to(allWords, {
@@ -1668,7 +1671,7 @@ function ClosingSection() {
     const ctx = gsap.context(() => {
       const isMobile = window.innerWidth < 768
 
-      // Section fade-in — ScrollTrigger top 80%
+      // Section fade-in
       gsap.fromTo(sectionRef.current!,
         { opacity: 0 },
         {
@@ -1683,104 +1686,156 @@ function ClosingSection() {
       )
 
       // Arabic text — LANGSUNG MUNCUL, tanpa animasi
-      // The sacred blessing appears instantly, like it was always there
 
-      // ─── HANDWRITING — kata per kata terbang dari belakang ───
-      // Starting from paragraph 1, each element's words fly in sequentially
-      // EXCEPTION: Arabic بارك الله لكما — langsung muncul
+      // ─── ALL ANIMATIONS ON ONE TIMELINE ───
+      // Word fly-in for each element, scheduled sequentially
+      // Arabic + transliteration stay gold, everything else white
       const wordStagger = isMobile ? 0.12 : 0.15
       const wordDur = isMobile ? 0.5 : 0.6
       const gapBetweenElements = isMobile ? 0.4 : 0.6
 
+      // Build the main timeline — all on one timeline for proper scheduling
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: sectionRef.current!,
           start: 'top 80%',
           toggleActions: 'play none none none',
-          onEnter: () => {
-            if (!hasAnimated.current) {
-              hasAnimated.current = true
-
-              // Paragraph 1 — "Dan seperti semua cerita indah..."
-              let nextDelay = 0.3
-              const titleDur = wordFlyIn(titleRef.current!, wordStagger, wordDur, nextDelay)
-
-              // Paragraph 2 — "Terima kasih telah menjadi bagian..."
-              nextDelay = titleDur + gapBetweenElements
-              const subtitleDur = wordFlyIn(subtitleRef.current!, wordStagger, wordDur, nextDelay)
-
-              // Transliteration — "Barakallahu lakuma..."
-              const transliterationEl = doaRef.current?.querySelector('.doa-transliteration') as HTMLParagraphElement | null
-              if (transliterationEl) {
-                nextDelay = subtitleDur + gapBetweenElements
-                const transliterationText = transliterationEl.textContent || ''
-                transliterationEl.innerHTML = ''
-                const transWords: HTMLSpanElement[] = []
-                transliterationText.split(' ').forEach(word => {
-                  const ws = document.createElement('span')
-                  ws.className = 'hw-word'
-                  ws.style.cssText = 'display:inline-block;will-change:opacity,transform,filter;opacity:0;transform:translateY(8px) scale(0.85);filter:blur(4px);margin-right:0.25em;color:inherit;'
-                  ws.textContent = word
-                  transliterationEl.appendChild(ws)
-                  transWords.push(ws)
-                })
-                gsap.to(transWords, {
-                  opacity: 0.7,
-                  y: 0,
-                  scale: 1,
-                  filter: 'blur(0px)',
-                  duration: wordDur * 0.8,
-                  stagger: wordStagger * 0.8,
-                  ease: 'power3.out',
-                  delay: nextDelay,
-                })
-              }
-
-              // Footer line — "Forever starts with Bismillah."
-              nextDelay = subtitleDur + gapBetweenElements * 2 + 0.3
-              const footerDur = wordFlyIn(footerLineRef.current!, wordStagger * 1.2, wordDur, nextDelay)
-
-              // Final emotional line — "Cerita mereka belum selesai..."
-              nextDelay = footerDur + gapBetweenElements
-              wordFlyIn(finalLineRef.current!, wordStagger * 1.5, wordDur * 1.2, nextDelay)
-            }
-          },
         },
       })
 
-      // Calculate approximate total time for shimmer + date scheduling
-      const totalFlyInTime = isMobile ? 8 : 10
+      // Paragraph 1 — "Dan seperti semua cerita indah..."
+      const titleEl = titleRef.current
+      if (titleEl) {
+        const titleText = titleEl.textContent || ''
+        titleEl.innerHTML = ''
+        const titleWords: HTMLSpanElement[] = []
+        titleText.split(' ').forEach((word) => {
+          const ws = document.createElement('span')
+          ws.className = 'hw-word'
+          ws.style.cssText = 'display:inline-block;margin-right:0.3em;color:inherit;'
+          ws.textContent = word
+          titleEl.appendChild(ws)
+          titleWords.push(ws)
+        })
+        gsap.set(titleWords, { opacity: 0, y: 15, scale: 0.85, filter: 'blur(4px)' })
+        tl.to(titleWords, {
+          opacity: 1, y: 0, scale: 1, filter: 'blur(0px)',
+          duration: wordDur, stagger: wordStagger, ease: 'power3.out',
+        }, 0.3)
+      }
+
+      // Paragraph 2 — "Terima kasih telah menjadi bagian..."
+      const subtitleEl = subtitleRef.current
+      if (subtitleEl) {
+        const subtitleText = subtitleEl.textContent || ''
+        subtitleEl.innerHTML = ''
+        const subtitleWords: HTMLSpanElement[] = []
+        subtitleText.split(' ').forEach((word) => {
+          const ws = document.createElement('span')
+          ws.className = 'hw-word'
+          ws.style.cssText = 'display:inline-block;margin-right:0.3em;color:inherit;'
+          ws.textContent = word
+          subtitleEl.appendChild(ws)
+          subtitleWords.push(ws)
+        })
+        gsap.set(subtitleWords, { opacity: 0, y: 15, scale: 0.85, filter: 'blur(4px)' })
+        tl.to(subtitleWords, {
+          opacity: 1, y: 0, scale: 1, filter: 'blur(0px)',
+          duration: wordDur, stagger: wordStagger, ease: 'power3.out',
+        }, `>+=${gapBetweenElements}`)
+      }
+
+      // Transliteration — "Barakallahu lakuma..." (gold color, not white)
+      const transliterationEl = doaRef.current?.querySelector('.doa-transliteration') as HTMLParagraphElement | null
+      if (transliterationEl) {
+        const transliterationText = transliterationEl.textContent || ''
+        transliterationEl.innerHTML = ''
+        const transWords: HTMLSpanElement[] = []
+        transliterationText.split(' ').forEach((word) => {
+          const ws = document.createElement('span')
+          ws.className = 'hw-word'
+          ws.style.cssText = 'display:inline-block;margin-right:0.25em;color:inherit;'
+          ws.textContent = word
+          transliterationEl.appendChild(ws)
+          transWords.push(ws)
+        })
+        gsap.set(transWords, { opacity: 0, y: 10, scale: 0.85, filter: 'blur(4px)' })
+        tl.to(transWords, {
+          opacity: 0.7, y: 0, scale: 1, filter: 'blur(0px)',
+          duration: wordDur * 0.8, stagger: wordStagger * 0.8, ease: 'power3.out',
+        }, `>+=${gapBetweenElements}`)
+      }
+
+      // Footer line — "Forever starts with Bismillah."
+      const footerEl = footerLineRef.current
+      if (footerEl) {
+        const footerText = footerEl.textContent || ''
+        footerEl.innerHTML = ''
+        const footerWords: HTMLSpanElement[] = []
+        footerText.split(' ').forEach((word) => {
+          const ws = document.createElement('span')
+          ws.className = 'hw-word'
+          ws.style.cssText = 'display:inline-block;margin-right:0.3em;color:inherit;'
+          ws.textContent = word
+          footerEl.appendChild(ws)
+          footerWords.push(ws)
+        })
+        gsap.set(footerWords, { opacity: 0, y: 15, scale: 0.85, filter: 'blur(4px)' })
+        tl.to(footerWords, {
+          opacity: 1, y: 0, scale: 1, filter: 'blur(0px)',
+          duration: wordDur, stagger: wordStagger * 1.2, ease: 'power3.out',
+        }, `>+=${gapBetweenElements + 0.3}`)
+      }
+
+      // Final emotional line — "Cerita mereka belum selesai..."
+      const finalEl = finalLineRef.current
+      if (finalEl) {
+        const finalText = finalEl.textContent || ''
+        finalEl.innerHTML = ''
+        const finalWords: HTMLSpanElement[] = []
+        finalText.split(' ').forEach((word) => {
+          const ws = document.createElement('span')
+          ws.className = 'hw-word'
+          ws.style.cssText = 'display:inline-block;margin-right:0.3em;color:inherit;'
+          ws.textContent = word
+          finalEl.appendChild(ws)
+          finalWords.push(ws)
+        })
+        gsap.set(finalWords, { opacity: 0, y: 15, scale: 0.85, filter: 'blur(4px)' })
+        tl.to(finalWords, {
+          opacity: 1, y: 0, scale: 1, filter: 'blur(0px)',
+          duration: wordDur * 1.2, stagger: wordStagger * 1.5, ease: 'power3.out',
+        }, `>+=${gapBetweenElements}`)
+      }
 
       // Golden shimmer sweeps across after all words have flown in
-      tl.call(() => {
-        if (shimmerRef.current) {
-          gsap.fromTo(shimmerRef.current,
-            { opacity: 0, x: -100 },
-            {
-              opacity: 0.06,
-              x: window.innerWidth,
-              duration: 3,
-              ease: 'power1.inOut',
-            }
-          )
-        }
-      }, undefined, totalFlyInTime)
+      if (shimmerRef.current) {
+        tl.fromTo(shimmerRef.current,
+          { opacity: 0, x: -100 },
+          {
+            opacity: 0.06,
+            x: window.innerWidth,
+            duration: 3,
+            ease: 'power1.inOut',
+          },
+          '+=2'
+        )
+      }
 
-      // Date appears at the end — subtle, like a signature on the last page
+      // Date appears at the end — subtle, like a signature
       if (dateRef.current) {
-        gsap.set(dateRef.current, { opacity: 0 })
-        tl.to(dateRef.current, {
-          opacity: 1,
-          duration: 1.5,
-          ease: 'power2.out',
-        }, totalFlyInTime + 0.5)
-        if (dateRef.current.querySelector('p')) {
-          gsap.set(dateRef.current.querySelector('p'), { opacity: 0 })
-          tl.to(dateRef.current.querySelector('p')!, {
-            opacity: 0.7,
-            duration: 2,
-            ease: 'power2.out',
-          }, totalFlyInTime + 0.8)
+        const dateP = dateRef.current.querySelector('p')
+        tl.fromTo(dateRef.current,
+          { opacity: 0 },
+          { opacity: 1, duration: 1.5, ease: 'power2.out' },
+          '+=1'
+        )
+        if (dateP) {
+          tl.fromTo(dateP,
+            { opacity: 0 },
+            { opacity: 0.7, duration: 2, ease: 'power2.out' },
+            '<+=0.3'
+          )
         }
       }
     })
