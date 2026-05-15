@@ -563,9 +563,9 @@ function DiaryIntroSection() {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      fadeIn(sectionRef.current!, { duration: 1.2, y: 20 })
+      fadeIn(sectionRef.current!, { duration: 1.8, y: 20 })
 
-      // Ink stroke draw-in — top
+      // Ink stroke draw-in — top (SLOWER, more cinematic)
       if (topStrokeRef.current) {
         const svgPath = topStrokeRef.current.querySelector('path') as SVGPathElement | null
         if (svgPath) {
@@ -575,7 +575,7 @@ function DiaryIntroSection() {
             svgPath.style.strokeDashoffset = String(len)
             gsap.to(svgPath, {
               strokeDashoffset: 0,
-              duration: 3.5,
+              duration: 5.0,
               ease: 'power2.inOut',
               scrollTrigger: {
                 trigger: sectionRef.current!,
@@ -587,7 +587,7 @@ function DiaryIntroSection() {
         }
       }
 
-      // Ink stroke draw-in — bottom
+      // Ink stroke draw-in — bottom (SLOWER, more cinematic)
       if (bottomStrokeRef.current) {
         const svgPath = bottomStrokeRef.current.querySelector('path') as SVGPathElement | null
         if (svgPath) {
@@ -597,9 +597,9 @@ function DiaryIntroSection() {
             svgPath.style.strokeDashoffset = String(len)
             gsap.to(svgPath, {
               strokeDashoffset: 0,
-              duration: 3.5,
+              duration: 5.0,
               ease: 'power2.inOut',
-              delay: 0.8,
+              delay: 1.2,
               scrollTrigger: {
                 trigger: sectionRef.current!,
                 start: 'top 50%',
@@ -610,13 +610,13 @@ function DiaryIntroSection() {
         }
       }
 
-      // Handwriting reveal — triggered by ScrollTrigger top 50% (consistent with ink strokes)
+      // Handwriting reveal — SLOWER stagger and char duration for cinematic pacing
       if (textRef.current) {
         gsap.fromTo(textRef.current,
           { opacity: 0 },
           {
             opacity: 0.85,
-            duration: 0.3,
+            duration: 0.5,
             scrollTrigger: {
               trigger: sectionRef.current!,
               start: 'top 50%',
@@ -624,7 +624,7 @@ function DiaryIntroSection() {
               onEnter: () => {
                 if (!hasAnimated.current) {
                   hasAnimated.current = true
-                  handwritingReveal(textRef.current!, 0.05, 0.16)
+                  handwritingReveal(textRef.current!, 0.08, 0.25)
                 }
               },
             },
@@ -958,7 +958,7 @@ function DiaryStorySection() {
       }
 
       // Signal that diary section is done — auto-scroll can resume smoothly
-      // 800ms delay to let Lenis smooth scroll engine + ScrollTrigger.refresh() settle after pin removal
+      // 800ms delay to let ScrollTrigger.refresh() settle after pin removal
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('diary-sequence-complete'))
       }, 800)
@@ -1976,49 +1976,51 @@ export default function Home() {
   }, [isPlaying])
 
   // Auto-scroll — cinematic breathing rhythm, mobile-first
+  // NO Lenis — Lenis was fighting with window.scrollBy() causing "macet"
+  // Auto-scroll handles its own smooth transitions via lerp
   // Diary section has PRIORITY: when diary is active, nothing else can resume auto-scroll
-  // This prevents race conditions between user scroll pause/resume and diary events
   useEffect(() => {
     if (!isOpen) return
 
     let animationId: number
     let resumeTimeout: ReturnType<typeof setTimeout>
+    let lastTime = 0
 
     const isMobile = window.innerWidth < 768
 
-    // Speed zones — SMOOTH TRANSITIONS between sections
-    // No more drastic jumps — each zone blends into the next
-    // Diary zone = 0 (diaryActive flag controls pause)
+    // Speed zones — smooth lerp transitions between sections
+    // Diary zone uses very slow speed (0.15) instead of 0 — the diaryActive flag
+    // handles the actual pause, but the slow speed prevents abrupt stops that feel "macet"
     // Gallery = 2x speed for fast browsing through photos
     const getSpeedForPosition = (scrollY: number, docHeight: number) => {
       const progress = scrollY / docHeight
       if (isMobile) {
         if (progress < 0.04) return 2.0    // Cover
-        if (progress < 0.10) return 3.2    // Transition (gradual from cover)
-        if (progress < 0.16) return 2.4    // Bismillah (soft slowdown)
-        if (progress < 0.24) return 3.0    // Transition (gentle speedup)
-        if (progress < 0.32) return 2.6    // Couple (moderate)
-        if (progress < 0.40) return 3.2    // Diary Intro (gentle speedup)
-        if (progress < 0.48) return 0.0    // Diary Story — diary controls scroll
-        if (progress < 0.55) return 3.0    // Countdown/events (gradual resume)
+        if (progress < 0.10) return 3.2    // Transition
+        if (progress < 0.16) return 2.4    // Bismillah
+        if (progress < 0.24) return 3.0    // Transition
+        if (progress < 0.32) return 2.6    // Couple
+        if (progress < 0.40) return 3.0    // Diary Intro
+        if (progress < 0.48) return 0.15   // Diary Story — very slow (diaryActive handles pause)
+        if (progress < 0.55) return 3.0    // Countdown/events
         if (progress < 0.62) return 2.8    // Events
         if (progress < 0.70) return 7.0    // Gallery — 2x speed!
-        if (progress < 0.76) return 2.6    // RSVP (slowdown from gallery)
+        if (progress < 0.76) return 2.6    // RSVP
         if (progress < 0.82) return 2.6    // Amplop Digital
         if (progress < 0.90) return 2.4    // Wishes
         return 1.5                          // Closing — slow, emotional
       } else {
         if (progress < 0.04) return 1.4    // Cover
-        if (progress < 0.10) return 2.4    // Transition (gradual)
-        if (progress < 0.16) return 1.8    // Bismillah (soft slowdown)
-        if (progress < 0.24) return 2.2    // Transition (gentle)
+        if (progress < 0.10) return 2.4    // Transition
+        if (progress < 0.16) return 1.8    // Bismillah
+        if (progress < 0.24) return 2.2    // Transition
         if (progress < 0.32) return 1.8    // Couple
-        if (progress < 0.40) return 2.4    // Diary Intro
-        if (progress < 0.48) return 0.0    // Diary Story — diary controls scroll
-        if (progress < 0.55) return 2.2    // Countdown/events (gradual resume)
+        if (progress < 0.40) return 2.2    // Diary Intro
+        if (progress < 0.48) return 0.1    // Diary Story — very slow (diaryActive handles pause)
+        if (progress < 0.55) return 2.2    // Countdown/events
         if (progress < 0.62) return 2.0    // Events
         if (progress < 0.70) return 6.0    // Gallery — 2x speed!
-        if (progress < 0.76) return 2.0    // RSVP (slowdown from gallery)
+        if (progress < 0.76) return 2.0    // RSVP
         if (progress < 0.82) return 2.0    // Amplop Digital
         if (progress < 0.90) return 1.8    // Wishes
         return 1.0                          // Closing
@@ -2027,20 +2029,23 @@ export default function Home() {
 
     const state = autoScrollState.current
 
-    // ═══ AUTO-SCROLL LOOP — NEVER DIES ═══
+    // ═══ AUTO-SCROLL LOOP — NEVER DIES, DELTA-TIME NORMALIZED ═══
     // The loop ALWAYS runs via requestAnimationFrame
-    // It just skips the actual scrolling when diary/user takes control
-    // This prevents the "macet selamanya" bug where the loop dies
-    // and nothing can restart it
-    const autoScroll = () => {
+    // Delta-time normalization ensures consistent speed at any frame rate
+    // When diary/user takes control, loop keeps running but skips scrolling
+    const autoScroll = (time: number) => {
       // ALWAYS schedule next frame — loop must never die
       animationId = requestAnimationFrame(autoScroll)
+
+      // Calculate delta time — normalize to 60fps baseline
+      const dt = lastTime === 0 ? 1 : Math.min((time - lastTime) / 16.67, 3)
+      lastTime = time
 
       // Skip scrolling if diary controls or user is scrolling
       // But keep the loop alive!
       if (state.diaryActive || userScrollingRef.current) {
-        // Still lerp speed toward 0 so when control returns, we ramp up smoothly
-        state.currentSpeed *= 0.92
+        // Decay speed smoothly so when control returns, we ramp up from near-zero
+        state.currentSpeed *= Math.pow(0.92, dt)
         return
       }
 
@@ -2051,25 +2056,27 @@ export default function Home() {
       // Calculate target speed based on current position
       state.targetSpeed = getSpeedForPosition(window.scrollY, document.documentElement.scrollHeight)
 
-      // Smooth lerp — smaller factor = smoother transitions between sections
-      // This is what makes speed changes feel like "pelan-pelan" not "berhenti"
-      const lerpFactor = isMobile ? 0.035 : 0.025
-      state.currentSpeed += (state.targetSpeed - state.currentSpeed) * lerpFactor
+      // Smooth lerp — frame-rate independent
+      // Higher lerp = faster transitions; lower = smoother/slower transitions
+      const lerpFactor = isMobile ? 0.04 : 0.03
+      const frameLerp = 1 - Math.pow(1 - lerpFactor, dt)
+      state.currentSpeed += (state.targetSpeed - state.currentSpeed) * frameLerp
 
       // Only scroll if speed is meaningful (avoids micro-scrolls)
       if (state.currentSpeed > 0.05) {
-        window.scrollBy(0, state.currentSpeed)
+        window.scrollBy(0, state.currentSpeed * dt)
       }
     }
 
     // Start after the story breathes in
     const startTimeout = setTimeout(() => {
       state.currentSpeed = isMobile ? 1.5 : 1.0
+      lastTime = 0
       animationId = requestAnimationFrame(autoScroll)
     }, isMobile ? 600 : 800)
 
     // User takes control — loop keeps running, just skips scrolling
-    // When user stops, auto-scroll resumes smoothly (no restart needed)
+    // When user stops, auto-scroll resumes smoothly
     const pauseAndResume = () => {
       if (state.diaryActive) return
 
@@ -2082,8 +2089,7 @@ export default function Home() {
 
         userScrollingRef.current = false
         state.paused = false
-        // No need to restart loop — it's always running!
-        // Just reduce speed for a gentle resume
+        // Gentle resume — reduce speed so lerp can ramp up smoothly
         state.currentSpeed *= 0.3
       }, isMobile ? 1500 : 2500)
     }
@@ -2095,8 +2101,6 @@ export default function Home() {
     window.addEventListener('touchstart', onTouchStart, { passive: true })
 
     // ─── Diary section integration — DIARY HAS PRIORITY ───
-    // When diary starts: loop keeps running but skips scrolling (diaryActive flag)
-    // When diary ends: just clear the flag, loop resumes scrolling automatically
     const onDiaryStart = () => {
       state.diaryActive = true
       state.currentSpeed = 0
@@ -2104,7 +2108,7 @@ export default function Home() {
     }
 
     const onDiaryComplete = () => {
-      // Clear diary flag — loop is already running, will resume scrolling automatically
+      // Clear diary flag — loop resumes scrolling automatically
       state.diaryActive = false
       userScrollingRef.current = false
       state.paused = false
@@ -2120,7 +2124,6 @@ export default function Home() {
             window.scrollTo(0, diaryBottom + 100)
           }
         }
-        // No need to restart loop — it's always running!
       }, 600)
     }
 

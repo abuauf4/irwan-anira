@@ -967,14 +967,10 @@ html {
 .jasmine-petal { pointer-events: none; will-change: transform, opacity; }
 
 /* ========================================
-   27. LENIS SMOOTH SCROLL
+   27. SMOOTH SCROLL — No Lenis
+   Auto-scroll handles its own smooth lerp
+   Browser handles user-initiated scroll natively
    ======================================== */
-html.lenis, html.lenis body { height: auto; }
-
-.lenis.lenis-smooth { scroll-behavior: auto !important; }
-.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
-.lenis.lenis-stopped { overflow: hidden; }
-.lenis.lenis-smooth iframe { pointer-events: none; }
 
 /* ========================================
    28. JAVANESE CULTURAL PATTERNS
