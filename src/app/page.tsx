@@ -1623,7 +1623,7 @@ function GallerySection() {
             The story evaporates, leaving only the doa and the date
             Like the ending of a film — the image fades, the feeling remains
 
-   Font: Inter for all white text, Amiri for Arabic, gold for transliteration
+   Font: Cormorant Garamond for all white text, Amiri for Arabic, Inter for transliteration
    ═══════════════════════════════════════════════════════════ */
 
 function ClosingSection() {
