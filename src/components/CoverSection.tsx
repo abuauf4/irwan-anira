@@ -304,7 +304,7 @@ function CoverSectionInner({ onOpen }: CoverSectionProps) {
 
         <p className="tracking-[0.35em] uppercase text-[10px] sm:text-xs mb-4"
           style={{ fontFamily: 'var(--font-body)', color: 'var(--gold-light)', opacity: 0.7 }}>
-          Kitab Cinta — Undangan Pernikahan
+          The Wedding Invitation of
         </p>
 
         {/* Names with handwriting reveal */}

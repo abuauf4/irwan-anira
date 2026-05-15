@@ -36,21 +36,21 @@ const WEDDING = {
   timeline: [
     {
       year: '2022',
-      title: 'Sahabat Tapi Tak Terlihat',
+      title: 'Mulai Dekat',
       description:
-        'Sudah bertahun-tahun aku mengenalmu, namun aku belum menyadari bahwa dirimu adalah garis takdir yang telah dituliskan untukku. Latar belakang yang berbeda justru membuat kita saling melengkapi. Setiap langkah tampak membawaku semakin dekat dengan orang yang ternyata sudah menjadi bagian dari hatiku.',
+        'Seiring berjalan waktu kami semakin dekat. Latar belakang yang berbeda membuat kami saling melengkapi dan banyak menemukan hal baru. Satu dua langkah menuntun kami hingga ke perjalanan selajutnya.',
     },
     {
       year: '2025',
-      title: 'Pertanda Cinta',
+      title: 'Lamaran',
       description:
-        'Di waktu maghrib, kau datang membawa setangkai melati. Kudengar alunan musik dari hatiku sendiri. Untuk pertama kalinya, aku berkata — ini mungkin bukan kebetulan. Tuhan-lah yang menitipkan rasa ini, supaya sudah waktunya aku dan kau menjadi satu.',
+        'Kehendak-Nya menuntun kami pada pertemuan yang tak pernah disangka hingga akhirnya membawa kami pada sebuah ikatan suci yang dicintai-Nya, kami melangsungkan acara lamaran pada 31 Agustus 2025.',
     },
     {
       year: '2026',
-      title: 'Menuju Pelaminan',
+      title: 'Menikah',
       description:
-        'Sekarang kutulis ini dengan namamu di setiap doaku. Tak ada lagi teka-teki — hanya satu kata yang kutandai: SAYANG. Atas izin Allah, kita mengikrarkan janji suci pernikahan, menyerahkan jiwa dan raga menjadi satu di sisi-Nya.',
+        'Percayalah, bukan karena bertemu lalu berjodoh, tapi karena berjodohlah kami dipertemukan. Atas izin Allah kami memutuskan untuk mengikrarkan janji suci pernikahan pada 05 Juli 2026.',
     },
   ],
   galleryImages: [
@@ -60,7 +60,7 @@ const WEDDING = {
     '/images/gallery-10.jpg', '/images/gallery-11.jpg',
   ],
   galleryCaptions: [
-    'Pertama Kali', 'Bersama', 'Kenangan', 'Tawa', 'Bahagia',
+    'Pertama kali', 'Bersama', 'Kenangan', 'Tawa', 'Bahagia',
     'Cinta', 'Semesta', 'Harapan', 'Janji', 'Selamanya', 'Kita',
   ],
 }
@@ -298,7 +298,6 @@ function BismillahSection() {
       {/* Soft golden light spots */}
       <div className="gold-light-leak absolute inset-0 pointer-events-none" />
       <div className="max-w-2xl mx-auto relative z-10">
-        <p className="text-xs tracking-[0.3em] uppercase mb-6" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold)', opacity: 0.4 }}>Sabda Gusti — Pertanda Cinta</p>
         <p
           ref={arabicRef}
           className="text-3xl sm:text-4xl md:text-5xl mb-8 leading-relaxed"
@@ -503,9 +502,9 @@ function CoupleSection() {
 
       <div className="max-w-4xl mx-auto text-center relative z-10">
         <h2 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-light)' }}>
-          Pengantin
+          Mempelai
         </h2>
-        <p className="text-sm italic mb-10" style={{ fontFamily: 'var(--font-serif)', color: 'var(--cream)', opacity: 0.6 }}>Dua jiwa, satu garis takdir</p>
+        <p className="text-sm italic mb-10" style={{ fontFamily: 'var(--font-serif)', color: 'var(--cream)', opacity: 0.6 }}>Dua jiwa, satu kisah</p>
         <div className="ornament-divider max-w-xs mx-auto mb-14">
           <span className="text-[var(--gold)] text-lg">&#10047;</span>
         </div>
@@ -666,14 +665,14 @@ function DiaryIntroSection() {
             className="text-sm tracking-wider"
             style={{ fontFamily: 'var(--font-body)', color: 'var(--gold)', opacity: 0.6 }}
           >
-            2022
+            2020
           </p>
           <p
             ref={subtitleRef}
             className="text-sm sm:text-base tracking-wider min-h-[1.5em]"
             style={{ fontFamily: 'var(--font-serif)', color: 'var(--gold)', opacity: 0.7, fontStyle: 'italic' }}
           >
-            Kitab Cinta — Catatan Hati
+            Cerita kami dimulai
           </p>
         </div>
 
@@ -696,7 +695,7 @@ function DiaryIntroSection() {
           className="text-base sm:text-lg italic leading-relaxed min-h-[10em]"
           style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown)', opacity: 0.85 }}
         >
-          Tidak ada yang kebetulan di dunia ini, semua sudah tersusun rapi oleh Yang Maha Kuasa. Kita tidak bisa memilih kepada siapa kita akan jatuh cinta. Kehadiranmu dalam hidupku, dimulai bukan dari rasa, melainkan dari garis takdir yang telah lama dituliskan. Dan sekarang, aku menulis ini — supaya dunia tahu bahwa cinta sejati itu nyata.
+          Tidak ada yang kebetulan di dunia ini, semua sudah tersusun rapih oleh sang maha kuasa, kita tidak bisa memilih kepada siapa kita akan jatuh cinta, awal kami bertemu pada tahun 2020. Tidak ada yang pernah meyangka bahwa pertemuan itu membawa kami pada suatu ikatan yang suci.
         </p>
 
         {/* Bottom ink stroke */}
@@ -1229,7 +1228,7 @@ function EventSection() {
     <section ref={sectionRef} data-section="events" className="py-28 px-6" style={{ background: 'var(--cream-dark)', opacity: 0 }}>
       <div className="max-w-2xl mx-auto text-center">
         <h2 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
-          Acara Pernikahan
+          Acara
         </h2>
         <div className="ornament-divider max-w-xs mx-auto mb-14">
           <span className="text-[var(--gold)] text-lg">&#10047;</span>
@@ -1557,7 +1556,7 @@ function GallerySection() {
     <section ref={sectionRef} data-section="gallery" className="diary-paper-bg cinema-depth py-28 px-6" style={{ opacity: 0 }}>
       <div className="max-w-4xl mx-auto text-center">
         <h2 className="gallery-title text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
-          Momen Kita — Catatan Kenangan
+          Momen Kami
         </h2>
         <div className="gallery-ornament ornament-divider max-w-xs mx-auto mb-14">
           <span className="text-[var(--gold)] text-lg">&#10047;</span>
@@ -1902,12 +1901,12 @@ function ClosingSection() {
       <div className="relative z-10 max-w-2xl mx-auto">
         {/* Title — handwriting reveal, then dust dissolve */}
         <div ref={titleRef} className="text-lg sm:text-xl leading-relaxed mb-8" style={{ fontFamily: "'Cormorant Garamond', serif", color: '#ffffff', fontStyle: 'italic' }}>
-          Dan seperti semua cerita indah yang dituliskan semesta, cerita hatiku untukmu baru saja dimulai.
+          Dan seperti semua cerita indah yang dituliskan semesta, kisah kami baru saja dimulai.
         </div>
 
         {/* Subtitle — handwriting, then dust */}
         <div ref={subtitleRef} className="text-sm sm:text-base leading-relaxed mb-10" style={{ fontFamily: "'Cormorant Garamond', serif", color: '#ffffff', opacity: 0.85, fontStyle: 'italic' }}>
-          Terima kasih telah menjadi bagian dari perjalanan kami menuju selamanya.
+          Terima kasih telah menjadi bagian dari perjalanan kecil kami menuju selamanya.
         </div>
 
         {/* Doa — Arabic appears immediately (no handwriting), transliteration gets handwriting */}
@@ -1932,12 +1931,12 @@ function ClosingSection() {
 
         {/* Footer line — handwriting, then dust */}
         <div ref={footerRef} className="text-sm mb-16" style={{ fontFamily: "'Cormorant Garamond', serif", color: '#ffffff', opacity: 0.6, fontStyle: 'italic' }}>
-          Selamanya dimulai dengan Bismillah.
+          Forever starts with Bismillah.
         </div>
 
         {/* Final emotional line — handwriting, then dust */}
         <div ref={finalRef} className="text-2xl sm:text-3xl min-h-[2em]" style={{ fontFamily: "'Cormorant Garamond', serif", color: '#ffffff', fontWeight: 300, fontStyle: 'italic' }}>
-          Cerita belum selesai...
+          Cerita mereka belum selesai...
         </div>
 
         {/* The date — appears after dust settles, the only thing left */}
@@ -1988,9 +1987,6 @@ function FooterSection() {
           style={{ fontFamily: 'var(--font-body)', color: 'var(--gold)', opacity: 0.5 }}
         >
           05 . 07 . 2026
-        </p>
-        <p className="text-[10px] tracking-[0.3em] mt-3" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold)', opacity: 0.3 }}>
-          Terima Kasih
         </p>
       </div>
     </footer>

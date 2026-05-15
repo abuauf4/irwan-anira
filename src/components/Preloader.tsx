@@ -270,7 +270,7 @@ export default function Preloader({ onComplete, groomName, brideName }: Preloade
           className="text-center mt-4 text-[10px] tracking-[0.4em] uppercase"
           style={{ fontFamily: 'var(--font-body)', color: 'var(--brown-soft)', opacity: 0.5 }}
         >
-          {progress < 100 ? 'membuka kitab cinta...' : 'selamat datang'}
+          {progress < 100 ? 'membuka diary...' : 'selamat datang'}
         </p>
       </div>
     </div>
