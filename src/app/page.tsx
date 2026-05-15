@@ -1813,12 +1813,12 @@ function ClosingSection() {
 
       <div className="relative z-10 max-w-2xl mx-auto">
         {/* Title — handwriting reveal, then dust dissolve */}
-        <div ref={titleRef} className="text-lg sm:text-xl leading-relaxed mb-8" style={{ fontFamily: 'Inter, sans-serif', color: '#ffffff' }}>
+        <div ref={titleRef} className="text-lg sm:text-xl leading-relaxed mb-8" style={{ fontFamily: "'Cormorant Garamond', serif", color: '#ffffff', fontStyle: 'italic' }}>
           Dan seperti semua cerita indah yang dituliskan semesta, kisah kami baru saja dimulai.
         </div>
 
         {/* Subtitle — handwriting, then dust */}
-        <div ref={subtitleRef} className="text-sm sm:text-base leading-relaxed mb-10" style={{ fontFamily: 'Inter, sans-serif', color: '#ffffff', opacity: 0.85 }}>
+        <div ref={subtitleRef} className="text-sm sm:text-base leading-relaxed mb-10" style={{ fontFamily: "'Cormorant Garamond', serif", color: '#ffffff', opacity: 0.85, fontStyle: 'italic' }}>
           Terima kasih telah menjadi bagian dari perjalanan kecil kami menuju selamanya.
         </div>
 
@@ -1843,12 +1843,12 @@ function ClosingSection() {
         </div>
 
         {/* Footer line — handwriting, then dust */}
-        <div ref={footerRef} className="text-sm mb-16" style={{ fontFamily: 'Inter, sans-serif', color: '#ffffff', opacity: 0.6 }}>
+        <div ref={footerRef} className="text-sm mb-16" style={{ fontFamily: "'Cormorant Garamond', serif", color: '#ffffff', opacity: 0.6, fontStyle: 'italic' }}>
           Forever starts with Bismillah.
         </div>
 
         {/* Final emotional line — handwriting, then dust */}
-        <div ref={finalRef} className="text-2xl sm:text-3xl min-h-[2em]" style={{ fontFamily: 'Inter, sans-serif', color: '#ffffff', fontWeight: 300 }}>
+        <div ref={finalRef} className="text-2xl sm:text-3xl min-h-[2em]" style={{ fontFamily: "'Cormorant Garamond', serif", color: '#ffffff', fontWeight: 300, fontStyle: 'italic' }}>
           Cerita mereka belum selesai...
         </div>
 
@@ -1860,7 +1860,7 @@ function ClosingSection() {
         >
           <p
             className="text-sm tracking-[0.4em]"
-            style={{ fontFamily: 'Inter, sans-serif', color: '#ffffff', opacity: 0.7 }}
+            style={{ fontFamily: "'Cormorant Garamond', serif", color: '#ffffff', opacity: 0.7 }}
           >
             05 . 07 . 2026
           </p>
