@@ -682,10 +682,10 @@ function DiaryIntroSection() {
         {/* The diary quote */}
         <p
           ref={textRef}
-          className="text-xl sm:text-2xl italic leading-relaxed min-h-[4em]"
+          className="text-base sm:text-lg italic leading-relaxed min-h-[10em]"
           style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown)', opacity: 0.85 }}
         >
-          Kehendak-Nya menuntun kami pada pertemuan yang tak pernah disangka...
+          Tidak ada yang kebetulan di dunia ini, semua sudah tersusun rapih oleh sang maha kuasa, kita tidak bisa memilih kepada siapa kita akan jatuh cinta, awal kami bertemu pada tahun 2020. Tidak ada yang pernah meyangka bahwa pertemuan itu membawa kami pada suatu ikatan yang suci.
         </p>
 
         {/* Bottom ink stroke */}
