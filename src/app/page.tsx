@@ -1321,19 +1321,66 @@ function GallerySection() {
   const [isTransitioning, setIsTransitioning] = useState(false)
   const captionRef = useRef<HTMLDivElement>(null)
   const slideRef = useRef<HTMLDivElement>(null)
+  const imgRef = useRef<HTMLImageElement>(null)
+  const shutterRef = useRef<HTMLDivElement>(null)
+  const lightLeakRef = useRef<HTMLDivElement>(null)
   const autoPlayRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const kenBurnsRef = useRef<gsap.core.Tween | null>(null)
   const totalImages = WEDDING.galleryImages.length
 
   // Detect mobile once
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
 
-  // ─── Slide transition — cinematic crossfade like a film projector ───
+  // ─── Ken Burns effect — slow zoom/pan on the photo while displayed ───
+  // Like a documentary slowly exploring a photograph
+  const startKenBurns = useCallback(() => {
+    if (kenBurnsRef.current) { kenBurnsRef.current.kill(); kenBurnsRef.current = null }
+    const img = imgRef.current
+    if (!img) return
+
+    // Random direction — sometimes zoom in, sometimes pan, sometimes both
+    const directions = [
+      { x: 0, y: 0, scale: 1.12 },   // slow zoom in center
+      { x: -15, y: -8, scale: 1.08 }, // drift up-left + zoom
+      { x: 10, y: -5, scale: 1.1 },   // drift up-right + zoom
+      { x: -8, y: 10, scale: 1.06 },  // drift down-left
+      { x: 5, y: 5, scale: 1.1 },     // drift down-right + zoom
+    ]
+    const dir = directions[Math.floor(Math.random() * directions.length)]
+
+    gsap.set(img, { x: 0, y: 0, scale: 1 })
+    kenBurnsRef.current = gsap.to(img, {
+      x: dir.x,
+      y: dir.y,
+      scale: dir.scale,
+      duration: isMobile ? 5 : 7,
+      ease: 'none',
+    })
+  }, [isMobile])
+
+  const stopKenBurns = useCallback(() => {
+    if (kenBurnsRef.current) { kenBurnsRef.current.kill(); kenBurnsRef.current = null }
+  }, [])
+
+  // Start Ken Burns on mount and on slide change
+  useEffect(() => {
+    if (!isTransitioning) {
+      const timer = setTimeout(() => startKenBurns(), 300)
+      return () => clearTimeout(timer)
+    }
+  }, [activeIndex, isTransitioning, startKenBurns])
+
+  // ─── Projector shutter transition ───
+  // Real film projectors have a physical shutter — brief darkness, then light
   const goToSlide = useCallback((nextIndex: number) => {
     if (isTransitioning || nextIndex === activeIndex) return
     setIsTransitioning(true)
+    stopKenBurns()
 
     const slide = slideRef.current
     const caption = captionRef.current
+    const shutter = shutterRef.current
+    const lightLeak = lightLeakRef.current
     if (!slide) { setIsTransitioning(false); return }
 
     const tl = gsap.timeline({
@@ -1343,51 +1390,77 @@ function GallerySection() {
       }
     })
 
-    // Phase 1: Current photo dims out — like a projector bulb fading
+    // ═══ PHASE 1: Current photo dims — projector bulb fading ═══
     tl.to(slide, {
       opacity: 0,
-      scale: 0.96,
-      filter: 'blur(4px) brightness(0.6)',
-      duration: isMobile ? 0.4 : 0.6,
+      scale: 0.97,
+      filter: 'blur(3px) brightness(0.5)',
+      duration: isMobile ? 0.3 : 0.45,
       ease: 'power2.in',
     })
 
-    // Caption fades up
+    // Caption lifts off
     if (caption) {
-      tl.to(caption, {
-        opacity: 0,
-        y: -8,
-        duration: 0.3,
-        ease: 'power2.in',
-      }, '<')
+      tl.to(caption, { opacity: 0, y: -6, duration: 0.2, ease: 'power2.in' }, '<')
     }
 
-    // Phase 2: Swap image after fade out, then reveal new — projector clicks to next frame
-    tl.call(() => {
-      // Image swap happens when opacity is 0 (invisible)
-    })
+    // ═══ PHASE 2: Shutter closes — brief total darkness like gate closing ═══
+    if (shutter) {
+      tl.fromTo(shutter,
+        { opacity: 0 },
+        { opacity: 1, duration: isMobile ? 0.1 : 0.12, ease: 'power2.in' },
+        '-=0.15'
+      )
+    }
 
-    // Phase 3: New photo fades in — projector beam illuminates the new frame
+    // ═══ PHASE 3: Light leak — golden light bleeds through the gate crack ═══
+    if (lightLeak) {
+      tl.fromTo(lightLeak,
+        { opacity: 0 },
+        { opacity: 0.6, duration: 0.15, ease: 'power2.out' },
+        '-=0.05'
+      )
+    }
+
+    // Shutter opens — new frame slides into gate
+    if (shutter) {
+      tl.to(shutter, { opacity: 0, duration: isMobile ? 0.1 : 0.15, ease: 'power2.out' })
+    }
+
+    // ═══ PHASE 4: New photo revealed — projector beam hits the new frame ═══
+    // Golden overexposure first (like bulb warming), then settles
     tl.fromTo(slide,
-      { opacity: 0, scale: 1.04, filter: 'blur(4px) brightness(1.4)' },
+      { opacity: 0, scale: 1.03, filter: 'blur(3px) brightness(1.5)' },
       {
         opacity: 1,
         scale: 1,
-        filter: 'blur(0px) brightness(1)',
-        duration: isMobile ? 0.5 : 0.8,
+        filter: 'blur(0px) brightness(1.05)',
+        duration: isMobile ? 0.4 : 0.6,
         ease: 'power2.out',
       }
     )
 
+    // Light leak fades away
+    if (lightLeak) {
+      tl.to(lightLeak, { opacity: 0, duration: 0.4, ease: 'power2.out' }, '-=0.4')
+    }
+
+    // Brief warm brightness then settle to normal
+    tl.to(slide, {
+      filter: 'blur(0px) brightness(1)',
+      duration: 0.3,
+      ease: 'power2.out',
+    })
+
     // New caption writes in
     if (caption) {
       tl.fromTo(caption,
-        { opacity: 0, y: 6 },
-        { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' },
+        { opacity: 0, y: 4 },
+        { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' },
         '-=0.3'
       )
     }
-  }, [activeIndex, isTransitioning, isMobile])
+  }, [activeIndex, isTransitioning, isMobile, stopKenBurns])
 
   const nextSlide = useCallback(() => {
     goToSlide((activeIndex + 1) % totalImages)
@@ -1402,7 +1475,7 @@ function GallerySection() {
     if (autoPlayRef.current) clearInterval(autoPlayRef.current)
     autoPlayRef.current = setInterval(() => {
       nextSlide()
-    }, 4000) // 4s per slide — enough time to absorb each memory
+    }, 5000) // 5s — more breathing room for Ken Burns
   }, [nextSlide])
 
   const stopAutoPlay = useCallback(() => {
@@ -1410,26 +1483,23 @@ function GallerySection() {
       clearInterval(autoPlayRef.current)
       autoPlayRef.current = null
     }
-  }, [startAutoPlay])
+  }, [])
 
   // Start auto-play on mount
   useEffect(() => {
-    const timer = setTimeout(() => {
-      startAutoPlay()
-    }, 2000)
-    return () => {
-      clearTimeout(timer)
-      stopAutoPlay()
-    }
+    const timer = setTimeout(() => { startAutoPlay() }, 2500)
+    return () => { clearTimeout(timer); stopAutoPlay() }
   }, [startAutoPlay, stopAutoPlay])
 
   // Reset autoplay on slide change
   useEffect(() => {
-    if (!isTransitioning) {
-      stopAutoPlay()
-      startAutoPlay()
-    }
+    if (!isTransitioning) { stopAutoPlay(); startAutoPlay() }
   }, [activeIndex, isTransitioning, startAutoPlay, stopAutoPlay])
+
+  // Cleanup Ken Burns on unmount
+  useEffect(() => {
+    return () => { stopKenBurns() }
+  }, [stopKenBurns])
 
   // ─── Section entrance animation ───
   useEffect(() => {
@@ -1456,19 +1526,23 @@ function GallerySection() {
         )
       }
 
-      // Projector reveal — first slide appears like a beam of light
+      // Projector reveal — first slide appears like turning on a projector
       const projector = section.querySelector('.projector-stage')
       if (projector) {
         gsap.fromTo(projector,
-          { opacity: 0, scale: 0.92, filter: 'blur(8px) brightness(0.3)' },
+          { opacity: 0, scale: 0.92, filter: 'blur(8px) brightness(0.2)' },
           {
             opacity: 1,
             scale: 1,
-            filter: 'blur(0px) brightness(1)',
-            duration: 1.5,
+            filter: 'blur(0px) brightness(1.1)',
+            duration: 1.8,
             ease: 'power3.out',
             scrollTrigger: { trigger: section, start: 'top 75%', toggleActions: 'play none none none' },
             delay: 0.5,
+            onComplete: () => {
+              // Brief golden flash then settle
+              gsap.to(projector, { filter: 'brightness(1)', duration: 0.5, ease: 'power2.out' })
+            }
           }
         )
       }
@@ -1478,27 +1552,19 @@ function GallerySection() {
       if (filmStrip) {
         gsap.fromTo(filmStrip,
           { opacity: 0, x: -20 },
-          {
-            opacity: 1,
-            x: 0,
-            duration: 1.0,
-            ease: 'power2.out',
+          { opacity: 1, x: 0, duration: 1.0, ease: 'power2.out',
             scrollTrigger: { trigger: section, start: 'top 75%', toggleActions: 'play none none none' },
             delay: 0.8,
           }
         )
       }
 
-      // Navigation controls fade in
+      // Projector controls fade in
       const controls = section.querySelector('.projector-controls')
       if (controls) {
         gsap.fromTo(controls,
           { opacity: 0, y: 10 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.8,
-            ease: 'power2.out',
+          { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out',
             scrollTrigger: { trigger: section, start: 'top 70%', toggleActions: 'play none none none' },
             delay: 1.0,
           }
@@ -1527,7 +1593,6 @@ function GallerySection() {
   // ─── Lightbox ───
   useEffect(() => {
     if (lightboxIndex === null) return
-
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setLightboxIndex(null)
       if (e.key === 'ArrowLeft') {
@@ -1537,7 +1602,6 @@ function GallerySection() {
         setLightboxIndex((prev) => prev !== null ? (prev + 1) % totalImages : null)
       }
     }
-
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [lightboxIndex, totalImages])
@@ -1573,12 +1637,42 @@ function GallerySection() {
 
         {/* ═══ Film Projector Stage ═══ */}
         <div className="projector-stage relative">
-          {/* Film strip decoration — left side */}
-          <div className="film-strip absolute -left-3 sm:-left-5 top-0 bottom-0 w-4 sm:w-5 flex flex-col justify-between py-1 opacity-20 pointer-events-none"
-            style={{ zIndex: 2 }}>
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="w-full aspect-[3/2] border border-[var(--gold)]/30 rounded-[1px]"
-                style={{ background: 'rgba(201,169,110,0.03)' }} />
+
+          {/* Projector dust particles — floating dust in the beam */}
+          <div className="projector-dust absolute inset-0 pointer-events-none z-30" />
+
+          {/* Light leak overlay — golden light that bleeds during transitions */}
+          <div
+            ref={lightLeakRef}
+            className="absolute inset-0 pointer-events-none z-20"
+            style={{
+              opacity: 0,
+              background: 'radial-gradient(ellipse at 30% 20%, rgba(201,169,110,0.4) 0%, rgba(201,169,110,0.1) 40%, transparent 70%)',
+              mixBlendMode: 'screen',
+            }}
+          />
+
+          {/* Shutter overlay — brief darkness during gate change */}
+          <div
+            ref={shutterRef}
+            className="absolute inset-0 pointer-events-none z-20"
+            style={{
+              opacity: 0,
+              background: '#0a0806',
+            }}
+          />
+
+          {/* Film strip decoration — left side, realistic sprocket holes */}
+          <div className="film-strip absolute -left-3 sm:-left-5 top-0 bottom-0 w-5 sm:w-6 flex flex-col justify-between py-1 pointer-events-none"
+            style={{ zIndex: 2, opacity: 0.25 }}>
+            {Array.from({ length: 14 }).map((_, i) => (
+              <div key={i} className="w-full flex justify-center">
+                <div className="w-2.5 sm:w-3 aspect-[3/4] rounded-[1px]"
+                  style={{
+                    border: '1px solid var(--gold)',
+                    background: 'rgba(201,169,110,0.04)',
+                  }} />
+              </div>
             ))}
           </div>
 
@@ -1589,7 +1683,7 @@ function GallerySection() {
             style={{
               background: 'white',
               padding: '4px 4px 0 4px',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06), 0 0 40px rgba(201,169,110,0.08)',
+              boxShadow: '0 4px 24px rgba(0,0,0,0.15), 0 1px 4px rgba(0,0,0,0.08), 0 0 60px rgba(201,169,110,0.1)',
             }}
             onClick={() => setLightboxIndex(activeIndex)}
             onTouchStart={handleCarouselTouchStart}
@@ -1599,44 +1693,49 @@ function GallerySection() {
             aria-label={`Lihat foto ${WEDDING.galleryCaptions[activeIndex]}`}
             onKeyDown={(e) => { if (e.key === 'Enter') setLightboxIndex(activeIndex) }}
           >
-            {/* Film grain overlay */}
+            {/* Film grain overlay — subtle noise like old film stock */}
             <div className="absolute inset-0 pointer-events-none z-10"
               style={{
-                background: 'repeating-conic-gradient(rgba(201,169,110,0.02) 0% 25%, transparent 0% 50%)',
-                backgroundSize: '3px 3px',
+                backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")',
+                backgroundSize: '100px 100px',
+                opacity: 0.03,
                 mixBlendMode: 'overlay',
               }} />
 
-            {/* Projector beam — subtle vignette */}
+            {/* Projector beam vignette — darker edges like projected light */}
             <div className="absolute inset-0 pointer-events-none z-10"
               style={{
-                background: 'radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.15) 100%)',
+                background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.2) 85%, rgba(0,0,0,0.4) 100%)',
               }} />
+
+            {/* Subtle film flicker — brightness micro-variations */}
+            <div className="absolute inset-0 pointer-events-none z-10 projector-flicker" />
 
             <div className="aspect-[4/5] overflow-hidden">
               <img
+                ref={imgRef}
                 key={activeIndex}
                 src={WEDDING.galleryImages[activeIndex]}
                 alt={WEDDING.galleryCaptions[activeIndex]}
-                className="w-full h-full object-cover"
-                style={{ display: 'block' }}
+                className="w-full h-full object-cover will-change-transform"
+                style={{ display: 'block', transformOrigin: 'center center' }}
               />
             </div>
 
-            {/* Slide number — like film frame counter */}
+            {/* Slide number — film frame counter */}
             <div className="absolute top-2 right-2 z-20 px-2 py-0.5 rounded-sm"
               style={{
-                background: 'rgba(0,0,0,0.4)',
+                background: 'rgba(0,0,0,0.5)',
                 fontFamily: 'var(--font-body)',
                 fontSize: '9px',
                 letterSpacing: '0.15em',
-                color: 'rgba(255,255,255,0.5)',
+                color: 'rgba(255,255,255,0.4)',
               }}>
               {String(activeIndex + 1).padStart(2, '0')} / {String(totalImages).padStart(2, '0')}
             </div>
           </div>
 
-          {/* Caption — writes in like a diary entry under the photo */}
+          {/* Caption — diary entry under the photo */}
           <div
             ref={captionRef}
             className="py-3 text-center"
@@ -1652,11 +1751,7 @@ function GallerySection() {
           <button
             onClick={() => { stopAutoPlay(); prevSlide() }}
             className="w-9 h-9 flex items-center justify-center rounded-full transition-all duration-300 cursor-pointer"
-            style={{
-              border: '1px solid var(--gold)',
-              color: 'var(--gold)',
-              background: 'transparent',
-            }}
+            style={{ border: '1px solid var(--gold)', color: 'var(--gold)', background: 'transparent' }}
             onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--gold)'; e.currentTarget.style.color = 'white' }}
             onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--gold)' }}
             aria-label="Foto sebelumnya"
@@ -1677,7 +1772,7 @@ function GallerySection() {
                   width: i === activeIndex ? '20px' : '6px',
                   height: '6px',
                   borderRadius: '3px',
-                  background: i === activeIndex ? 'var(--gold)' : 'var(--gold)',
+                  background: 'var(--gold)',
                   opacity: i === activeIndex ? 1 : 0.3,
                 }}
                 aria-label={`Foto ${i + 1}`}
@@ -1689,11 +1784,7 @@ function GallerySection() {
           <button
             onClick={() => { stopAutoPlay(); nextSlide() }}
             className="w-9 h-9 flex items-center justify-center rounded-full transition-all duration-300 cursor-pointer"
-            style={{
-              border: '1px solid var(--gold)',
-              color: 'var(--gold)',
-              background: 'transparent',
-            }}
+            style={{ border: '1px solid var(--gold)', color: 'var(--gold)', background: 'transparent' }}
             onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--gold)'; e.currentTarget.style.color = 'white' }}
             onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--gold)' }}
             aria-label="Foto selanjutnya"
@@ -1746,19 +1837,13 @@ function GallerySection() {
             </svg>
           </button>
 
-          <div
-            className="max-w-4xl max-h-[85vh] px-14 sm:px-16"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="max-w-4xl max-h-[85vh] px-14 sm:px-16" onClick={(e) => e.stopPropagation()}>
             <img
               src={WEDDING.galleryImages[lightboxIndex]}
               alt={WEDDING.galleryCaptions[lightboxIndex]}
               className="max-w-full max-h-[80vh] object-contain mx-auto"
             />
-            <p
-              className="text-center text-sm italic mt-4"
-              style={{ fontFamily: 'var(--font-serif)', color: 'rgba(255,255,255,0.6)' }}
-            >
+            <p className="text-center text-sm italic mt-4" style={{ fontFamily: 'var(--font-serif)', color: 'rgba(255,255,255,0.6)' }}>
               {WEDDING.galleryCaptions[lightboxIndex]}
             </p>
           </div>
