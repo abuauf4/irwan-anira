@@ -1630,9 +1630,9 @@ function ClosingSection() {
   const hasAnimated = useRef(false)
 
   // ─── WORD FLY-IN — kata terbang dari belakang ───
-  // Splits text into word spans, hides them, then animates them in
-  // Uses gsap.set + gsap.to (NO CSS inline transform — GSAP can't parse those)
-  // Returns total duration so next element knows when to start
+  // Simple: split text → word spans → gsap.fromTo() animate
+  // NO filter property (causes GSAP issues), NO CSS inline transform
+  // Returns total duration for scheduling next element
   const wordFlyIn = (el: HTMLDivElement | null, stagger: number = 0.15, wordDuration: number = 0.6, delay: number = 0): number => {
     if (!el) return delay
 
@@ -1652,20 +1652,20 @@ function ClosingSection() {
       allWords.push(ws)
     })
 
-    // Hide with GSAP (not CSS — avoids transform conflict)
-    gsap.set(allWords, { opacity: 0, y: 15, scale: 0.85, filter: 'blur(4px)' })
-
-    // Animate in — fly from behind
-    gsap.to(allWords, {
-      opacity: 1,
-      y: 0,
-      scale: 1,
-      filter: 'blur(0px)',
-      duration: wordDuration,
-      stagger: stagger,
-      ease: 'power3.out',
-      delay: delay,
-    })
+    // Animate: from invisible/shifted → visible/normal
+    // Using fromTo — most reliable GSAP method, no separate set() needed
+    gsap.fromTo(allWords,
+      { opacity: 0, y: 20, scale: 0.8 },
+      {
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        duration: wordDuration,
+        stagger: stagger,
+        ease: 'back.out(1.2)',
+        delay: delay,
+      }
+    )
 
     return delay + allWords.length * stagger + wordDuration
   }
@@ -1675,11 +1675,11 @@ function ClosingSection() {
     if (!section) return
 
     const isMobile = window.innerWidth < 768
-    const wordStagger = isMobile ? 0.12 : 0.15
-    const wordDur = isMobile ? 0.5 : 0.6
-    const gap = isMobile ? 0.4 : 0.6
+    const wordStagger = isMobile ? 0.1 : 0.13
+    const wordDur = isMobile ? 0.4 : 0.5
+    const gap = isMobile ? 0.3 : 0.5
 
-    // Section fade-in via IntersectionObserver — most reliable
+    // Section fade-in via IntersectionObserver
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -1690,21 +1690,14 @@ function ClosingSection() {
             // Fade section in
             gsap.to(section, { opacity: 1, duration: 1.5, ease: 'power2.out' })
 
-            // Run word fly-in sequence — each element waits for previous to finish
-            // Paragraph 1 — "Dan seperti semua cerita indah..."
+            // Word fly-in sequence — each element starts after previous finishes
             const titleEnd = wordFlyIn(titleRef.current, wordStagger, wordDur, 0.5)
-
-            // Paragraph 2 — "Terima kasih telah menjadi bagian..."
             const subtitleEnd = wordFlyIn(subtitleRef.current, wordStagger, wordDur, titleEnd + gap)
 
-            // Transliteration — "Barakallahu lakuma..." (gold color)
             const transEl = doaRef.current?.querySelector('.doa-transliteration') as HTMLDivElement | null
             const transEnd = wordFlyIn(transEl, wordStagger * 0.8, wordDur * 0.8, subtitleEnd + gap)
 
-            // Footer line — "Forever starts with Bismillah."
             const footerEnd = wordFlyIn(footerLineRef.current, wordStagger * 1.2, wordDur, transEnd + gap + 0.3)
-
-            // Final emotional line — "Cerita mereka belum selesai..."
             const finalEnd = wordFlyIn(finalLineRef.current, wordStagger * 1.5, wordDur * 1.2, footerEnd + gap)
 
             // Golden shimmer sweep
@@ -1715,7 +1708,7 @@ function ClosingSection() {
               )
             }
 
-            // Date appears — like a signature
+            // Date appears
             if (dateRef.current) {
               gsap.to(dateRef.current, { opacity: 1, duration: 1.5, ease: 'power2.out', delay: finalEnd + 3 })
               const dateP = dateRef.current.querySelector('p')
