@@ -71,17 +71,17 @@ const WEDDING = {
    cinematic: if true, auto-scroll FULLY PAUSES until section signals completion
    ═══════════════════════════════════════════════════════════ */
 const SECTION_SCROLL: Record<string, { speed: number; cinematic: boolean }> = {
-  cover:      { speed: 1.0,  cinematic: false },
-  bismillah:  { speed: 1.0,  cinematic: false },
-  couple:     { speed: 1.2,  cinematic: false },
-  diaryIntro: { speed: 1.0,  cinematic: false },
+  cover:      { speed: 2.0,  cinematic: false },
+  bismillah:  { speed: 2.0,  cinematic: false },
+  couple:     { speed: 2.4,  cinematic: false },
+  diaryIntro: { speed: 2.0,  cinematic: false },
   diaryStory: { speed: 0,    cinematic: true  },  // PAUSE — diary controls its own timeline
-  countdown:  { speed: 1.2,  cinematic: false },
-  events:     { speed: 1.2,  cinematic: false },
-  gallery:    { speed: 1.8,  cinematic: false },
-  rsvp:       { speed: 1.0,  cinematic: false },
-  envelope:   { speed: 1.0,  cinematic: false },
-  wishes:     { speed: 1.0,  cinematic: false },
+  countdown:  { speed: 2.4,  cinematic: false },
+  events:     { speed: 2.4,  cinematic: false },
+  gallery:    { speed: 3.6,  cinematic: false },
+  rsvp:       { speed: 2.0,  cinematic: false },
+  envelope:   { speed: 2.0,  cinematic: false },
+  wishes:     { speed: 2.0,  cinematic: false },
   closing:    { speed: 0,    cinematic: true  },  // PAUSE — closing has dissolve animation
   footer:     { speed: 0,    cinematic: false },  // STOP — end of page
 }
@@ -1993,10 +1993,10 @@ export default function Home() {
     const isMobile = window.innerWidth < 768
     const mobileMultiplier = isMobile ? 2.0 : 1.0
 
-    // Velocity state
+    // Velocity state — 2x faster for smooth gliding
     const velocity = {
-      current: isMobile ? 2.0 : 1.0,
-      target: isMobile ? 2.0 : 1.0,
+      current: isMobile ? 4.0 : 2.0,
+      target: isMobile ? 4.0 : 2.0,
     }
     let cinematicLock = false
     let activeSection = ''
@@ -2037,7 +2037,7 @@ export default function Home() {
               // The section needs to reach top 0% first
               // The actual lock happens when the section dispatches "start" event
               if (!cinematicLock) {
-                velocity.target = 0.4 * mobileMultiplier  // Slow creep toward top 0%
+                velocity.target = 0.8 * mobileMultiplier  // Smooth creep toward top 0%
               }
             } else if (!cinematicLock) {
               // Normal section or completed cinematic — update speed normally
@@ -2084,7 +2084,7 @@ export default function Home() {
       const diff = velocity.target - velocity.current
       if (Math.abs(diff) > 0.01) {
         const isRampingUp = diff > 0
-        const factor = isRampingUp ? 0.06 : 0.10
+        const factor = isRampingUp ? 0.10 : 0.14
         const frameFactor = 1 - Math.pow(1 - factor, dt)
         velocity.current += diff * frameFactor
       }
@@ -2097,10 +2097,10 @@ export default function Home() {
 
     // Start after a brief delay
     const startTimeout = setTimeout(() => {
-      velocity.current = isMobile ? 1.0 : 0.5
+      velocity.current = isMobile ? 2.0 : 1.0
       lastTime = 0
       animationId = requestAnimationFrame(autoScroll)
-    }, isMobile ? 600 : 800)
+    }, isMobile ? 400 : 600)
 
     // User scroll detection
     const pauseAndResume = () => {
@@ -2110,7 +2110,7 @@ export default function Home() {
       resumeTimeout = setTimeout(() => {
         if (cinematicLock) return  // Double check
         userScrollingRef.current = false
-        velocity.current *= 0.3  // Gentle resume
+        velocity.current *= 0.5  // Smooth resume after user scroll
       }, isMobile ? 1500 : 2000)
     }
 
@@ -2144,7 +2144,7 @@ export default function Home() {
       userScrollingRef.current = false
       // After diary, next section is countdown
       velocity.target = SECTION_SCROLL.countdown.speed * mobileMultiplier
-      velocity.current = 0.5 * mobileMultiplier  // Gentle resume
+      velocity.current = 1.0 * mobileMultiplier  // Smooth glide resume
     }
 
     const onClosingComplete = () => {
