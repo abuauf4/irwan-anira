@@ -1992,10 +1992,11 @@ export default function Home() {
     let lastTime = 0
 
     // ─── Speed: pixels per millisecond ───
-    // 0.12 px/ms = ~7.2 px/frame at 60fps = ~120 px/s
-    // Feels like a gentle, constant drift — like floating downstream
+    // 0.35 px/ms = ~21 px/frame at 60fps = ~350 px/s (desktop)
+    // Fast enough to feel cinematic, not boring — diary in ~8s from start
+    // Closing done: 0.3x speed = gentle drift to footer
     const isMobile = window.innerWidth < 768
-    const pxPerMs = isMobile ? 0.18 : 0.12  // Mobile slightly faster
+    const pxPerMs = isMobile ? 0.45 : 0.35  // Mobile faster for smaller viewport
 
     // ─── State ───
     let cinematicLock = false
@@ -2029,7 +2030,7 @@ export default function Home() {
       }
 
       // ─── Accumulate fractional pixels ───
-      const speed = isClosingDone ? pxPerMs * 0.2 : pxPerMs  // Slow drift after closing
+      const speed = isClosingDone ? pxPerMs * 0.3 : pxPerMs  // Gentle drift after closing
       accumulated += delta * speed
 
       // ─── Only scroll WHOLE pixels — avoids sub-pixel layout thrashing ───
