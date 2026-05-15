@@ -70,20 +70,23 @@ const WEDDING = {
    speed: pixels per frame at 60fps baseline (0 = stop)
    cinematic: if true, auto-scroll FULLY PAUSES until section signals completion
    ═══════════════════════════════════════════════════════════ */
+// UNIFORM speed for all sections — no speed changes = no stutter
+// Only diary/closing get cinematic lock (full stop), everything else glides at the same pace
+const SCROLL_SPEED = 2.0  // px/frame — smooth consistent glide
 const SECTION_SCROLL: Record<string, { speed: number; cinematic: boolean }> = {
-  cover:      { speed: 2.0,  cinematic: false },
-  bismillah:  { speed: 2.0,  cinematic: false },
-  couple:     { speed: 2.4,  cinematic: false },
-  diaryIntro: { speed: 2.0,  cinematic: false },
-  diaryStory: { speed: 0,    cinematic: true  },  // PAUSE — diary controls its own timeline
-  countdown:  { speed: 2.4,  cinematic: false },
-  events:     { speed: 2.4,  cinematic: false },
-  gallery:    { speed: 3.6,  cinematic: false },
-  rsvp:       { speed: 2.0,  cinematic: false },
-  envelope:   { speed: 2.0,  cinematic: false },
-  wishes:     { speed: 2.0,  cinematic: false },
-  closing:    { speed: 0,    cinematic: true  },  // PAUSE — closing has dissolve animation
-  footer:     { speed: 0,    cinematic: false },  // STOP — end of page
+  cover:      { speed: SCROLL_SPEED,  cinematic: false },
+  bismillah:  { speed: SCROLL_SPEED,  cinematic: false },
+  couple:     { speed: SCROLL_SPEED,  cinematic: false },
+  diaryIntro: { speed: SCROLL_SPEED,  cinematic: false },
+  diaryStory: { speed: 0,             cinematic: true  },  // LOCK — diary controls its own timeline
+  countdown:  { speed: SCROLL_SPEED,  cinematic: false },
+  events:     { speed: SCROLL_SPEED,  cinematic: false },
+  gallery:    { speed: SCROLL_SPEED,  cinematic: false },
+  rsvp:       { speed: SCROLL_SPEED,  cinematic: false },
+  envelope:   { speed: SCROLL_SPEED,  cinematic: false },
+  wishes:     { speed: SCROLL_SPEED,  cinematic: false },
+  closing:    { speed: 0,             cinematic: true  },  // LOCK — closing has dissolve animation
+  footer:     { speed: 0,             cinematic: false },  // STOP — end of page
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1993,10 +1996,11 @@ export default function Home() {
     const isMobile = window.innerWidth < 768
     const mobileMultiplier = isMobile ? 2.0 : 1.0
 
-    // Velocity state — 2x faster for smooth gliding
+    // Velocity state — uniform speed, no changes between sections
+    const baseSpeed = SCROLL_SPEED * mobileMultiplier
     const velocity = {
-      current: isMobile ? 4.0 : 2.0,
-      target: isMobile ? 4.0 : 2.0,
+      current: baseSpeed,
+      target: baseSpeed,
     }
     let cinematicLock = false
     let activeSection = ''
@@ -2007,48 +2011,33 @@ export default function Home() {
     const completedCinematic = new Set<string>()
 
     // ─── Section detection via IntersectionObserver ───
-    const sectionRatios = new Map<string, number>()
 
     const sectionObserver = new IntersectionObserver(
       (entries) => {
+        // Only care about cinematic sections approaching — slow down for them
+        // Normal sections all have the same speed, no changes needed
         entries.forEach((entry) => {
           const name = entry.target.getAttribute('data-section') || ''
-          if (name) {
-            sectionRatios.set(name, entry.intersectionRatio)
-          }
-        })
+          const behavior = SECTION_SCROLL[name]
+          if (!behavior) return
 
-        // Find section with highest intersection ratio
-        let maxRatio = 0
-        let bestSection = ''
-        sectionRatios.forEach((ratio, name) => {
-          if (ratio > maxRatio) {
-            maxRatio = ratio
-            bestSection = name
-          }
-        })
-
-        if (bestSection && bestSection !== activeSection) {
-          activeSection = bestSection
-          const behavior = SECTION_SCROLL[activeSection]
-          if (behavior) {
-            if (behavior.cinematic && !completedCinematic.has(activeSection)) {
-              // DON'T immediately lock — just slow down to a creep
-              // The section needs to reach top 0% first
-              // The actual lock happens when the section dispatches "start" event
-              if (!cinematicLock) {
-                velocity.target = 0.8 * mobileMultiplier  // Smooth creep toward top 0%
-              }
-            } else if (!cinematicLock) {
-              // Normal section or completed cinematic — update speed normally
-              velocity.target = behavior.speed * mobileMultiplier
+          if (entry.isIntersecting && behavior.cinematic && !completedCinematic.has(name)) {
+            // Cinematic section approaching — slow to creep speed
+            // Full lock happens when section dispatches "start" event at top 0%
+            if (!cinematicLock) {
+              activeSection = name
+              velocity.target = 0.8 * mobileMultiplier
             }
+          } else if (entry.isIntersecting && !behavior.cinematic && !cinematicLock) {
+            // Normal section — always glide at base speed
+            activeSection = name
+            velocity.target = baseSpeed
           }
-        }
+        })
       },
       {
-        threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
-        rootMargin: '-10% 0px -10% 0px',
+        threshold: [0.1, 0.3, 0.5],
+        rootMargin: '-5% 0px -5% 0px',
       }
     )
 
@@ -2080,11 +2069,10 @@ export default function Home() {
       const atBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 1)
       if (atBottom) return
 
-      // Smooth velocity transition
+      // Smooth velocity transition — simple lerp
       const diff = velocity.target - velocity.current
       if (Math.abs(diff) > 0.01) {
-        const isRampingUp = diff > 0
-        const factor = isRampingUp ? 0.10 : 0.14
+        const factor = 0.08  // Smooth easing, same for both directions
         const frameFactor = 1 - Math.pow(1 - factor, dt)
         velocity.current += diff * frameFactor
       }
@@ -2097,10 +2085,10 @@ export default function Home() {
 
     // Start after a brief delay
     const startTimeout = setTimeout(() => {
-      velocity.current = isMobile ? 2.0 : 1.0
+      velocity.current = baseSpeed * 0.5  // Start at half, ramp up smoothly
       lastTime = 0
       animationId = requestAnimationFrame(autoScroll)
-    }, isMobile ? 400 : 600)
+    }, 500)
 
     // User scroll detection
     const pauseAndResume = () => {
@@ -2110,7 +2098,7 @@ export default function Home() {
       resumeTimeout = setTimeout(() => {
         if (cinematicLock) return  // Double check
         userScrollingRef.current = false
-        velocity.current *= 0.5  // Smooth resume after user scroll
+        velocity.current = baseSpeed * 0.4  // Resume gently
       }, isMobile ? 1500 : 2000)
     }
 
@@ -2142,16 +2130,16 @@ export default function Home() {
       cinematicLock = false
       completedCinematic.add('diaryStory')  // Prevent re-locking
       userScrollingRef.current = false
-      // After diary, next section is countdown
-      velocity.target = SECTION_SCROLL.countdown.speed * mobileMultiplier
-      velocity.current = 1.0 * mobileMultiplier  // Smooth glide resume
+      // After diary, glide at base speed again
+      velocity.target = baseSpeed
+      velocity.current = baseSpeed * 0.5  // Ramp up smoothly
     }
 
     const onClosingComplete = () => {
       cinematicLock = false
       completedCinematic.add('closing')  // Prevent re-locking
-      // Footer is next — speed 0, just drift to a stop naturally
-      velocity.target = 0.3 * mobileMultiplier  // Slow drift to footer
+      // Footer is next — slow drift to a stop
+      velocity.target = baseSpeed * 0.15  // Gentle drift to end
     }
 
     window.addEventListener('diary-sequence-start', onDiaryStart)
