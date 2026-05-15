@@ -1992,11 +1992,11 @@ export default function Home() {
     let lastTime = 0
 
     // ─── Speed: pixels per millisecond ───
-    // 0.35 px/ms = ~21 px/frame at 60fps = ~350 px/s (desktop)
-    // Fast enough to feel cinematic, not boring — diary in ~8s from start
+    // 0.55 px/ms = ~33 px/frame at 60fps = ~550 px/s (desktop)
+    // Full page in ~20s, diary section in ~5s — cinematic pace
     // Closing done: 0.3x speed = gentle drift to footer
     const isMobile = window.innerWidth < 768
-    const pxPerMs = isMobile ? 0.45 : 0.35  // Mobile faster for smaller viewport
+    const pxPerMs = isMobile ? 0.7 : 0.55  // Mobile faster for smaller viewport
 
     // ─── State ───
     let cinematicLock = false

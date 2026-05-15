@@ -169,7 +169,7 @@ body::after {
 }
 
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto;  /* CRITICAL: must be 'auto' for rAF auto-scroll — 'smooth' causes stutter */
 }
 
 /* ========================================
