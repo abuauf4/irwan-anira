@@ -1982,11 +1982,10 @@ export default function Home() {
     }
   }, [isPlaying])
 
-  // Auto-scroll — section-based cinematic experience
-  // Uses IntersectionObserver to detect active section and adjust speed accordingly
-  // Cinematic sections (diary, closing) slow down first, then FULLY lock at top 0%
-  // Lock ONLY happens when the section signals "start" (at top 0%), not when it just becomes visible
-  // After section signals "complete", it's marked done and observer can't re-lock it
+  // Auto-scroll — pure constant velocity, no observer
+  // Speed NEVER changes between sections — that's what was causing the stutter
+  // Only 2 things can stop it: cinematic lock (diary/closing) and user scroll
+  // Cinematic lock is triggered by ScrollTrigger events at top 0%
   useEffect(() => {
     if (!isOpen) return
 
@@ -1995,111 +1994,68 @@ export default function Home() {
     let lastTime = 0
     const isMobile = window.innerWidth < 768
     const mobileMultiplier = isMobile ? 2.0 : 1.0
-
-    // Velocity state — uniform speed, no changes between sections
     const baseSpeed = SCROLL_SPEED * mobileMultiplier
-    const velocity = {
-      current: baseSpeed,
-      target: baseSpeed,
-    }
+
+    // Simple state — just current velocity and a lock flag
+    let velocity = baseSpeed * 0.5  // Start gentle, ramp up
     let cinematicLock = false
-    let activeSection = ''
+    let isClosingDone = false  // After closing completes, drift slowly to end
 
-    // ─── Track completed cinematic sections ───
-    // Once a cinematic section finishes, the observer must NEVER re-lock it
-    // This fixes the bug where observer re-locks diary/closing after completion
-    const completedCinematic = new Set<string>()
-
-    // ─── Section detection via IntersectionObserver ───
-
-    const sectionObserver = new IntersectionObserver(
-      (entries) => {
-        // Only care about cinematic sections approaching — slow down for them
-        // Normal sections all have the same speed, no changes needed
-        entries.forEach((entry) => {
-          const name = entry.target.getAttribute('data-section') || ''
-          const behavior = SECTION_SCROLL[name]
-          if (!behavior) return
-
-          if (entry.isIntersecting && behavior.cinematic && !completedCinematic.has(name)) {
-            // Cinematic section approaching — slow to creep speed
-            // Full lock happens when section dispatches "start" event at top 0%
-            if (!cinematicLock) {
-              activeSection = name
-              velocity.target = 0.8 * mobileMultiplier
-            }
-          } else if (entry.isIntersecting && !behavior.cinematic && !cinematicLock) {
-            // Normal section — always glide at base speed
-            activeSection = name
-            velocity.target = baseSpeed
-          }
-        })
-      },
-      {
-        threshold: [0.1, 0.3, 0.5],
-        rootMargin: '-5% 0px -5% 0px',
-      }
-    )
-
-    // Observe sections — delayed to ensure all are rendered
-    const observeSections = () => {
-      const allSections = document.querySelectorAll('[data-section]')
-      allSections.forEach((s) => sectionObserver.observe(s))
-    }
-
-    observeSections()
-    const observeTimeout = setTimeout(observeSections, 1000)
-
-    // Auto-scroll loop — NEVER DIES
+    // Auto-scroll loop — constant speed, nothing to stutter
     const autoScroll = (time: number) => {
       animationId = requestAnimationFrame(autoScroll)
 
       const dt = lastTime === 0 ? 1 : Math.min((time - lastTime) / 16.67, 3)
       lastTime = time
 
-      // Cinematic lock or user scrolling — decay velocity to zero
-      if (cinematicLock || userScrollingRef.current) {
-        const decayRate = 1 - Math.pow(0.88, dt)
-        velocity.current += (0 - velocity.current) * decayRate
-        if (Math.abs(velocity.current) < 0.01) velocity.current = 0
+      // Cinematic lock — smooth deceleration to stop
+      if (cinematicLock) {
+        velocity *= Math.pow(0.92, dt)  // Exponential decay
+        if (velocity < 0.01) velocity = 0
+        if (velocity > 0.05) window.scrollBy(0, velocity * dt)
         return
       }
 
-      // At bottom? Don't scroll, but keep loop alive
+      // User scroll pause — same smooth deceleration
+      if (userScrollingRef.current) {
+        velocity *= Math.pow(0.90, dt)
+        if (velocity < 0.01) velocity = 0
+        return
+      }
+
+      // At bottom? Keep alive but don't scroll
       const atBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 1)
       if (atBottom) return
 
-      // Smooth velocity transition — simple lerp
-      const diff = velocity.target - velocity.current
-      if (Math.abs(diff) > 0.01) {
-        const factor = 0.08  // Smooth easing, same for both directions
-        const frameFactor = 1 - Math.pow(1 - factor, dt)
-        velocity.current += diff * frameFactor
-      }
+      // After closing completes — drift slowly to end, don't ramp back up
+      const targetSpeed = isClosingDone ? baseSpeed * 0.15 : baseSpeed
+
+      // Smooth ramp toward target — simple exponential approach
+      const diff = targetSpeed - velocity
+      velocity += diff * (1 - Math.pow(0.92, dt))
 
       // Apply scroll
-      if (velocity.current > 0.05) {
-        window.scrollBy(0, velocity.current * dt)
+      if (velocity > 0.05) {
+        window.scrollBy(0, velocity * dt)
       }
     }
 
     // Start after a brief delay
     const startTimeout = setTimeout(() => {
-      velocity.current = baseSpeed * 0.5  // Start at half, ramp up smoothly
       lastTime = 0
       animationId = requestAnimationFrame(autoScroll)
     }, 500)
 
-    // User scroll detection
+    // User scroll detection — pause then resume
     const pauseAndResume = () => {
-      if (cinematicLock) return  // Don't override cinematic lock
+      if (cinematicLock) return
       userScrollingRef.current = true
       clearTimeout(resumeTimeout)
       resumeTimeout = setTimeout(() => {
-        if (cinematicLock) return  // Double check
+        if (cinematicLock) return
         userScrollingRef.current = false
-        velocity.current = baseSpeed * 0.4  // Resume gently
-      }, isMobile ? 1500 : 2000)
+        velocity = baseSpeed * 0.4  // Resume gently
+      }, 2000)
     }
 
     const onWheel = () => pauseAndResume()
@@ -2108,38 +2064,22 @@ export default function Home() {
     window.addEventListener('wheel', onWheel, { passive: true })
     window.addEventListener('touchstart', onTouchStart, { passive: true })
 
-    // ═══ Cinematic section START events ═══
-    // These fire when the section's top reaches top 0% of viewport
-    // THIS is when we fully lock — the section is now fully visible
-    const onDiaryStart = () => {
-      if (completedCinematic.has('diaryStory')) return  // Already done, ignore
-      cinematicLock = true
-      velocity.target = 0
-    }
+    // ═══ Cinematic locks — ONLY from ScrollTrigger events ═══
+    // diary-sequence-start: dispatched by DiaryStorySection at top 0%
+    // closing-sequence-start: dispatched by ClosingSection at top 0%
+    const onDiaryStart = () => { cinematicLock = true }
+    const onClosingStart = () => { cinematicLock = true }
 
-    const onClosingStart = () => {
-      if (completedCinematic.has('closing')) return  // Already done, ignore
-      cinematicLock = true
-      velocity.target = 0
-    }
-
-    // ═══ Cinematic section COMPLETE events ═══
-    // These fire when the section's internal animation finishes
-    // Unlock + mark as completed so observer can't re-lock
     const onDiaryComplete = () => {
       cinematicLock = false
-      completedCinematic.add('diaryStory')  // Prevent re-locking
       userScrollingRef.current = false
-      // After diary, glide at base speed again
-      velocity.target = baseSpeed
-      velocity.current = baseSpeed * 0.5  // Ramp up smoothly
+      velocity = baseSpeed * 0.5  // Gentle resume
     }
 
     const onClosingComplete = () => {
       cinematicLock = false
-      completedCinematic.add('closing')  // Prevent re-locking
-      // Footer is next — slow drift to a stop
-      velocity.target = baseSpeed * 0.15  // Gentle drift to end
+      isClosingDone = true
+      velocity = baseSpeed * 0.15  // Slow drift to end
     }
 
     window.addEventListener('diary-sequence-start', onDiaryStart)
@@ -2151,8 +2091,6 @@ export default function Home() {
       clearTimeout(startTimeout)
       cancelAnimationFrame(animationId)
       clearTimeout(resumeTimeout)
-      clearTimeout(observeTimeout)
-      sectionObserver.disconnect()
       window.removeEventListener('wheel', onWheel)
       window.removeEventListener('touchstart', onTouchStart)
       window.removeEventListener('diary-sequence-start', onDiaryStart)
