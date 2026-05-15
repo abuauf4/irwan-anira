@@ -1747,7 +1747,17 @@ function ClosingSection() {
       return delay + reversed.length * 0.08 + 0.7
     }
 
-    // ScrollTrigger — proven to work in all other sections
+    // ScrollTrigger: Signal cinematic lock when section reaches top 0%
+    // This tells auto-scroll to fully stop — the section is now fully visible
+    ScrollTrigger.create({
+      trigger: section,
+      start: 'top 0%',
+      onEnter: () => {
+        window.dispatchEvent(new CustomEvent('closing-sequence-start'))
+      },
+    })
+
+    // ScrollTrigger — Start animation when section enters viewport
     ScrollTrigger.create({
       trigger: section,
       start: 'top 80%',
@@ -1971,7 +1981,9 @@ export default function Home() {
 
   // Auto-scroll — section-based cinematic experience
   // Uses IntersectionObserver to detect active section and adjust speed accordingly
-  // Cinematic sections (diary, closing) fully pause auto-scroll until they signal completion
+  // Cinematic sections (diary, closing) slow down first, then FULLY lock at top 0%
+  // Lock ONLY happens when the section signals "start" (at top 0%), not when it just becomes visible
+  // After section signals "complete", it's marked done and observer can't re-lock it
   useEffect(() => {
     if (!isOpen) return
 
@@ -1989,7 +2001,12 @@ export default function Home() {
     let cinematicLock = false
     let activeSection = ''
 
-    // Section detection via IntersectionObserver
+    // ─── Track completed cinematic sections ───
+    // Once a cinematic section finishes, the observer must NEVER re-lock it
+    // This fixes the bug where observer re-locks diary/closing after completion
+    const completedCinematic = new Set<string>()
+
+    // ─── Section detection via IntersectionObserver ───
     const sectionRatios = new Map<string, number>()
 
     const sectionObserver = new IntersectionObserver(
@@ -2015,14 +2032,15 @@ export default function Home() {
           activeSection = bestSection
           const behavior = SECTION_SCROLL[activeSection]
           if (behavior) {
-            if (behavior.cinematic) {
-              // LOCK: cinematic section takes full control
-              // Can ONLY be unlocked by the section's own completion event
-              cinematicLock = true
-              velocity.target = 0
+            if (behavior.cinematic && !completedCinematic.has(activeSection)) {
+              // DON'T immediately lock — just slow down to a creep
+              // The section needs to reach top 0% first
+              // The actual lock happens when the section dispatches "start" event
+              if (!cinematicLock) {
+                velocity.target = 0.4 * mobileMultiplier  // Slow creep toward top 0%
+              }
             } else if (!cinematicLock) {
-              // Only update speed if we're NOT in a cinematic lock
-              // This prevents observer from accidentally unlocking during diary/closing
+              // Normal section or completed cinematic — update speed normally
               velocity.target = behavior.speed * mobileMultiplier
             }
           }
@@ -2035,13 +2053,11 @@ export default function Home() {
     )
 
     // Observe sections — delayed to ensure all are rendered
-    // Cover section is rendered conditionally, so use MutationObserver as fallback
     const observeSections = () => {
       const allSections = document.querySelectorAll('[data-section]')
       allSections.forEach((s) => sectionObserver.observe(s))
     }
 
-    // Initial observe + re-observe after a short delay for late-rendered sections
     observeSections()
     const observeTimeout = setTimeout(observeSections, 1000)
 
@@ -2068,7 +2084,7 @@ export default function Home() {
       const diff = velocity.target - velocity.current
       if (Math.abs(diff) > 0.01) {
         const isRampingUp = diff > 0
-        const factor = isRampingUp ? 0.06 : 0.10  // Ramp up: 0.06 (gentle), Ramp down: 0.10 (responsive)
+        const factor = isRampingUp ? 0.06 : 0.10
         const frameFactor = 1 - Math.pow(1 - factor, dt)
         velocity.current += diff * frameFactor
       }
@@ -2104,22 +2120,42 @@ export default function Home() {
     window.addEventListener('wheel', onWheel, { passive: true })
     window.addEventListener('touchstart', onTouchStart, { passive: true })
 
-    // Cinematic section completion events
+    // ═══ Cinematic section START events ═══
+    // These fire when the section's top reaches top 0% of viewport
+    // THIS is when we fully lock — the section is now fully visible
+    const onDiaryStart = () => {
+      if (completedCinematic.has('diaryStory')) return  // Already done, ignore
+      cinematicLock = true
+      velocity.target = 0
+    }
+
+    const onClosingStart = () => {
+      if (completedCinematic.has('closing')) return  // Already done, ignore
+      cinematicLock = true
+      velocity.target = 0
+    }
+
+    // ═══ Cinematic section COMPLETE events ═══
+    // These fire when the section's internal animation finishes
+    // Unlock + mark as completed so observer can't re-lock
     const onDiaryComplete = () => {
       cinematicLock = false
+      completedCinematic.add('diaryStory')  // Prevent re-locking
       userScrollingRef.current = false
-      // Determine target based on current section
-      const behavior = SECTION_SCROLL[activeSection] || SECTION_SCROLL.countdown
-      velocity.target = behavior.speed * mobileMultiplier
-      velocity.current = 0.5 * mobileMultiplier  // Start gentle
+      // After diary, next section is countdown
+      velocity.target = SECTION_SCROLL.countdown.speed * mobileMultiplier
+      velocity.current = 0.5 * mobileMultiplier  // Gentle resume
     }
 
     const onClosingComplete = () => {
       cinematicLock = false
+      completedCinematic.add('closing')  // Prevent re-locking
       // Footer is next — speed 0, just drift to a stop naturally
       velocity.target = 0.3 * mobileMultiplier  // Slow drift to footer
     }
 
+    window.addEventListener('diary-sequence-start', onDiaryStart)
+    window.addEventListener('closing-sequence-start', onClosingStart)
     window.addEventListener('diary-sequence-complete', onDiaryComplete)
     window.addEventListener('closing-sequence-complete', onClosingComplete)
 
@@ -2131,6 +2167,8 @@ export default function Home() {
       sectionObserver.disconnect()
       window.removeEventListener('wheel', onWheel)
       window.removeEventListener('touchstart', onTouchStart)
+      window.removeEventListener('diary-sequence-start', onDiaryStart)
+      window.removeEventListener('closing-sequence-start', onClosingStart)
       window.removeEventListener('diary-sequence-complete', onDiaryComplete)
       window.removeEventListener('closing-sequence-complete', onClosingComplete)
     }
