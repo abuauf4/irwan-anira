@@ -1996,7 +1996,7 @@ export default function Home() {
     // Very slow cinematic drift — like watching a story unfold page by page
     // Closing done: 0.3x speed = gentle drift to footer
     const isMobile = window.innerWidth < 768
-    const pxPerMs = isMobile ? 0.05 : 0.05
+    const pxPerMs = 0.035
 
     // ─── State ───
     let cinematicLock = false
