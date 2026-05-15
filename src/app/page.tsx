@@ -34,7 +34,7 @@ const WEDDING = {
   lamaranDate: '31 Agustus 2025',
   timeline: [
     {
-      year: '2020',
+      year: '2022',
       title: 'Mulai Dekat',
       description:
         'Seiring berjalan waktu kami semakin dekat. Latar belakang yang berbeda membuat kami saling melengkapi dan banyak menemukan hal baru. Satu dua langkah menuntun kami hingga ke perjalanan selajutnya.',
@@ -997,7 +997,7 @@ function DiaryStorySection() {
           }
         })
       },
-      { threshold: 0.15 }
+      { threshold: 0.5 }
     )
     enterObserver.observe(section)
 
@@ -1831,7 +1831,7 @@ function ClosingSection() {
         <div ref={titleRef}>
           <p
             className="text-lg sm:text-xl italic leading-relaxed mb-8"
-            style={{ fontFamily: 'var(--font-serif)', color: 'var(--cream)' }}
+            style={{ fontFamily: 'var(--font-serif)', color: '#ffffff' }}
           >
             Dan seperti semua cerita indah yang dituliskan semesta, kisah
             <span className="gold-shimmer"> kami </span>
@@ -1843,7 +1843,7 @@ function ClosingSection() {
         <div ref={subtitleRef}>
           <p
             className="text-sm sm:text-base leading-relaxed mb-10"
-            style={{ fontFamily: 'var(--font-serif)', color: 'var(--cream)', opacity: 0.8 }}
+            style={{ fontFamily: 'var(--font-serif)', color: '#ffffff', opacity: 0.8 }}
           >
             Terima kasih telah menjadi bagian dari perjalanan kecil kami menuju selamanya.
           </p>
@@ -1877,7 +1877,7 @@ function ClosingSection() {
         <div ref={footerLineRef}>
           <p
             className="text-sm italic gold-shimmer-text"
-            style={{ fontFamily: 'var(--font-serif)', color: 'var(--cream)', opacity: 0.6 }}
+            style={{ fontFamily: 'var(--font-serif)', color: '#ffffff', opacity: 0.6 }}
           >
             Forever starts with Bismillah.
           </p>
@@ -1890,7 +1890,7 @@ function ClosingSection() {
         >
           <p
             className="text-2xl sm:text-3xl gold-shimmer-text"
-            style={{ fontFamily: 'var(--font-script)' }}
+            style={{ fontFamily: 'var(--font-script)', color: '#ffffff' }}
           >
             Cerita mereka belum selesai...
           </p>
@@ -1903,7 +1903,7 @@ function ClosingSection() {
         >
           <p
             className="text-sm tracking-[0.4em]"
-            style={{ fontFamily: 'var(--font-body)', color: 'var(--gold)', opacity: 0 }}
+            style={{ fontFamily: 'var(--font-body)', color: '#ffffff', opacity: 0 }}
           >
             05 . 07 . 2026
           </p>
