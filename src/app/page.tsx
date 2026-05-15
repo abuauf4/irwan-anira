@@ -2048,19 +2048,36 @@ export default function Home() {
     }, 10000)
 
     // ─── User scroll detection — pause then auto-resume ───
-    const pauseAndResume = () => {
+    // Only pause for genuine scroll gestures (wheel on empty area)
+    // DON'T pause for form interactions — touching inputs/buttons shouldn't stop auto-scroll
+    const isFormInteraction = (e: Event): boolean => {
+      const target = e.target as HTMLElement
+      if (!target) return false
+      const tag = target.tagName
+      // Don't pause for: input, textarea, select, button, label, a (links)
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON' || tag === 'LABEL' || tag === 'A') {
+        return true
+      }
+      // Also check if target is inside a form
+      if (target.closest('form, button, input, textarea, select, label, a')) {
+        return true
+      }
+      return false
+    }
+
+    const pauseAndResume = (e?: Event) => {
       if (cinematicLock) return
+      if (e && isFormInteraction(e)) return  // Don't pause for form interactions
       userScrollingRef.current = true
       clearTimeout(resumeTimeout)
       resumeTimeout = setTimeout(() => {
         if (cinematicLock) return
         userScrollingRef.current = false
-        // No velocity to reset — accumulator starts from 0, constant speed resumes
       }, 2500)
     }
 
-    const onWheel = () => pauseAndResume()
-    const onTouchStart = () => pauseAndResume()
+    const onWheel = (e: Event) => pauseAndResume(e)
+    const onTouchStart = (e: Event) => pauseAndResume(e)
 
     window.addEventListener('wheel', onWheel, { passive: true })
     window.addEventListener('touchstart', onTouchStart, { passive: true })
