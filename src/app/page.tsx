@@ -1613,105 +1613,133 @@ function GallerySection() {
 /* ═══════════════════════════════════════════════════════════
    9. CLOSING — Diary Ending
    The last page of this chapter, the first of forever
-   Font: Inter (var(--font-body)) for all text
-   Exception: Arabic + transliteration stay gold with their fonts
-   Animation: Framer Motion word-by-word fly-in (reliable, no GSAP issues)
+   Font: Inter for all white text, Amiri for Arabic, gold for transliteration
+   Animation: GSAP from() — same proven approach as Bismillah/Couple sections
+   Word spans are in JSX directly — no innerHTML manipulation
    ═══════════════════════════════════════════════════════════ */
 
-// Word-by-word fly-in component — each word animates in from below
-function FlyInWords({ text, className, style, delayOffset = 0, stagger = 0.1, duration = 0.5 }: {
-  text: string
-  className?: string
-  style?: React.CSSProperties
-  delayOffset?: number
-  stagger?: number
-  duration?: number
-}) {
-  const ref = useRef<HTMLDivElement>(null)
-  const hasAnimated = useRef(false)
-  const words = text.split(' ')
-
-  useEffect(() => {
-    const el = ref.current
-    if (!el || hasAnimated.current) return
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && !hasAnimated.current) {
-            hasAnimated.current = true
-            observer.disconnect()
-
-            const spans = el.querySelectorAll<HTMLElement>('.fly-word')
-            spans.forEach((span, i) => {
-              span.style.opacity = '0'
-              span.style.transform = 'translateY(18px) scale(0.9)'
-              span.style.transition = `opacity ${duration}s cubic-bezier(0.25, 0.46, 0.45, 0.94) ${delayOffset + i * stagger}s, transform ${duration}s cubic-bezier(0.25, 0.46, 0.45, 0.94) ${delayOffset + i * stagger}s`
-              // Force reflow then animate
-              requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                  span.style.opacity = '1'
-                  span.style.transform = 'translateY(0) scale(1)'
-                })
-              })
-            })
-          }
-        })
-      },
-      { threshold: 0.2 }
-    )
-    observer.observe(el)
-
-    return () => observer.disconnect()
-  }, [delayOffset, stagger, duration])
-
+// Split text into word spans for GSAP animation — rendered in JSX, not innerHTML
+function WordSpan({ text }: { text: string }) {
   return (
-    <div ref={ref} className={className} style={style}>
-      {words.map((word, i) => (
+    <>
+      {text.split(' ').map((word, i) => (
         <span
           key={i}
-          className="fly-word inline-block mr-[0.3em]"
-          style={{ opacity: 0 }}
+          className="closing-word inline-block"
+          style={{ marginRight: '0.3em' }}
         >
           {word}
         </span>
       ))}
-    </div>
+    </>
   )
 }
 
 function ClosingSection() {
   const sectionRef = useRef<HTMLDivElement>(null)
   const dateRef = useRef<HTMLDivElement>(null)
-  const hasAnimated = useRef(false)
+  const dividerRef = useRef<HTMLDivElement>(null)
+  const arabicRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const section = sectionRef.current
     if (!section) return
 
-    // Section fade-in via IntersectionObserver
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && !hasAnimated.current) {
-            hasAnimated.current = true
-            observer.disconnect()
+    const ctx = gsap.context(() => {
+      // Section fade in
+      gsap.fromTo(section,
+        { opacity: 0 },
+        {
+          opacity: 1,
+          duration: 1.5,
+          ease: 'power2.out',
+          scrollTrigger: {
+            trigger: section,
+            start: 'top 80%',
+            toggleActions: 'play none none none',
+          },
+        }
+      )
 
-            // Fade section in
-            gsap.to(section, { opacity: 1, duration: 1.5, ease: 'power2.out' })
+      // ─── WORD FLY-IN: All .closing-word spans animate from below ───
+      // This is the SAME pattern that works in Bismillah & Couple sections
+      // gsap.from() sets initial state and animates to current CSS state
+      const allWords = section.querySelectorAll<HTMLElement>('.closing-word')
 
-            // Date appears after all word animations finish (roughly 6-8s)
-            if (dateRef.current) {
-              gsap.to(dateRef.current, { opacity: 1, duration: 1.5, ease: 'power2.out', delay: 8 })
-            }
-          }
+      if (allWords.length > 0) {
+        gsap.from(allWords, {
+          opacity: 0,
+          y: 25,
+          scale: 0.85,
+          duration: 0.6,
+          stagger: 0.08,
+          ease: 'back.out(1.4)',
+          scrollTrigger: {
+            trigger: section,
+            start: 'top 80%',
+            toggleActions: 'play none none none',
+          },
         })
-      },
-      { threshold: 0.2 }
-    )
-    observer.observe(section)
+      }
 
-    return () => observer.disconnect()
+      // Arabic text — gentle fade in
+      if (arabicRef.current) {
+        gsap.fromTo(arabicRef.current,
+          { opacity: 0, y: 10 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 1.2,
+            delay: 2.5,
+            ease: 'power2.out',
+            scrollTrigger: {
+              trigger: section,
+              start: 'top 80%',
+              toggleActions: 'play none none none',
+            },
+          }
+        )
+      }
+
+      // Divider ornament
+      if (dividerRef.current) {
+        gsap.fromTo(dividerRef.current,
+          { opacity: 0, scale: 0.5 },
+          {
+            opacity: 1,
+            scale: 1,
+            duration: 0.8,
+            delay: 3.5,
+            ease: 'back.out(2)',
+            scrollTrigger: {
+              trigger: section,
+              start: 'top 80%',
+              toggleActions: 'play none none none',
+            },
+          }
+        )
+      }
+
+      // Date — appears last
+      if (dateRef.current) {
+        gsap.fromTo(dateRef.current,
+          { opacity: 0 },
+          {
+            opacity: 1,
+            duration: 1.5,
+            delay: 5,
+            ease: 'power2.out',
+            scrollTrigger: {
+              trigger: section,
+              start: 'top 80%',
+              toggleActions: 'play none none none',
+            },
+          }
+        )
+      }
+    })
+
+    return () => ctx.revert()
   }, [])
 
   return (
@@ -1744,68 +1772,44 @@ function ClosingSection() {
 
       <div className="relative z-10 max-w-2xl mx-auto">
         {/* Title — first to fly in */}
-        <FlyInWords
-          text="Dan seperti semua cerita indah yang dituliskan semesta, kisah kami baru saja dimulai."
-          className="text-lg sm:text-xl leading-relaxed mb-8"
-          style={{ fontFamily: 'var(--font-body)', color: '#ffffff' }}
-          delayOffset={0.5}
-          stagger={0.1}
-          duration={0.5}
-        />
+        <p className="text-lg sm:text-xl leading-relaxed mb-8" style={{ fontFamily: 'Inter, sans-serif', color: '#ffffff' }}>
+          <WordSpan text="Dan seperti semua cerita indah yang dituliskan semesta, kisah kami baru saja dimulai." />
+        </p>
 
         {/* Subtitle — flies in after title */}
-        <FlyInWords
-          text="Terima kasih telah menjadi bagian dari perjalanan kecil kami menuju selamanya."
-          className="text-sm sm:text-base leading-relaxed mb-10"
-          style={{ fontFamily: 'var(--font-body)', color: '#ffffff', opacity: 0.85 }}
-          delayOffset={3.0}
-          stagger={0.08}
-          duration={0.45}
-        />
+        <p className="text-sm sm:text-base leading-relaxed mb-10" style={{ fontFamily: 'Inter, sans-serif', color: '#ffffff', opacity: 0.85 }}>
+          <WordSpan text="Terima kasih telah menjadi bagian dari perjalanan kecil kami menuju selamanya." />
+        </p>
 
-        {/* Doa — Arabic + transliteration in gold */}
+        {/* Doa — Arabic fades in, transliteration flies in */}
         <div className="mb-8">
           <p
+            ref={arabicRef}
             className="text-base sm:text-lg leading-relaxed mb-4"
-            style={{ fontFamily: 'var(--font-arabic)', color: 'var(--gold-light)' }}
+            style={{ fontFamily: 'Amiri, serif', color: 'var(--gold-light)', opacity: 0 }}
             dir="rtl"
           >
             بارك الله لكما وبارك عليكما وجمع بينكما في خير
           </p>
-          <FlyInWords
-            text="Barakallahu lakuma wa baraka 'alaikuma wa jama'a bainakuma fi khair."
-            className="text-xs italic"
-            style={{ fontFamily: 'var(--font-body)', color: 'var(--gold)' }}
-            delayOffset={5.0}
-            stagger={0.06}
-            duration={0.4}
-          />
+          <p className="text-xs italic" style={{ fontFamily: 'Inter, sans-serif', color: 'var(--gold)' }}>
+            <WordSpan text="Barakallahu lakuma wa baraka 'alaikuma wa jama'a bainakuma fi khair." />
+          </p>
         </div>
 
         {/* Small divider */}
-        <div className="ornament-divider max-w-[120px] mx-auto mb-6">
+        <div ref={dividerRef} className="ornament-divider max-w-[120px] mx-auto mb-6" style={{ opacity: 0 }}>
           <span className="text-[var(--gold)] text-xs">&#10047;</span>
         </div>
 
         {/* Footer line */}
-        <FlyInWords
-          text="Forever starts with Bismillah."
-          className="text-sm mb-16"
-          style={{ fontFamily: 'var(--font-body)', color: '#ffffff', opacity: 0.6 }}
-          delayOffset={6.0}
-          stagger={0.1}
-          duration={0.5}
-        />
+        <p className="text-sm mb-16" style={{ fontFamily: 'Inter, sans-serif', color: '#ffffff', opacity: 0.6 }}>
+          <WordSpan text="Forever starts with Bismillah." />
+        </p>
 
         {/* Final emotional line */}
-        <FlyInWords
-          text="Cerita mereka belum selesai..."
-          className="text-2xl sm:text-3xl min-h-[2em]"
-          style={{ fontFamily: 'var(--font-body)', color: '#ffffff', fontWeight: 300 }}
-          delayOffset={7.0}
-          stagger={0.15}
-          duration={0.6}
-        />
+        <p className="text-2xl sm:text-3xl min-h-[2em]" style={{ fontFamily: 'Inter, sans-serif', color: '#ffffff', fontWeight: 300 }}>
+          <WordSpan text="Cerita mereka belum selesai..." />
+        </p>
 
         {/* The date — the beginning of forever */}
         <div
@@ -1815,7 +1819,7 @@ function ClosingSection() {
         >
           <p
             className="text-sm tracking-[0.4em]"
-            style={{ fontFamily: 'var(--font-body)', color: '#ffffff', opacity: 0.7 }}
+            style={{ fontFamily: 'Inter, sans-serif', color: '#ffffff', opacity: 0.7 }}
           >
             05 . 07 . 2026
           </p>
