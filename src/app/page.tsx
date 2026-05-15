@@ -1352,84 +1352,117 @@ function GallerySection() {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      fadeIn(sectionRef.current!, { duration: 1.2, y: 20 })
+      const section = sectionRef.current!
+      fadeIn(section, { duration: 1.2, y: 20 })
 
-      // Each memory surfaces one by one — from depth, from blur, from forgetting
-      // The rhythm is organic, like memories returning in a dream
-      const memories = sectionRef.current!.querySelectorAll('.memory-photo')
+      // ─── Title & ornament entrance ───
+      const titleEl = section.querySelector('.gallery-title')
+      const ornamentEl = section.querySelector('.gallery-ornament')
+      if (titleEl) {
+        gsap.fromTo(titleEl,
+          { opacity: 0, y: 30, filter: 'blur(6px)' },
+          { opacity: 1, y: 0, filter: 'blur(0px)', duration: 1.0, ease: 'power3.out',
+            scrollTrigger: { trigger: section, start: 'top 0%', toggleActions: 'play none none none' }
+          }
+        )
+      }
+      if (ornamentEl) {
+        gsap.fromTo(ornamentEl,
+          { opacity: 0, scale: 0.5 },
+          { opacity: 1, scale: 1, duration: 0.8, ease: 'back.out(2)', delay: 0.3,
+            scrollTrigger: { trigger: section, start: 'top 0%', toggleActions: 'play none none none' }
+          }
+        )
+      }
+
+      // ─── Golden light cascade — photos reveal one by one ───
+      const memories = section.querySelectorAll('.memory-photo')
       if (memories.length > 0) {
         memories.forEach((memory, i) => {
           const depth = depthOffsets.current[i]
           const isFeatured = i % 4 === 0
+          const isFirst = i === 0
 
-          // Organic rhythm — not linear, each memory surfaces in its own time
-          // Featured memories arrive slightly later (more important = more anticipation)
-          const baseDelay = isMobile ? 0.25 * i : 0.4 * i
-          const organicBreath = Math.sin(i * 0.7 + 1.2) * 0.3
-          const featuredExtraDelay = isFeatured ? 0.2 : 0
-          const staggerDelay = baseDelay + organicBreath + featuredExtraDelay
+          // Stagger — cascade from left to right, like turning pages
+          const cascadeDelay = isMobile ? 0.15 * i : 0.22 * i
+          const featuredPulse = isFeatured ? 0.15 : 0
+          const staggerDelay = cascadeDelay + featuredPulse
 
-          // Each memory arrives from a unique direction — like surfacing from fog
-          const arriveFromX = depth.x * 4 + (Math.random() - 0.5) * 30
-          const arriveFromY = (isMobile ? 40 : 60) + i * 4 + Math.random() * 20
-          const arriveScale = (depth.scale || 0.9) * 0.65
-          const arriveRotation = (Math.random() - 0.5) * 15
+          // Parallax depth — closer memories rise faster
+          const depthSpeed = isFeatured ? 1.2 : isFirst ? 1.4 : 0.7 + Math.random() * 0.3
+          const startY = (isMobile ? 60 : 100) * depthSpeed
+          const startScale = (depth.scale || 0.9) * 0.4
 
-          // CINEMATIC ENTRANCE — three phases:
-          // 1. Emerge from fog (blur + scale + opacity)
-          // 2. Focus (de-blur + scale up)  
-          // 3. Settle into final position with gentle floating
+          // Each photo arrives from a unique angle
+          const arriveAngle = (Math.random() - 0.5) * 20
+          const arriveX = (Math.random() - 0.5) * 60
+
+          // CINEMATIC REVEAL — four phases:
+          // 1. Rise from depth (parallax fog)
+          // 2. Golden shimmer (opacity peak + scale overshoot)
+          // 3. Focus & settle (de-blur + final position)
+          // 4. Breathing float (alive, organic)
 
           const tl = gsap.timeline({
             scrollTrigger: {
-              trigger: sectionRef.current!,
-              start: 'top 50%',
+              trigger: section,
+              start: 'top 0%',
               toggleActions: 'play none none none',
             },
             delay: staggerDelay,
           })
 
-          // Phase 1: Emerge from fog
+          // Phase 1: Rise from deep fog — like a memory surfacing from the dark
           tl.fromTo(memory,
             {
               opacity: 0,
-              x: arriveFromX,
-              y: arriveFromY,
-              scale: arriveScale,
-              rotation: arriveRotation,
-              filter: 'blur(12px)',
+              x: arriveX,
+              y: startY,
+              scale: startScale,
+              rotation: arriveAngle,
+              filter: 'blur(16px) brightness(0.3)',
             },
             {
-              opacity: depth.opacity * 0.6,
-              x: depth.x * 1.5,
-              y: (verticalOffsets.current[i] || 0) + depth.y * 1.5,
-              scale: depth.scale * 0.9,
-              rotation: rotations.current[i] + (Math.random() - 0.5) * 3,
-              filter: 'blur(4px)',
-              duration: isMobile ? 0.8 : 1.2,
+              opacity: depth.opacity * 0.4,
+              x: depth.x * 2,
+              y: (verticalOffsets.current[i] || 0) + depth.y * 2,
+              scale: depth.scale * 0.75,
+              rotation: rotations.current[i] + (Math.random() - 0.5) * 4,
+              filter: 'blur(8px) brightness(0.7)',
+              duration: isMobile ? 0.7 : 1.0,
               ease: 'power2.out',
             }
           )
 
-          // Phase 2: Focus — cinematic zoom, like the eye adjusting
+          // Phase 2: Golden shimmer — light catches the photo, a brief flash
+          tl.to(memory, {
+            opacity: Math.min(depth.opacity * 1.1, 1),
+            scale: depth.scale * 1.06,
+            filter: 'blur(2px) brightness(1.3)',
+            duration: isMobile ? 0.3 : 0.4,
+            ease: 'power2.in',
+          })
+
+          // Phase 3: Focus & settle — eye adjusts, memory becomes clear
           tl.to(memory, {
             opacity: depth.opacity,
             x: depth.x,
             y: (verticalOffsets.current[i] || 0) + depth.y,
             scale: depth.scale,
             rotation: rotations.current[i],
-            filter: 'blur(0px)',
-            duration: isMobile ? 0.6 : 0.8,
-            ease: isFeatured ? 'back.out(1.4)' : 'power3.out',
+            filter: 'blur(0px) brightness(1)',
+            duration: isMobile ? 0.5 : 0.7,
+            ease: isFeatured ? 'back.out(1.6)' : 'power3.out',
           })
 
-          // Phase 3: Settle — gentle breathing float, memory is alive
+          // Phase 4: Breathing float — the memory is alive, gently drifting
           tl.call(() => {
-            const floatDistance = isFeatured ? 3 : 2
-            const floatDuration = isFeatured ? 4 : 3 + Math.random() * 2
+            const floatDistance = isFeatured ? 3.5 : 2
+            const floatDuration = isFeatured ? 4.5 : 3 + Math.random() * 2.5
+            const floatX = (Math.random() - 0.5) * 2
             gsap.to(memory, {
               y: `+=${floatDistance}`,
-              x: `+=${(Math.random() - 0.5) * 1.5}`,
+              x: `+=${floatX}`,
               duration: floatDuration,
               ease: 'sine.inOut',
               yoyo: true,
@@ -1438,6 +1471,21 @@ function GallerySection() {
             })
           })
         })
+
+        // ─── Section-level golden light wash ───
+        // A warm glow pulses through the entire gallery after all photos settle
+        const lightWash = gsap.timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: 'top 0%',
+            toggleActions: 'play none none none',
+          },
+          delay: memories.length * (isMobile ? 0.15 : 0.22) + 1.5,
+        })
+        lightWash.fromTo(section,
+          { filter: 'brightness(1)' },
+          { filter: 'brightness(1.08)', duration: 0.8, ease: 'power2.inOut', yoyo: true, repeat: 1 }
+        )
       }
     })
     return () => ctx.revert()
@@ -1495,10 +1543,10 @@ function GallerySection() {
   return (
     <section ref={sectionRef} data-section="gallery" className="diary-paper-bg cinema-depth py-28 px-6" style={{ opacity: 0 }}>
       <div className="max-w-4xl mx-auto text-center">
-        <h2 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
+        <h2 className="gallery-title text-3xl sm:text-4xl mb-2" style={{ fontFamily: 'var(--font-script)', color: 'var(--gold-dark)' }}>
           Momen Kami
         </h2>
-        <div className="ornament-divider max-w-xs mx-auto mb-14">
+        <div className="gallery-ornament ornament-divider max-w-xs mx-auto mb-14">
           <span className="text-[var(--gold)] text-lg">&#10047;</span>
         </div>
 
@@ -1526,7 +1574,6 @@ function GallerySection() {
                 zIndex: depth.z,
                 position: 'relative',
                 // Featured memories get slightly more prominent shadow
-                filter: 'blur(12px)', // Start blurred, animation will clear it
               }}
               onClick={() => openLightbox(index)}
               role="button"
