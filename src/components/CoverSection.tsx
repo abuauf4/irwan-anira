@@ -103,6 +103,7 @@ export default function CoverSection({ onOpen }: CoverSectionProps) {
   return (
     <section
       ref={containerRef}
+      data-section="cover"
       className="relative min-h-screen flex items-center justify-center overflow-hidden"
       style={{
         transition: 'opacity 0.8s ease, transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',

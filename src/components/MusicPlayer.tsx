@@ -18,7 +18,9 @@ export default function MusicPlayer({ isPlaying, onToggle, audioRef }: MusicPlay
     }))
   )
 
-  // Fade audio in/out
+  // Fade audio in when user plays — only handles user-initiated play
+  // Closing section handles its own fade-out via IntersectionObserver
+  // so we only fade IN here, not out (to avoid race condition with closing fade)
   useEffect(() => {
     const audio = audioRef.current
     if (!audio) return
@@ -34,17 +36,9 @@ export default function MusicPlayer({ isPlaying, onToggle, audioRef }: MusicPlay
         }
       }, 50)
       return () => clearInterval(fadeIn)
-    } else {
-      const fadeOut = setInterval(() => {
-        if (audio.volume > 0.05) {
-          audio.volume = Math.max(audio.volume - 0.05, 0)
-        } else {
-          audio.volume = 0
-          clearInterval(fadeOut)
-        }
-      }, 50)
-      return () => clearInterval(fadeOut)
     }
+    // No fade-out here — closing section handles its own fade
+    // If user manually pauses, instant stop is fine
   }, [isPlaying, audioRef])
 
   return (

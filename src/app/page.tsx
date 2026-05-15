@@ -71,6 +71,7 @@ const WEDDING = {
    cinematic: if true, auto-scroll FULLY PAUSES until section signals completion
    ═══════════════════════════════════════════════════════════ */
 const SECTION_SCROLL: Record<string, { speed: number; cinematic: boolean }> = {
+  cover:      { speed: 1.0,  cinematic: false },
   bismillah:  { speed: 1.0,  cinematic: false },
   couple:     { speed: 1.2,  cinematic: false },
   diaryIntro: { speed: 1.0,  cinematic: false },
@@ -1946,9 +1947,6 @@ export default function Home() {
   const [isOpen, setIsOpen] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const audioRef = useRef<HTMLAudioElement>(null)
-  const autoScrollState = useRef({
-    currentSpeed: 0,
-  })
   const userScrollingRef = useRef(false)
 
   const handlePreloaderComplete = useCallback(() => setIsLoading(false), [])
@@ -1993,7 +1991,6 @@ export default function Home() {
 
     // Section detection via IntersectionObserver
     const sectionRatios = new Map<string, number>()
-    const allSections = document.querySelectorAll('[data-section]')
 
     const sectionObserver = new IntersectionObserver(
       (entries) => {
@@ -2019,12 +2016,13 @@ export default function Home() {
           const behavior = SECTION_SCROLL[activeSection]
           if (behavior) {
             if (behavior.cinematic) {
+              // LOCK: cinematic section takes full control
+              // Can ONLY be unlocked by the section's own completion event
               cinematicLock = true
               velocity.target = 0
-            } else {
-              // Only unlock if we're moving to a non-cinematic section
-              // Cinematic sections are unlocked by their own completion events
-              cinematicLock = false
+            } else if (!cinematicLock) {
+              // Only update speed if we're NOT in a cinematic lock
+              // This prevents observer from accidentally unlocking during diary/closing
               velocity.target = behavior.speed * mobileMultiplier
             }
           }
@@ -2036,7 +2034,16 @@ export default function Home() {
       }
     )
 
-    allSections.forEach((s) => sectionObserver.observe(s))
+    // Observe sections — delayed to ensure all are rendered
+    // Cover section is rendered conditionally, so use MutationObserver as fallback
+    const observeSections = () => {
+      const allSections = document.querySelectorAll('[data-section]')
+      allSections.forEach((s) => sectionObserver.observe(s))
+    }
+
+    // Initial observe + re-observe after a short delay for late-rendered sections
+    observeSections()
+    const observeTimeout = setTimeout(observeSections, 1000)
 
     // Auto-scroll loop — NEVER DIES
     const autoScroll = (time: number) => {
@@ -2069,7 +2076,6 @@ export default function Home() {
       // Apply scroll
       if (velocity.current > 0.05) {
         window.scrollBy(0, velocity.current * dt)
-        autoScrollState.current.currentSpeed = velocity.current
       }
     }
 
@@ -2121,6 +2127,7 @@ export default function Home() {
       clearTimeout(startTimeout)
       cancelAnimationFrame(animationId)
       clearTimeout(resumeTimeout)
+      clearTimeout(observeTimeout)
       sectionObserver.disconnect()
       window.removeEventListener('wheel', onWheel)
       window.removeEventListener('touchstart', onTouchStart)
