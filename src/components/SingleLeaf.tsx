@@ -71,64 +71,72 @@ export default function SingleLeaf() {
     el.style.opacity = '0'
     el.style.perspective = '800px'
 
-    // ═══ Daun Maple Kering — ngelipet, pucat, natural ═══
-    // Bukan maple leaf barat yang rapih — ini daun maple yang udah kering,
-    // agak ngelipet di tepi, warna udah memudar ke coklat-kuning
-    const size = 28
+    // ═══ Daun Maple Kering 🍁 — ngelipet, pucat, natural ═══
+    // Bentuk kaya emoji 🍁 — 5 lobus tajam yang recognizable
+    // Tapi warna coklat-kering, agak ngelipet, bukan merah cerah
+    const size = 44
     el.innerHTML = `
-      <svg width="${size}" height="${size * 1.15}" viewBox="0 0 28 32" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform-style:preserve-3d;">
-        <!-- Tangkai — tipis, agak melengkung kaya daun kering -->
-        <path d="M14 30 Q13.5 28 13.8 26 Q14.2 24 14 22" stroke="#7A5C2E" stroke-width="0.7" fill="none" opacity="0.5"/>
+      <svg width="${size}" height="${size * 1.2}" viewBox="0 0 50 60" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform-style:preserve-3d;">
+        <!-- Tangkai — tipis, agak melengkung -->
+        <path d="M25 57 Q24.5 54 24.8 51 Q25.2 48 25 45" stroke="#7A5C2E" stroke-width="1" fill="none" opacity="0.5"/>
 
-        <!-- Daun maple utama — 5 lobus, agak asimetris (daun kering ga rapih) -->
-        <!-- Lobi tengah (paling besar) -->
-        <path d="M14 1 Q15.5 4 17 3 Q18.5 2 18 5 Q19 4 19.5 6 Q20 8 18 9 Q19 10 20 11 Q21 13 18.5 13 Q20 14 19.5 16 Q19 18 17 16 Q17.5 18 17 20 Q16 22 14 22 Q12 22 11 20 Q10.5 18 11 16 Q9 18 8.5 16 Q8 14 9.5 13 Q7 13 8 11 Q9 10 10 9 Q8 8 8.5 6 Q9 4 10 5 Q9.5 2 11 3 Q12.5 4 14 1Z"
-              fill="#8B6B3A" opacity="0.75"/>
+        <!-- ═══ Bentuk Maple Leaf 🍁 — 5 lobus tajam, iconic ═══ -->
+        <!-- Lobi utama: tengah (atas), 2 samping, 2 bawah -->
+        <!-- Asimetris sedikit — daun kering ga sempurna -->
+        <path d="
+          M25 0
+          L27.5 8 L33 4 L31 12 L38 9 L34 17 L42 17 L36 22 L40 27 L33 25 L35 33 L29 28 L27 37 L25 42 L23 37 L21 28 L15 33 L17 25 L10 27 L14 22 L8 17 L16 17 L12 9 L19 12 L17 4 L22.5 8 Z"
+          fill="#8B6B3A" opacity="0.8"/>
 
-        <!-- Layer kedua — warna lebih gelap di bagian yang ngelipet ke dalam -->
-        <!-- Efek ngelipet: sisi kiri agak melipat, jadi lebih gelap -->
-        <path d="M14 1 Q12.5 4 11 3 Q9.5 2 10 5 Q9 4 8.5 6 Q8 8 10 9 Q9 10 8 11 Q7 13 9.5 13 Q8 14 8.5 16 Q9 18 11 16 Q10.5 18 11 20 Q12 22 14 22"
-              fill="#6B4F2A" opacity="0.3"/>
+        <!-- Shadow layer — bagian yang ngelipet lebih gelap -->
+        <path d="
+          M25 0
+          L22.5 8 L17 4 L19 12 L12 9 L16 17 L8 17 L14 22 L10 27 L17 25 L15 33 L21 28 L23 37 L25 42"
+          fill="#6B4F2A" opacity="0.25"/>
 
-        <!-- Highlight — cahaya dari kanan atas, daun kering agak transparan -->
-        <path d="M14 3 Q16 5 17 8 Q18 11 17 14 Q16 17 14 19"
-              fill="rgba(201,169,110,0.08)" />
+        <!-- Highlight — cahaya dari kanan atas -->
+        <path d="
+          M25 3
+          L27.5 8 L33 4 L31 12 L38 9 L34 17 L42 17 L36 22 L40 27 L33 25 L35 33 L29 28 L27 37 L25 42"
+          fill="rgba(201,169,110,0.07)" />
 
-        <!-- Urat utama — dari tangkai ke ujung tiap lobus -->
-        <path d="M14 22 L14 3" stroke="#5A4220" stroke-width="0.5" fill="none" opacity="0.35"/>
-        <!-- Urat ke lobi kanan atas -->
-        <path d="M14 12 Q16 10 18 8" stroke="#5A4220" stroke-width="0.3" fill="none" opacity="0.25"/>
-        <!-- Urat ke lobi kiri atas -->
-        <path d="M14 12 Q12 10 10 8" stroke="#5A4220" stroke-width="0.3" fill="none" opacity="0.25"/>
-        <!-- Urat ke lobi kanan bawah -->
-        <path d="M14 14 Q16 14 18 13" stroke="#5A4220" stroke-width="0.3" fill="none" opacity="0.2"/>
-        <!-- Urat ke lobi kiri bawah -->
-        <path d="M14 14 Q12 14 10 13" stroke="#5A4220" stroke-width="0.3" fill="none" opacity="0.2"/>
+        <!-- ═══ Urat daun — dari tengah ke ujung tiap lobus ═══ -->
+        <!-- Urat tengah (ke atas) -->
+        <path d="M25 42 L25 5" stroke="#5A4220" stroke-width="0.7" fill="none" opacity="0.3"/>
+        <!-- Urat ke lobus kanan atas -->
+        <path d="M25 24 Q29 19 34 16" stroke="#5A4220" stroke-width="0.5" fill="none" opacity="0.25"/>
+        <!-- Urat ke lobus kiri atas -->
+        <path d="M25 24 Q21 19 16 16" stroke="#5A4220" stroke-width="0.5" fill="none" opacity="0.25"/>
+        <!-- Urat ke lobus kanan bawah -->
+        <path d="M25 30 Q28 30 33 26" stroke="#5A4220" stroke-width="0.4" fill="none" opacity="0.2"/>
+        <!-- Urat ke lobus kiri bawah -->
+        <path d="M25 30 Q22 30 17 26" stroke="#5A4220" stroke-width="0.4" fill="none" opacity="0.2"/>
 
-        <!-- Urat halus tambahan — daun maple punya urat banyak -->
-        <path d="M14 7 Q15 8 16 8.5" stroke="#5A4220" stroke-width="0.15" fill="none" opacity="0.15"/>
-        <path d="M14 7 Q13 8 12 8.5" stroke="#5A4220" stroke-width="0.15" fill="none" opacity="0.15"/>
-        <path d="M14 16 Q15 16 16 15.5" stroke="#5A4220" stroke-width="0.15" fill="none" opacity="0.12"/>
-        <path d="M14 16 Q13 16 12 15.5" stroke="#5A4220" stroke-width="0.15" fill="none" opacity="0.12"/>
+        <!-- Urat halus cabang -->
+        <path d="M25 12 Q27 14 29 15" stroke="#5A4220" stroke-width="0.2" fill="none" opacity="0.15"/>
+        <path d="M25 12 Q23 14 21 15" stroke="#5A4220" stroke-width="0.2" fill="none" opacity="0.15"/>
+        <path d="M25 34 Q27 33 28 31" stroke="#5A4220" stroke-width="0.2" fill="none" opacity="0.12"/>
+        <path d="M25 34 Q23 33 22 31" stroke="#5A4220" stroke-width="0.2" fill="none" opacity="0.12"/>
 
-        <!-- Tepi yang agak ngelipet/keriting — daun kering selalu keriting di tepi -->
-        <!-- Tepi kanan melipat ke bawah sedikit -->
-        <path d="M18 5 Q19.5 4.5 19.5 6" stroke="#6B4F2A" stroke-width="0.6" fill="none" opacity="0.3"/>
-        <path d="M19.5 9 Q20.5 10 20 11" stroke="#6B4F2A" stroke-width="0.5" fill="none" opacity="0.25"/>
-        <!-- Tepi kiri melipat ke atas sedikit -->
-        <path d="M10 5 Q8.5 4.5 8.5 6" stroke="#6B4F2A" stroke-width="0.6" fill="none" opacity="0.3"/>
-        <path d="M8.5 9 Q7.5 10 8 11" stroke="#6B4F2A" stroke-width="0.5" fill="none" opacity="0.25"/>
-        <!-- Ujung lobus yang agak menggulung -->
-        <path d="M17 3 Q18 1.5 18.5 3" stroke="#6B4F2A" stroke-width="0.4" fill="none" opacity="0.25"/>
-        <path d="M11 3 Q10 1.5 9.5 3" stroke="#6B4F2A" stroke-width="0.4" fill="none" opacity="0.25"/>
+        <!-- ═══ Tepi ngelipet — daun kering selalu keriting ═══ -->
+        <!-- Ujung lobus kanan atas agak menggulung -->
+        <path d="M34 17 Q35 16 35 18" stroke="#6B4F2A" stroke-width="0.8" fill="none" opacity="0.3"/>
+        <!-- Ujung lobus kiri atas agak menggulung -->
+        <path d="M16 17 Q15 16 15 18" stroke="#6B4F2A" stroke-width="0.8" fill="none" opacity="0.3"/>
+        <!-- Tepi lobus kanan bawah melipat -->
+        <path d="M33 25 Q34 24 34 26" stroke="#6B4F2A" stroke-width="0.6" fill="none" opacity="0.25"/>
+        <!-- Tepi lobus kiri bawah melipat -->
+        <path d="M17 25 Q16 24 16 26" stroke="#6B4F2A" stroke-width="0.6" fill="none" opacity="0.25"/>
+        <!-- Ujung lobus tengah agak melipat -->
+        <path d="M27.5 8 Q28 6.5 29 8" stroke="#6B4F2A" stroke-width="0.5" fill="none" opacity="0.2"/>
+        <path d="M22.5 8 Q22 6.5 21 8" stroke="#6B4F2A" stroke-width="0.5" fill="none" opacity="0.2"/>
 
-        <!-- Noda kecoklatan — daun kering selalu punya noda -->
-        <ellipse cx="16" cy="10" rx="1.2" ry="0.8" fill="#5A3E1A" opacity="0.12"/>
-        <ellipse cx="11" cy="15" rx="0.9" ry="0.6" fill="#5A3E1A" opacity="0.1"/>
-        <circle cx="15" cy="17" r="0.4" fill="#5A3E1A" opacity="0.08"/>
-
-        <!-- Bagian yang agak robek di lobi kiri bawah — daun kering sering robek -->
-        <path d="M9.5 13 Q8.5 13.5 9 14.5" stroke="#5A3E1A" stroke-width="0.4" fill="none" opacity="0.2"/>
+        <!-- ═══ Noda & robekan — daun kering ═══ -->
+        <ellipse cx="30" cy="18" rx="1.8" ry="1.2" fill="#5A3E1A" opacity="0.1"/>
+        <ellipse cx="20" cy="26" rx="1.4" ry="1" fill="#5A3E1A" opacity="0.08"/>
+        <circle cx="27" cy="32" r="0.6" fill="#5A3E1A" opacity="0.07"/>
+        <!-- Sobekan kecil di lobus kiri bawah -->
+        <path d="M17 25 Q15.5 25.5 16 27" stroke="#5A3E1A" stroke-width="0.5" fill="none" opacity="0.18"/>
       </svg>
     `
 
@@ -152,7 +160,7 @@ export default function SingleLeaf() {
       driftPhase: Math.random() * Math.PI * 2,
       wobblePhase: Math.random() * Math.PI * 2,
       opacity: 0,
-      scale: 0.8 + Math.random() * 0.2,
+      scale: 0.9 + Math.random() * 0.15,
       element: el,
       // Wind gust system
       windGustX: 0,
