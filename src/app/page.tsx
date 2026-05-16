@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import JasmineParticles from '@/components/JasmineParticles'
+import SingleLeaf from '@/components/SingleLeaf'
 import Preloader from '@/components/Preloader'
 import SmoothScroll from '@/components/SmoothScroll'
 import CoverSectionComponent from '@/components/CoverSection'
@@ -1330,7 +1330,8 @@ function GallerySection() {
   // ─── PAGE PEEL — animasi membalik halaman kertas lusuh ───
   // Konsep: halaman diangkat dari pojok, melipat ke kiri, 
   // mengungkap halaman baru di bawahnya.
-  // Menggunakan scaleX untuk simulasi kedalaman + skew untuk perspektif kertas
+  // Menggunakan scaleX + skewY + rotation untuk simulasi 3D yang lebih berat
+  // LEBIH LAMBAT, LEBIH BERAT, LEBIH "KERTAS" — bukan smooth tech animation
   const flipToPage = useCallback((nextIdx: number, direction: 'next' | 'prev') => {
     if (isFlipping || nextIdx === activeIndex) return
     setIsFlipping(true)
@@ -1346,81 +1347,92 @@ function GallerySection() {
       onComplete: () => {
         setActiveIndex(nextIdx)
         setIsFlipping(false)
-        // Reset tanpa animasi
-        gsap.set(page, { scaleX: 1, skewY: 0, x: 0, opacity: 1, overwrite: true })
+        gsap.set(page, { scaleX: 1, skewY: 0, x: 0, rotation: 0, opacity: 1, overwrite: true })
         if (curl) gsap.set(curl, { opacity: 0, overwrite: true })
         if (shadow) gsap.set(shadow, { opacity: 0, overwrite: true })
       }
     })
 
-    // Caption hilang
+    // Caption hilang pelan
     if (caption) {
-      tl.to(caption, { opacity: 0, y: -4, duration: 0.15, ease: 'power2.in' })
+      tl.to(caption, { opacity: 0, y: -5, duration: 0.25, ease: 'power2.in' })
     }
 
     if (direction === 'next') {
-      // ═══ FLIP NEXT: halaman melipat ke kiri ═══
+      // ═══ FLIP NEXT: halaman melipat ke kiri — BERAT, PELAN, KERTAS ═══
       gsap.set(page, { transformOrigin: 'left center' })
 
-      // Phase 1: ANGKAT — tepi kanan halaman diangkat
+      // Phase 1: ANGKAT — tepi kanan halaman diangkat pelan
+      // Kertas tua berat, ga langsung terangkat — ada momen "mengangkat"
       tl.to(page, {
-        scaleX: 0.98,
-        skewY: -1.5,
-        duration: 0.12,
+        scaleX: 0.97,
+        skewY: -2,
+        rotation: -0.3,
+        duration: 0.2,
         ease: 'power2.out',
       })
 
-      // Shadow muncul di bawah
+      // Shadow berat muncul — kertas mengangkat = bayangan jatuh
       if (shadow) {
-        tl.to(shadow, { opacity: 1, duration: 0.2, ease: 'power1.in' }, '<')
+        tl.to(shadow, { opacity: 1, duration: 0.3, ease: 'power1.in' }, '<')
       }
 
-      // Phase 2: LIPAT — halaman menyusut ke kiri (simulasi 3D fold)
-      // scaleX dari 0.98 → 0 = halaman menipis sampai hilang
+      // Phase 2: LIPAT — halaman menyusut ke kiri
+      // Ini momen paling "berat" — kertas tua melipat pelan
+      // Duration lebih lama = terasa lebih berat dan nyata
       tl.to(page, {
         scaleX: 0,
-        skewY: -3,
-        duration: 0.55,
-        ease: 'power3.in',
+        skewY: -5,
+        rotation: -0.8,
+        duration: 0.7,
+        ease: 'power4.in',       // power4 = mulai pelan, akhir cepat — kaya kertas yang melipat
       })
 
-      // Curl effect muncul di tengah lipatan
+      // Curl effect — lipatan kertas di tengah, lebih dramatis
       if (curl) {
         gsap.set(curl, { opacity: 0 })
-        tl.to(curl, { opacity: 1, duration: 0.2, ease: 'power1.in' }, '-=0.35')
-        tl.to(curl, { opacity: 0, duration: 0.15, ease: 'power1.out' }, '-=0.1')
+        tl.to(curl, { opacity: 0.8, duration: 0.25, ease: 'power1.in' }, '-=0.45')
+        tl.to(curl, { opacity: 0, duration: 0.2, ease: 'power1.out' }, '-=0.15')
       }
 
-      // Shadow menghilang saat halaman sudah tipis
+      // Shadow menghilang saat halaman tipis
       if (shadow) {
-        tl.to(shadow, { opacity: 0, duration: 0.3, ease: 'power1.out' }, '-=0.25')
+        tl.to(shadow, { opacity: 0, duration: 0.4, ease: 'power1.out' }, '-=0.35')
       }
 
-      // Phase 3: BUKA — halaman baru muncul dari kiri (melebar)
-      // Set foto baru dulu
+      // ═══ JEDA SINGKAT — ruang kosong antara halaman ═══
+      // Bayangin buku tua: setelah halaman melipat, ada jeda sebelum halaman baru muncul
+      tl.to({}, { duration: 0.08 })
+
+      // Phase 3: BUKA — halaman baru muncul dari kiri
+      // Set foto baru
       tl.add(() => { setActiveIndex(nextIdx) })
       gsap.set(page, { transformOrigin: 'right center' })
 
       tl.fromTo(page,
-        { scaleX: 0, skewY: 3, opacity: 1 },
+        { scaleX: 0, skewY: 5, rotation: 0.8, opacity: 1 },
         {
           scaleX: 1,
           skewY: 0,
-          duration: 0.5,
+          rotation: 0,
+          duration: 0.6,
           ease: 'power2.out',
         }
       )
 
-      // Sedikit overshoot biar kerasa kertas yang melentur
+      // Kertas lentur kembali — overshoot kecil
       tl.to(page, {
-        scaleX: 1.01,
-        duration: 0.08,
+        scaleX: 1.015,
+        skewY: -0.3,
+        duration: 0.1,
         ease: 'power1.out',
       })
+      // Settle — kertas kembali rata
       tl.to(page, {
         scaleX: 1,
-        duration: 0.2,
-        ease: 'elastic.out(1, 0.4)',
+        skewY: 0,
+        duration: 0.35,
+        ease: 'elastic.out(1, 0.3)',
       })
 
     } else {
@@ -1428,57 +1440,62 @@ function GallerySection() {
       gsap.set(page, { transformOrigin: 'right center' })
 
       tl.to(page, {
-        scaleX: 0.98,
-        skewY: 1.5,
-        duration: 0.12,
+        scaleX: 0.97,
+        skewY: 2,
+        rotation: 0.3,
+        duration: 0.2,
         ease: 'power2.out',
       })
 
       if (shadow) {
-        tl.to(shadow, { opacity: 1, duration: 0.2, ease: 'power1.in' }, '<')
+        tl.to(shadow, { opacity: 1, duration: 0.3, ease: 'power1.in' }, '<')
       }
 
       tl.to(page, {
         scaleX: 0,
-        skewY: 3,
-        duration: 0.55,
-        ease: 'power3.in',
+        skewY: 5,
+        rotation: 0.8,
+        duration: 0.7,
+        ease: 'power4.in',
       })
 
       if (curl) {
         gsap.set(curl, { opacity: 0 })
-        tl.to(curl, { opacity: 1, duration: 0.2, ease: 'power1.in' }, '-=0.35')
-        tl.to(curl, { opacity: 0, duration: 0.15, ease: 'power1.out' }, '-=0.1')
+        tl.to(curl, { opacity: 0.8, duration: 0.25, ease: 'power1.in' }, '-=0.45')
+        tl.to(curl, { opacity: 0, duration: 0.2, ease: 'power1.out' }, '-=0.15')
       }
 
       if (shadow) {
-        tl.to(shadow, { opacity: 0, duration: 0.3, ease: 'power1.out' }, '-=0.25')
+        tl.to(shadow, { opacity: 0, duration: 0.4, ease: 'power1.out' }, '-=0.35')
       }
+
+      tl.to({}, { duration: 0.08 })
 
       // Halaman baru muncul dari kanan
       tl.add(() => { setActiveIndex(nextIdx) })
       gsap.set(page, { transformOrigin: 'left center' })
 
       tl.fromTo(page,
-        { scaleX: 0, skewY: -3, opacity: 1 },
+        { scaleX: 0, skewY: -5, rotation: -0.8, opacity: 1 },
         {
           scaleX: 1,
           skewY: 0,
-          duration: 0.5,
+          rotation: 0,
+          duration: 0.6,
           ease: 'power2.out',
         }
       )
 
-      tl.to(page, { scaleX: 1.01, duration: 0.08, ease: 'power1.out' })
-      tl.to(page, { scaleX: 1, duration: 0.2, ease: 'elastic.out(1, 0.4)' })
+      tl.to(page, { scaleX: 1.015, skewY: 0.3, duration: 0.1, ease: 'power1.out' })
+      tl.to(page, { scaleX: 1, skewY: 0, duration: 0.35, ease: 'elastic.out(1, 0.3)' })
     }
 
-    // Caption muncul
+    // Caption muncul pelan
     if (caption) {
       tl.fromTo(caption,
-        { opacity: 0, y: 6 },
-        { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' },
-        '-=0.25'
+        { opacity: 0, y: 8 },
+        { opacity: 1, y: 0, duration: 0.45, ease: 'power2.out' },
+        '-=0.3'
       )
     }
   }, [activeIndex, isFlipping])
@@ -2049,29 +2066,6 @@ function ClosingSection() {
       {/* Gold light leak */}
       <div className="gold-light-leak absolute inset-0 pointer-events-none" />
 
-      {/* Final petals — the last visible movement before silence */}
-      <div className="absolute inset-0 pointer-events-none z-25 overflow-hidden">
-        {[15, 35, 55, 72, 88].map((left, i) => (
-          <div
-            key={`final-petal-${i}`}
-            style={{
-              position: 'absolute',
-              left: `${left}%`,
-              top: '-20px',
-              width: `${8 + i * 2}px`,
-              height: `${10 + i * 2}px`,
-              opacity: 0,
-              animation: `finalPetalDrift ${7 + i * 1.5}s ease-in ${5 + i * 1.5}s forwards`,
-            }}
-          >
-            <svg width="100%" height="100%" viewBox="0 0 20 24" fill="none">
-              <path d="M10 0C10 0 14 4 14 10C14 16 10 24 10 24C10 24 6 16 6 10C6 4 10 0 10 0Z"
-                fill={`rgba(201,169,110,${0.2 + i * 0.04})`} />
-            </svg>
-          </div>
-        ))}
-      </div>
-
       <div className="relative z-10 max-w-2xl mx-auto">
         {/* Title — handwriting reveal, then dust dissolve */}
         <div ref={titleRef} className="text-lg sm:text-xl leading-relaxed mb-8" style={{ fontFamily: "'Cormorant Garamond', serif", color: '#ffffff', fontStyle: 'italic' }}>
@@ -2113,12 +2107,18 @@ function ClosingSection() {
           Cerita mereka belum selesai...
         </div>
 
-        {/* The date — appears after dust settles, the only thing left */}
+        {/* The names — appears after dust settles, after emptiness */}
         <div
           ref={dateRef}
-          className="mt-8"
+          className="mt-12"
           style={{ opacity: 0 }}
         >
+          <p
+            className="text-4xl sm:text-5xl mb-4"
+            style={{ fontFamily: 'var(--font-script)', color: '#ffffff' }}
+          >
+            Irwan &amp; Anira
+          </p>
           <p
             className="text-sm tracking-[0.4em]"
             style={{ fontFamily: "'Cormorant Garamond', serif", color: '#ffffff', opacity: 0.7 }}
@@ -2453,7 +2453,7 @@ export default function Home() {
         <SmoothScroll>
           <main className="relative">
             <CursorFollower />
-            <JasmineParticles />
+            <SingleLeaf />
 
             {/* The Diary — each section is a page */}
             <BismillahSection />

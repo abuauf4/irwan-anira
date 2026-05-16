@@ -844,14 +844,23 @@ html {
     #b09870 100%      /* coklat muda di ujung */
   );
   /* Tidak ada border-radius — kertas lusuh tidak rapih */
-  border-radius: 1px 2px 1px 1px;
+  /* clip-path untuk tepi yang benar-benar tidak rata — sobekan kertas */
+  clip-path: polygon(
+    0% 0%, 
+    2% 0.5%, 5% 0%, 8% 0.3%, 12% 0%, 18% 0.2%, 25% 0%, 35% 0.1%, 50% 0%, 65% 0.2%, 75% 0%, 85% 0.1%, 92% 0%, 96% 0.3%, 98% 0%, 100% 0.5%,
+    100% 3%, 99.8% 8%, 100% 15%, 99.7% 25%, 100% 40%, 99.9% 55%, 100% 70%, 99.8% 82%, 100% 90%, 99.7% 95%, 100% 98%,
+    98% 99.5%, 95% 99.8%, 90% 99.3%, 82% 99.9%, 70% 99.5%, 55% 99.8%, 40% 99.4%, 28% 99.9%, 18% 99.5%, 10% 99.8%, 5% 99.3%, 2% 99.7%, 0% 99.5%,
+    0.2% 95%, 0.3% 88%, 0.1% 75%, 0.2% 60%, 0.3% 45%, 0.1% 30%, 0.2% 18%, 0.3% 10%, 0.1% 5%
+  );
   box-shadow:
-    3px 4px 16px rgba(0,0,0,0.2),
-    0 1px 4px rgba(0,0,0,0.1),
-    inset 0 0 40px rgba(0,0,0,0.08);
-  padding: 16px 14px 12px 14px;
+    3px 4px 16px rgba(0,0,0,0.25),
+    0 1px 4px rgba(0,0,0,0.12),
+    inset 0 0 40px rgba(0,0,0,0.1),
+    /* Tepi kertas yang tipis — kelihatan serat */
+    inset 0 0 2px rgba(139,109,63,0.2);
+  padding: 18px 16px 14px 16px;
   /* Sedikit miring — kertas tua ga pernah rata */
-  transform: rotate(-0.3deg);
+  transform: rotate(-0.4deg);
 }
 
 /* ═══ Paper grain — serat kertas yang keliatan ═══ */
@@ -865,18 +874,24 @@ html {
 /* ═══ Stains — noda kopi, minyak, jamur ═══ */
 .worn-stains {
   background-image:
-    /* Noda kopi besar */
-    radial-gradient(ellipse at 80% 15%, rgba(90,60,20,0.12) 0%, transparent 40%),
-    /* Noda minyak */
-    radial-gradient(ellipse at 20% 80%, rgba(80,55,25,0.08) 0%, transparent 30%),
-    /* Noda jamur kecil */
-    radial-gradient(circle at 65% 60%, rgba(60,80,30,0.04) 0%, transparent 15%),
-    radial-gradient(circle at 35% 30%, rgba(60,80,30,0.03) 0%, transparent 10%),
-    /* Noda air */
-    radial-gradient(ellipse at 90% 70%, rgba(120,100,60,0.06) 0%, transparent 25%),
-    /* Tepi menguning */
-    linear-gradient(to bottom, rgba(139,109,63,0.06) 0%, transparent 15%),
-    linear-gradient(to top, rgba(100,70,30,0.08) 0%, transparent 10%);
+    /* Noda kopi besar — kelihatan jelas */
+    radial-gradient(ellipse at 80% 15%, rgba(90,60,20,0.18) 0%, transparent 40%),
+    /* Noda minyak — lecet gelap */
+    radial-gradient(ellipse at 20% 80%, rgba(80,55,25,0.12) 0%, transparent 30%),
+    /* Noda jamur kecil — bintik hijau pudar */
+    radial-gradient(circle at 65% 60%, rgba(60,80,30,0.06) 0%, transparent 15%),
+    radial-gradient(circle at 35% 30%, rgba(60,80,30,0.04) 0%, transparent 10%),
+    /* Noda air — bekas tumpahan */
+    radial-gradient(ellipse at 90% 70%, rgba(120,100,60,0.1) 0%, transparent 25%),
+    /* Tepi menguning — kertas tua selalu menguning di tepi */
+    linear-gradient(to bottom, rgba(139,109,63,0.1) 0%, transparent 12%),
+    linear-gradient(to top, rgba(100,70,30,0.12) 0%, transparent 8%),
+    linear-gradient(to right, rgba(139,109,63,0.08) 0%, transparent 8%),
+    linear-gradient(to left, rgba(120,90,40,0.06) 0%, transparent 10%),
+    /* Noda sidik jari — bekas pegangan */
+    radial-gradient(ellipse at 15% 50%, rgba(100,75,40,0.07) 0%, transparent 20%),
+    /* Bekas lipatan yang dalam — garis gelap */
+    linear-gradient(to bottom, transparent 47%, rgba(80,55,20,0.04) 49%, rgba(80,55,20,0.08) 50%, rgba(80,55,20,0.04) 51%, transparent 53%);
 }
 
 /* ═══ Creases — garis lipatan ═══ */
