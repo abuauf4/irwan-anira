@@ -1319,128 +1319,155 @@ function GallerySection() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [touchStart, setTouchStart] = useState<number | null>(null)
   const [isFlipping, setIsFlipping] = useState(false)
-  const [targetIndex, setTargetIndex] = useState(0)
+  const [displayIndex, setDisplayIndex] = useState(0)     // foto yg keliatan di base page
+  const [flipIndex, setFlipIndex] = useState(0)           // foto yg keliatan di flip page
   const pageRef = useRef<HTMLDivElement>(null)
-  const shadowRef = useRef<HTMLDivElement>(null)
+  const foldShadowRef = useRef<HTMLDivElement>(null)       // shadow lipatan halaman
+  const pageShadowRef = useRef<HTMLDivElement>(null)       // shadow halaman terangkat
   const captionRef = useRef<HTMLDivElement>(null)
   const autoPlayRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const totalImages = WEDDING.galleryImages.length
 
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
 
-  // ─── Page flip transition ───
-  // Membalik halaman buku kuno — the paper lifts, turns, and the next page appears
+  // ─── Page flip transition — membalik halaman buku kuno ───
+  // Full 3D page flip: halaman diangkat dari tepi, berputar 180°, 
+  // saat melewati 90° foto di belakang keliatan (backface kertas tua),
+  // terus berputar sampai menutup, lalu foto baru muncul
   const flipToPage = useCallback((nextIdx: number, direction: 'next' | 'prev') => {
     if (isFlipping || nextIdx === activeIndex) return
     setIsFlipping(true)
-    setTargetIndex(nextIdx)
+
+    // Set foto yang akan muncul SETELAH flip selesai
+    setFlipIndex(activeIndex)     // flip page tetap tampilin foto lama
+    setDisplayIndex(nextIdx)      // base page sudah tampilin foto baru (tertutup flip page)
 
     const page = pageRef.current
-    const shadow = shadowRef.current
+    const foldShadow = foldShadowRef.current
+    const pageShadow = pageShadowRef.current
     const caption = captionRef.current
     if (!page) { setIsFlipping(false); return }
+
+    // Durasi flip — lebih lambat biar keliatan cinematic
+    const flipDur = isMobile ? 0.9 : 1.1
+    const liftDur = 0.15
+    const settleDur = 0.25
 
     const tl = gsap.timeline({
       onComplete: () => {
         setActiveIndex(nextIdx)
+        setFlipIndex(nextIdx)
+        setDisplayIndex(nextIdx)
         setIsFlipping(false)
-        // Reset page position for next flip
-        gsap.set(page, { rotateY: 0, scale: 1, zIndex: 5 })
-        if (shadow) gsap.set(shadow, { opacity: 0 })
+        // Reset halaman ke posisi awal — TANPA animasi
+        gsap.set(page, { rotateY: 0, scaleY: 1, zIndex: 5, overwrite: true })
+        if (foldShadow) gsap.set(foldShadow, { opacity: 0, x: '0%', overwrite: true })
+        if (pageShadow) gsap.set(pageShadow, { opacity: 0, overwrite: true })
       }
     })
 
-    // Caption fades like ink dissolving
+    // Caption fades kayak tinta yang menguap
     if (caption) {
-      tl.to(caption, { opacity: 0, y: -4, duration: 0.2, ease: 'power2.in' })
+      tl.to(caption, { opacity: 0, y: -6, duration: 0.25, ease: 'power2.in' })
     }
 
     if (direction === 'next') {
-      // ═══ FLIP FORWARD: halaman kanan diangkat, berputar ke kiri ═══
-      gsap.set(page, { transformOrigin: 'left center' })
+      // ═══ FLIP FORWARD: halaman berputar dari kanan ke kiri (hinge di kiri) ═══
+      gsap.set(page, { transformOrigin: 'left center', zIndex: 5, force3D: true })
 
-      // Phase 1: Halaman diangkat sedikit — jari memegang tepi
+      // Phase 1: ANGKAT — tepi halaman sedikit terangkat, kayak jari mengambil halaman
       tl.to(page, {
-        rotateY: -12,
-        scale: 0.99,
-        duration: 0.12,
-        ease: 'power2.out',
+        rotateY: -8,
+        scaleY: 1.005,
+        duration: liftDur,
+        ease: 'power1.out',
       })
 
-      // Shadow tumbuh di bawah halaman yang terangkat
-      if (shadow) {
-        tl.to(shadow, { opacity: 1, duration: 0.25, ease: 'power2.in' }, '<')
+      // Shadow mulai muncul di bawah halaman yang terangkat
+      if (pageShadow) {
+        tl.to(pageShadow, { opacity: 0.6, duration: 0.3, ease: 'power1.in' }, '<')
       }
 
-      // Phase 2: Halaman dibalik — rotate dari 0 ke -90 (sampai tegak)
-      tl.to(page, {
-        rotateY: -90,
-        duration: isMobile ? 0.35 : 0.4,
-        ease: 'power3.in',
-      })
-
-      // ═══ CRITICAL: Swap z-index di midpoint! ═══
-      // Saat halaman sudah tegak (90°), pindah ke belakang base page
-      // Biar foto berikutnya yang di base page keliatan
-      tl.add(() => {
-        gsap.set(page, { zIndex: 0 })
-      })
-
-      // Phase 3: Halaman lanjut berputar dari -90 ke -180 (menutup ke belakang)
+      // Phase 2: BALIK — halaman berputar penuh dari -8° ke -180°
+      // Ini adalah inti dari efek page-flip
       tl.to(page, {
         rotateY: -180,
-        scale: 0.97,
-        duration: isMobile ? 0.3 : 0.35,
-        ease: 'power3.out',
+        duration: flipDur,
+        ease: 'power2.inOut',    // ease in-out biar ada akselerasi & deselerasi
       })
 
-      // Shadow menghilang
-      if (shadow) {
-        tl.to(shadow, { opacity: 0, duration: 0.25, ease: 'power2.out' }, '-=0.2')
+      // ═══ Fold shadow — bayangan lipatan yang bergerak dari kiri ke kanan ═══
+      // Saat halaman berputar, lipatan bergerak dari tepi kiri ke tepi kanan
+      if (foldShadow) {
+        gsap.set(foldShadow, { x: '-5%', opacity: 0 })
+        tl.to(foldShadow, {
+          x: '100%',
+          opacity: 0.7,
+          duration: flipDur,
+          ease: 'power2.inOut',
+        }, '<')  // mulai bareng phase 2
+      }
+
+      // ═══ Dynamic page shadow — semakin gelap saat halaman terangkat tinggi ═══
+      if (pageShadow) {
+        tl.to(pageShadow, { opacity: 0.9, duration: flipDur * 0.5, ease: 'power1.in' }, '<')
+        tl.to(pageShadow, { opacity: 0, duration: flipDur * 0.5, ease: 'power1.out' }, `+=${flipDur * 0.3}`)
       }
     } else {
-      // ═══ FLIP BACKWARD: halaman kiri diangkat, berputar ke kanan ═══
-      gsap.set(page, { transformOrigin: 'right center' })
+      // ═══ FLIP BACKWARD: halaman berputar dari kiri ke kanan (hinge di kanan) ═══
+      gsap.set(page, { transformOrigin: 'right center', zIndex: 5, force3D: true })
 
       tl.to(page, {
-        rotateY: 12,
-        scale: 0.99,
-        duration: 0.12,
-        ease: 'power2.out',
+        rotateY: 8,
+        scaleY: 1.005,
+        duration: liftDur,
+        ease: 'power1.out',
       })
 
-      if (shadow) {
-        tl.to(shadow, { opacity: 1, duration: 0.25, ease: 'power2.in' }, '<')
+      if (pageShadow) {
+        tl.to(pageShadow, { opacity: 0.6, duration: 0.3, ease: 'power1.in' }, '<')
       }
-
-      tl.to(page, {
-        rotateY: 90,
-        duration: isMobile ? 0.35 : 0.4,
-        ease: 'power3.in',
-      })
-
-      tl.add(() => {
-        gsap.set(page, { zIndex: 0 })
-      })
 
       tl.to(page, {
         rotateY: 180,
-        scale: 0.97,
-        duration: isMobile ? 0.3 : 0.35,
-        ease: 'power3.out',
+        duration: flipDur,
+        ease: 'power2.inOut',
       })
 
-      if (shadow) {
-        tl.to(shadow, { opacity: 0, duration: 0.25, ease: 'power2.out' }, '-=0.2')
+      if (foldShadow) {
+        gsap.set(foldShadow, { x: '105%', opacity: 0 })
+        tl.to(foldShadow, {
+          x: '0%',
+          opacity: 0.7,
+          duration: flipDur,
+          ease: 'power2.inOut',
+        }, '<')
+      }
+
+      if (pageShadow) {
+        tl.to(pageShadow, { opacity: 0.9, duration: flipDur * 0.5, ease: 'power1.in' }, '<')
+        tl.to(pageShadow, { opacity: 0, duration: flipDur * 0.5, ease: 'power1.out' }, `+=${flipDur * 0.3}`)
       }
     }
+
+    // Phase 3: SETTLE — sedikit bounce setelah halaman mendarat
+    tl.to(page, {
+      scaleY: 0.995,
+      duration: 0.08,
+      ease: 'power2.out',
+    })
+    tl.to(page, {
+      scaleY: 1,
+      duration: settleDur,
+      ease: 'elastic.out(1, 0.5)',
+    })
 
     // Caption baru muncul kayak tinta segar
     if (caption) {
       tl.fromTo(caption,
-        { opacity: 0, y: 6 },
-        { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' },
-        '-=0.1'
+        { opacity: 0, y: 8 },
+        { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' },
+        '-=0.2'
       )
     }
   }, [activeIndex, isFlipping, isMobile])
@@ -1453,10 +1480,10 @@ function GallerySection() {
     flipToPage((activeIndex - 1 + totalImages) % totalImages, 'prev')
   }, [activeIndex, totalImages, flipToPage])
 
-  // ─── Auto-play — halaman berputar sendiri, kayak buku yang dibaca ═══
+  // ─── Auto-play — halaman berputar sendiri kayak buku yang dibaca ═══
   const startAutoPlay = useCallback(() => {
     if (autoPlayRef.current) clearInterval(autoPlayRef.current)
-    autoPlayRef.current = setInterval(() => { nextSlide() }, 6000)
+    autoPlayRef.current = setInterval(() => { nextSlide() }, 7000)
   }, [nextSlide])
 
   const stopAutoPlay = useCallback(() => {
@@ -1501,7 +1528,7 @@ function GallerySection() {
       }
 
       // Buku muncul — kayak nemuin buku diary lama di laci
-      const book = section.querySelector('.diary-book-perspective')
+      const book = section.querySelector('.diary-book-wrapper')
       if (book) {
         gsap.fromTo(book,
           { opacity: 0, scale: 0.88, filter: 'blur(6px) brightness(0.5)' },
@@ -1585,8 +1612,11 @@ function GallerySection() {
 
   const closeLightbox = () => setLightboxIndex(null)
 
-  // Foto yang ditampilkan di base page saat flip
-  const baseImageIndex = isFlipping ? targetIndex : activeIndex
+  // Foto yang ditampilkan
+  // - displayIndex: foto di base page (di bawah, keliatan SETELAH halaman dibalik)
+  // - flipIndex: foto di flip page (di atas, yang sedang dibalik)
+  const baseIdx = isFlipping ? displayIndex : activeIndex
+  const flipIdx = isFlipping ? flipIndex : activeIndex
 
   return (
     <section ref={sectionRef} data-section="gallery" className="diary-paper-bg cinema-depth py-20 px-6" style={{ opacity: 0 }}>
@@ -1599,166 +1629,180 @@ function GallerySection() {
         </div>
 
         {/* ═══ DIARY BOOK — lembaran kuno yang diikat jadi buku ═══ */}
-        <div className="diary-book-perspective" style={{ maxWidth: '400px', margin: '0 auto' }}>
+        {/* Wrapper punya breathing animasi — TERPISAH dari perspective container */}
+        <div className="diary-book-wrapper" style={{ maxWidth: '400px', margin: '0 auto' }}>
+          <div className="diary-book-perspective">
 
-          {/* Book binding — kulit buku dengan jahitan benang emas */}
-          <div className="book-binding absolute -left-3 sm:-left-4 top-1 bottom-1 w-4 sm:w-5 z-20 pointer-events-none"
-            style={{
-              background: 'linear-gradient(to right, #3d2b1a 0%, #5c4435 30%, #6b5240 60%, #5c4435 80%, #4a3728 100%)',
-              borderRadius: '3px 0 0 3px',
-              boxShadow: '-3px 0 8px rgba(0,0,0,0.4), inset 2px 0 4px rgba(255,255,255,0.08)',
-            }}
-          >
-            <div className="absolute inset-0 flex flex-col justify-around items-center py-3 px-1"
-              style={{ opacity: 0.35 }}>
-              {Array.from({ length: 10 }).map((_, i) => (
-                <div key={i} className="w-2 h-[1px] rounded-full"
-                  style={{ background: 'var(--gold)' }} />
+            {/* Book binding — kulit buku dengan jahitan benang emas */}
+            <div className="book-binding absolute -left-3 sm:-left-4 top-1 bottom-1 w-4 sm:w-5 z-20 pointer-events-none"
+              style={{
+                background: 'linear-gradient(to right, #3d2b1a 0%, #5c4435 30%, #6b5240 60%, #5c4435 80%, #4a3728 100%)',
+                borderRadius: '3px 0 0 3px',
+                boxShadow: '-3px 0 8px rgba(0,0,0,0.4), inset 2px 0 4px rgba(255,255,255,0.08)',
+              }}
+            >
+              <div className="absolute inset-0 flex flex-col justify-around items-center py-3 px-1"
+                style={{ opacity: 0.35 }}>
+                {Array.from({ length: 10 }).map((_, i) => (
+                  <div key={i} className="w-2 h-[1px] rounded-full"
+                    style={{ background: 'var(--gold)' }} />
+                ))}
+              </div>
+            </div>
+
+            {/* Page stack edges — tumpukan halaman di sisi kanan */}
+            <div className="absolute -right-1.5 top-2 bottom-2 w-3 pointer-events-none"
+              style={{
+                background: 'linear-gradient(to right, #d4c5a9, #c9b896, #c0ad88, #b8a57e)',
+                borderRadius: '0 2px 2px 0',
+                boxShadow: '2px 0 3px rgba(0,0,0,0.08)',
+                zIndex: 1,
+              }}>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="absolute w-full"
+                  style={{ top: `${8 + i * 18}%`, height: '1px', background: 'rgba(0,0,0,0.06)' }} />
               ))}
             </div>
-          </div>
 
-          {/* Page stack edges — tumpukan halaman di sisi kanan */}
-          <div className="absolute -right-1.5 top-2 bottom-2 w-3 pointer-events-none"
-            style={{
-              background: 'linear-gradient(to right, #d4c5a9, #c9b896, #c0ad88, #b8a57e)',
-              borderRadius: '0 2px 2px 0',
-              boxShadow: '2px 0 3px rgba(0,0,0,0.08)',
-              zIndex: 1,
-            }}>
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="absolute w-full"
-                style={{ top: `${8 + i * 18}%`, height: '1px', background: 'rgba(0,0,0,0.06)' }} />
-            ))}
-          </div>
+            {/* Bottom page stack — tumpukan dari bawah */}
+            <div className="absolute left-0 right-1 -bottom-1.5 h-2 pointer-events-none"
+              style={{
+                background: 'linear-gradient(to bottom, #d4c5a9, #c9b896, #c0ad88)',
+                borderRadius: '0 0 2px 2px',
+                boxShadow: '0 2px 3px rgba(0,0,0,0.08)',
+                zIndex: 0,
+              }} />
 
-          {/* Bottom page stack — tumpukan dari bawah */}
-          <div className="absolute left-0 right-1 -bottom-1.5 h-2 pointer-events-none"
-            style={{
-              background: 'linear-gradient(to bottom, #d4c5a9, #c9b896, #c0ad88)',
-              borderRadius: '0 0 2px 2px',
-              boxShadow: '0 2px 3px rgba(0,0,0,0.08)',
-              zIndex: 0,
-            }} />
+            {/* ═══ BASE PAGE — halaman di bawah (foto baru, tertutup flip page) ═══ */}
+            <div className="diary-book-page" style={{ position: 'relative', zIndex: 1 }}>
+              <div className="diary-page-inner">
+                <div className="absolute inset-0 pointer-events-none diary-paper-texture" />
+                <div className="absolute inset-0 pointer-events-none diary-age-spots" />
+                <div className="absolute inset-x-4 top-16 bottom-10 pointer-events-none diary-ruled-lines" />
 
-          {/* ═══ BASE PAGE — halaman di bawah (foto berikutnya) ═══ */}
-          <div className="diary-book-page" style={{ position: 'relative', zIndex: 1 }}>
-            <div className="diary-page-inner">
-              {/* Paper texture */}
-              <div className="absolute inset-0 pointer-events-none diary-paper-texture" />
-              {/* Age spots */}
-              <div className="absolute inset-0 pointer-events-none diary-age-spots" />
-              {/* Ruled lines */}
-              <div className="absolute inset-x-4 top-16 bottom-10 pointer-events-none diary-ruled-lines" />
+                <div className="relative" style={{ margin: '0 2px' }}>
+                  <div className="absolute -top-0.5 -left-0.5 w-5 h-5 z-10 pointer-events-none diary-photo-corner" />
+                  <div className="absolute -top-0.5 -right-0.5 w-5 h-5 z-10 pointer-events-none diary-photo-corner" />
+                  <div className="absolute -bottom-0.5 -left-0.5 w-5 h-5 z-10 pointer-events-none diary-photo-corner" />
+                  <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 z-10 pointer-events-none diary-photo-corner" />
 
-              {/* Photo mount area */}
-              <div className="relative" style={{ margin: '0 2px' }}>
-                <div className="absolute -top-0.5 -left-0.5 w-5 h-5 z-10 pointer-events-none diary-photo-corner" />
-                <div className="absolute -top-0.5 -right-0.5 w-5 h-5 z-10 pointer-events-none diary-photo-corner" />
-                <div className="absolute -bottom-0.5 -left-0.5 w-5 h-5 z-10 pointer-events-none diary-photo-corner" />
-                <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 z-10 pointer-events-none diary-photo-corner" />
+                  <div className="aspect-[4/5] overflow-hidden" style={{ background: '#ddd5c5' }}>
+                    <img
+                      src={WEDDING.galleryImages[baseIdx]}
+                      alt={WEDDING.galleryCaptions[baseIdx]}
+                      className="w-full h-full object-cover diary-photo-filter"
+                      style={{ display: 'block' }}
+                    />
+                  </div>
+                </div>
 
-                <div className="aspect-[4/5] overflow-hidden" style={{ background: '#ddd5c5' }}>
-                  <img
-                    src={WEDDING.galleryImages[baseImageIndex]}
-                    alt={WEDDING.galleryCaptions[baseImageIndex]}
-                    className="w-full h-full object-cover diary-photo-filter"
-                    style={{ display: 'block' }}
-                  />
+                <div className="mt-3 text-center" style={{ fontFamily: 'var(--font-body)', fontSize: '9px', letterSpacing: '0.15em', color: 'var(--brown-light)', opacity: 0.4 }}>
+                  — {String(baseIdx + 1).padStart(2, '0')} —
                 </div>
               </div>
+            </div>
 
-              {/* Page number */}
-              <div className="mt-3 text-center" style={{ fontFamily: 'var(--font-body)', fontSize: '9px', letterSpacing: '0.15em', color: 'var(--brown-light)', opacity: 0.4 }}>
-                — {String(baseImageIndex + 1).padStart(2, '0')} —
+            {/* ═══ FLIPPING PAGE — halaman yang dibalik (di atas base page) ═══ */}
+            <div ref={pageRef} className="diary-flip-page">
+
+              {/* ─── FRONT FACE: halaman depan dengan foto saat ini ─── */}
+              <div
+                className="diary-flip-front diary-page-inner cursor-pointer"
+                onClick={() => !isFlipping && setLightboxIndex(activeIndex)}
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+                role="button"
+                tabIndex={0}
+                aria-label={`Lihat foto ${WEDDING.galleryCaptions[activeIndex]}`}
+                onKeyDown={(e) => { if (e.key === 'Enter') setLightboxIndex(activeIndex) }}
+              >
+                <div className="absolute inset-0 pointer-events-none diary-paper-texture" />
+                <div className="absolute inset-0 pointer-events-none diary-age-spots" />
+                <div className="absolute inset-x-4 top-16 bottom-10 pointer-events-none diary-ruled-lines" />
+
+                <div className="relative" style={{ margin: '0 2px' }}>
+                  <div className="absolute -top-0.5 -left-0.5 w-5 h-5 z-10 pointer-events-none diary-photo-corner" />
+                  <div className="absolute -top-0.5 -right-0.5 w-5 h-5 z-10 pointer-events-none diary-photo-corner" />
+                  <div className="absolute -bottom-0.5 -left-0.5 w-5 h-5 z-10 pointer-events-none diary-photo-corner" />
+                  <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 z-10 pointer-events-none diary-photo-corner" />
+
+                  <div className="aspect-[4/5] overflow-hidden" style={{ background: '#ddd5c5' }}>
+                    <img
+                      key={`flip-${flipIdx}`}
+                      src={WEDDING.galleryImages[flipIdx]}
+                      alt={WEDDING.galleryCaptions[flipIdx]}
+                      className="w-full h-full object-cover diary-photo-filter"
+                      style={{ display: 'block' }}
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-3 text-center" style={{ fontFamily: 'var(--font-body)', fontSize: '9px', letterSpacing: '0.15em', color: 'var(--brown-light)', opacity: 0.4 }}>
+                  — {String(flipIdx + 1).padStart(2, '0')} —
+                </div>
+
+                {/* Page curl hint — pojok kanan bawah yang sedikit terlipat */}
+                <div className="absolute bottom-0 right-0 w-10 h-10 pointer-events-none"
+                  style={{
+                    background: 'linear-gradient(135deg, transparent 35%, rgba(0,0,0,0.03) 35%, rgba(0,0,0,0.08) 45%, rgba(0,0,0,0.02) 55%, transparent 55%)',
+                    borderRadius: '0 0 3px 0',
+                  }} />
+              </div>
+
+              {/* ─── BACK FACE: belakang halaman — kertas tua dengan tulisan pudar ─── */}
+              <div className="diary-flip-back">
+                <div className="absolute inset-0 pointer-events-none diary-paper-texture" />
+
+                {/* Faded diary writing — tulisan yang pudar di belakang halaman */}
+                <div className="absolute inset-0 flex flex-col justify-center items-start p-8 pt-16"
+                  style={{ opacity: 0.06, color: 'var(--brown)' }}>
+                  <div className="w-full space-y-4" style={{ fontFamily: 'var(--font-script)' }}>
+                    <div className="h-px w-full" style={{ background: 'currentColor' }} />
+                    <div className="h-px w-11/12" style={{ background: 'currentColor' }} />
+                    <div className="h-px w-full" style={{ background: 'currentColor' }} />
+                    <div className="h-px w-2/3" style={{ background: 'currentColor' }} />
+                    <div className="h-8" />
+                    <div className="h-px w-full" style={{ background: 'currentColor' }} />
+                    <div className="h-px w-4/5" style={{ background: 'currentColor' }} />
+                    <div className="h-px w-full" style={{ background: 'currentColor' }} />
+                    <div className="h-px w-3/5" style={{ background: 'currentColor' }} />
+                  </div>
+                </div>
+
+                {/* Aging stain */}
+                <div className="absolute bottom-4 right-4 w-16 h-16 pointer-events-none"
+                  style={{ background: 'radial-gradient(ellipse, rgba(139,109,63,0.08) 0%, transparent 70%)' }} />
               </div>
             </div>
-          </div>
 
-          {/* ═══ FLIPPING PAGE — halaman yang dibalik (di atas base page) ═══ */}
-          <div ref={pageRef} className="diary-flip-page">
-
-            {/* ─── FRONT FACE: halaman depan dengan foto saat ini ─── */}
+            {/* ═══ Fold shadow — bayangan lipatan halaman yang bergerak ═══ */}
+            {/* Ini bayangan vertikal yang muncul saat halaman dilipat */}
             <div
-              className="diary-flip-front diary-page-inner cursor-pointer"
-              onClick={() => !isFlipping && setLightboxIndex(activeIndex)}
-              onTouchStart={handleTouchStart}
-              onTouchEnd={handleTouchEnd}
-              role="button"
-              tabIndex={0}
-              aria-label={`Lihat foto ${WEDDING.galleryCaptions[activeIndex]}`}
-              onKeyDown={(e) => { if (e.key === 'Enter') setLightboxIndex(activeIndex) }}
-            >
-              <div className="absolute inset-0 pointer-events-none diary-paper-texture" />
-              <div className="absolute inset-0 pointer-events-none diary-age-spots" />
-              <div className="absolute inset-x-4 top-16 bottom-10 pointer-events-none diary-ruled-lines" />
+              ref={foldShadowRef}
+              className="absolute top-0 bottom-0 pointer-events-none"
+              style={{
+                width: '40px',
+                zIndex: 4,
+                opacity: 0,
+                left: 0,
+                background: 'linear-gradient(to right, rgba(0,0,0,0.25), rgba(0,0,0,0.08) 40%, transparent 100%)',
+                filter: 'blur(3px)',
+                transform: 'translateX(-50%)',
+              }}
+            />
 
-              <div className="relative" style={{ margin: '0 2px' }}>
-                <div className="absolute -top-0.5 -left-0.5 w-5 h-5 z-10 pointer-events-none diary-photo-corner" />
-                <div className="absolute -top-0.5 -right-0.5 w-5 h-5 z-10 pointer-events-none diary-photo-corner" />
-                <div className="absolute -bottom-0.5 -left-0.5 w-5 h-5 z-10 pointer-events-none diary-photo-corner" />
-                <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 z-10 pointer-events-none diary-photo-corner" />
-
-                <div className="aspect-[4/5] overflow-hidden" style={{ background: '#ddd5c5' }}>
-                  <img
-                    key={activeIndex}
-                    src={WEDDING.galleryImages[activeIndex]}
-                    alt={WEDDING.galleryCaptions[activeIndex]}
-                    className="w-full h-full object-cover diary-photo-filter"
-                    style={{ display: 'block' }}
-                  />
-                </div>
-              </div>
-
-              <div className="mt-3 text-center" style={{ fontFamily: 'var(--font-body)', fontSize: '9px', letterSpacing: '0.15em', color: 'var(--brown-light)', opacity: 0.4 }}>
-                — {String(activeIndex + 1).padStart(2, '0')} —
-              </div>
-
-              {/* Page curl hint — pojok kanan bawah yang sedikit terlipat */}
-              <div className="absolute bottom-0 right-0 w-8 h-8 pointer-events-none"
-                style={{
-                  background: 'linear-gradient(135deg, transparent 40%, rgba(0,0,0,0.04) 40%, rgba(0,0,0,0.08) 50%, rgba(0,0,0,0.02) 60%, transparent 60%)',
-                  borderRadius: '0 0 3px 0',
-                }} />
-            </div>
-
-            {/* ─── BACK FACE: belakang halaman — kertas tua dengan tulisan pudar ─── */}
-            <div className="diary-flip-back">
-              <div className="absolute inset-0 pointer-events-none diary-paper-texture" />
-
-              {/* Faded diary writing — tulisan yang pudar di belakang halaman */}
-              <div className="absolute inset-0 flex flex-col justify-center items-start p-8 pt-16"
-                style={{ opacity: 0.06, color: 'var(--brown)' }}>
-                <div className="w-full space-y-4" style={{ fontFamily: 'var(--font-script)' }}>
-                  <div className="h-px w-full" style={{ background: 'currentColor' }} />
-                  <div className="h-px w-11/12" style={{ background: 'currentColor' }} />
-                  <div className="h-px w-full" style={{ background: 'currentColor' }} />
-                  <div className="h-px w-2/3" style={{ background: 'currentColor' }} />
-                  <div className="h-8" />
-                  <div className="h-px w-full" style={{ background: 'currentColor' }} />
-                  <div className="h-px w-4/5" style={{ background: 'currentColor' }} />
-                  <div className="h-px w-full" style={{ background: 'currentColor' }} />
-                  <div className="h-px w-3/5" style={{ background: 'currentColor' }} />
-                </div>
-              </div>
-
-              {/* Aging stain */}
-              <div className="absolute bottom-4 right-4 w-16 h-16 pointer-events-none"
-                style={{ background: 'radial-gradient(ellipse, rgba(139,109,63,0.08) 0%, transparent 70%)' }} />
-            </div>
+            {/* ═══ Page shadow — bayangan halaman terangkat jatuh ke base page ═══ */}
+            <div
+              ref={pageShadowRef}
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                zIndex: 3,
+                opacity: 0,
+                background: 'linear-gradient(to right, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.1) 30%, transparent 60%)',
+                borderRadius: '2px',
+              }}
+            />
           </div>
-
-          {/* Shadow — bayangan saat halaman terangkat */}
-          <div
-            ref={shadowRef}
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              zIndex: 3,
-              opacity: 0,
-              background: 'linear-gradient(to right, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.08) 40%, transparent 70%)',
-              borderRadius: '2px',
-            }}
-          />
         </div>
 
         {/* Caption — tulisan tangan di bawah buku */}
