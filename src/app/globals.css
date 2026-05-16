@@ -811,123 +811,116 @@ html {
 }
 
 /* ========================================
-   22. GALLERY — DIARY BOOK
-   Lembaran kuno yang diikat jadi buku
-   3D page-flip transition with CSS perspective
-   ALL 3D properties MUST be in CSS, not inline
+   22. GALLERY — BUKU LUSUH
+   Lembaran coklat tua, sobek, diikat tali
+   Page-peel transition (scaleX + skew)
    ======================================== */
 
-/* ═══ Book wrapper — breathing animation SEPARATE from perspective ═══ */
-.diary-book-wrapper {
+/* ═══ Book wrapper ═══ */
+.worn-book-wrapper {
   position: relative;
-  animation: bookBreathe 6s var(--ease-breathe) infinite;
+  padding: 0 0 0 8px;
 }
 
-/* ═══ Perspective container — MUST be on parent, NO transforms on this element ═══ */
-/* CRITICAL: Jangan tambah transform atau animation di sini! 
-   Perspektif 3D akan rusak kalau ada transform di parent. */
-.diary-book-perspective {
+/* ═══ Worn page — halaman lusuh ═══ */
+.worn-page {
   position: relative;
-  perspective: 1200px;
-  -webkit-perspective: 1200px;
-  perspective-origin: 50% 50%;
-  -webkit-perspective-origin: 50% 50%;
-  margin: 0 auto;
-}
-
-/* ═══ Base page — halaman di bawah, foto berikutnya ═══ */
-.diary-book-page {
-  position: relative;
-  z-index: 1;
-}
-
-/* ═══ Shared page inner styling ═══ */
-.diary-page-inner {
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(145deg, #f5edd6 0%, #efe5cc 25%, #e8dbc0 55%, #f0e7d0 80%, #efe5cc 100%);
-  border-radius: 0 3px 3px 0;
-  box-shadow: 3px 4px 12px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.06);
-  padding: 20px 18px 14px 18px;
-}
-
-/* ═══ Paper texture — serat kertas kuno ═══ */
-.diary-paper-texture {
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size: 150px 150px;
-  opacity: 0.03;
-  mix-blend-mode: multiply;
-  border-radius: 0 3px 3px 0;
-}
-
-/* ═══ Age spots — bintik usia ═══ */
-.diary-age-spots {
-  background-image:
-    radial-gradient(ellipse at 85% 12%, rgba(139,109,63,0.07) 0%, transparent 45%),
-    radial-gradient(ellipse at 15% 85%, rgba(139,109,63,0.05) 0%, transparent 35%),
-    radial-gradient(ellipse at 50% 50%, rgba(139,109,63,0.02) 0%, transparent 50%);
-  border-radius: 0 3px 3px 0;
-}
-
-/* ═══ Ruled lines — garis-garis halaman diary ═══ */
-.diary-ruled-lines {
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent,
-    transparent 24px,
-    rgba(180,160,130,0.12) 24px,
-    rgba(180,160,130,0.12) 25px
-  );
-}
-
-/* ═══ Photo corners — sudut foto yang ditempel ═══ */
-.diary-photo-corner {
-  border: 2px solid rgba(201,169,110,0.4);
-}
-
-/* ═══ Photo vintage filter ═══ */
-.diary-photo-filter {
-  filter: sepia(0.1) contrast(1.02) saturate(0.95);
-}
-
-/* ═══ Flipping page — halaman yang dibalik (3D) ═══ */
-/* CRITICAL: transform-style preserve-3d WAJIB biar front/back face keliatan */
-.diary-flip-page {
-  position: absolute;
-  inset: 0;
-  z-index: 5;
-  transform-style: preserve-3d;
-  -webkit-transform-style: preserve-3d;
-  transform-origin: left center;
-  -webkit-transform-origin: left center;
   will-change: transform;
-  backface-visibility: visible;
-  -webkit-backface-visibility: visible;
 }
 
-/* ═══ Front face — halaman depan ═══ */
-.diary-flip-front {
-  position: absolute;
-  inset: 0;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  z-index: 2;
-}
-
-/* ═══ Back face — belakang halaman ═══ */
-/* rotateY(180deg) biar keliatan saat halaman dibalik melewati 90° */
-.diary-flip-back {
-  position: absolute;
-  inset: 0;
+/* ═══ Page surface — kertas coklat tua ═══ */
+.worn-page-surface {
+  position: relative;
   overflow: hidden;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  transform: rotateY(180deg);
-  -webkit-transform: rotateY(180deg);
-  z-index: 1;
-  background: linear-gradient(145deg, #efe5cc 0%, #e5d9b8 30%, #dccdb0 60%, #e2d5b5 100%);
-  border-radius: 0 3px 3px 0;
-  box-shadow: inset 0 0 30px rgba(0,0,0,0.06);
+  /* Kertas coklat tua — bukan krem rapi, tapi coklat yang udah lama */
+  background: linear-gradient(
+    160deg,
+    #b8a07a 0%,      /* coklat muda kering */
+    #a89068 20%,      /* coklat medium */
+    #9d8458 40%,      /* coklat tua */
+    #a08860 55%,      /* coklat sedang */
+    #937a4e 70%,      /* coklat gelap */
+    #a89068 85%,      /* coklat medium lagi */
+    #b09870 100%      /* coklat muda di ujung */
+  );
+  /* Tidak ada border-radius — kertas lusuh tidak rapih */
+  border-radius: 1px 2px 1px 1px;
+  box-shadow:
+    3px 4px 16px rgba(0,0,0,0.2),
+    0 1px 4px rgba(0,0,0,0.1),
+    inset 0 0 40px rgba(0,0,0,0.08);
+  padding: 16px 14px 12px 14px;
+  /* Sedikit miring — kertas tua ga pernah rata */
+  transform: rotate(-0.3deg);
+}
+
+/* ═══ Paper grain — serat kertas yang keliatan ═══ */
+.worn-paper-grain {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 120px 120px;
+  opacity: 0.06;
+  mix-blend-mode: multiply;
+}
+
+/* ═══ Stains — noda kopi, minyak, jamur ═══ */
+.worn-stains {
+  background-image:
+    /* Noda kopi besar */
+    radial-gradient(ellipse at 80% 15%, rgba(90,60,20,0.12) 0%, transparent 40%),
+    /* Noda minyak */
+    radial-gradient(ellipse at 20% 80%, rgba(80,55,25,0.08) 0%, transparent 30%),
+    /* Noda jamur kecil */
+    radial-gradient(circle at 65% 60%, rgba(60,80,30,0.04) 0%, transparent 15%),
+    radial-gradient(circle at 35% 30%, rgba(60,80,30,0.03) 0%, transparent 10%),
+    /* Noda air */
+    radial-gradient(ellipse at 90% 70%, rgba(120,100,60,0.06) 0%, transparent 25%),
+    /* Tepi menguning */
+    linear-gradient(to bottom, rgba(139,109,63,0.06) 0%, transparent 15%),
+    linear-gradient(to top, rgba(100,70,30,0.08) 0%, transparent 10%);
+}
+
+/* ═══ Creases — garis lipatan ═══ */
+.worn-creases {
+  background-image:
+    /* Lipatan horizontal tengah */
+    linear-gradient(to bottom, transparent 48%, rgba(0,0,0,0.03) 49%, rgba(0,0,0,0.06) 50%, rgba(0,0,0,0.03) 51%, transparent 52%),
+    /* Lipatan vertikal */
+    linear-gradient(to right, transparent 48%, rgba(0,0,0,0.02) 49%, rgba(0,0,0,0.04) 50%, rgba(0,0,0,0.02) 51%, transparent 52%);
+  background-size: 100% 100%, 100% 100%;
+}
+
+/* ═══ Torn edges — tepi sobek ═══ */
+.worn-torn-edges {
+  /* Tepi kanan yang sobek — tidak rata */
+  border-right: 2px solid transparent;
+  border-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    rgba(0,0,0,0.08) 3px,
+    transparent 4px,
+    rgba(0,0,0,0.12) 8px,
+    transparent 10px,
+    rgba(0,0,0,0.06) 14px,
+    transparent 16px
+  ) 2;
+  /* Bayangan sobekan di tepi */
+  box-shadow:
+    inset -3px 0 6px rgba(0,0,0,0.06),
+    inset 2px 0 3px rgba(0,0,0,0.03);
+}
+
+/* ═══ Tape corners — perekat menguning di sudut foto ═══ */
+.worn-tape-corner {
+  background: linear-gradient(135deg,
+    rgba(180,150,80,0.35) 0%,
+    rgba(180,150,80,0.2) 40%,
+    rgba(180,150,80,0.15) 60%,
+    rgba(180,150,80,0.25) 100%
+  );
+  border-radius: 1px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  /* Perekat udah mulai terkelupas */
+  clip-path: polygon(0 0, 100% 0, 100% 70%, 80% 100%, 0 100%);
 }
 
 /* ═══ Book controls ═══ */
@@ -936,10 +929,14 @@ html {
   outline-offset: 2px;
 }
 
-/* ═══ Subtle idle breathing — di wrapper, BUKAN di perspective container ═══ */
+/* ═══ Subtle idle breathing ═══ */
 @keyframes bookBreathe {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-2px); }
+  50% { transform: translateY(-1px); }
+}
+
+.worn-book-wrapper {
+  animation: bookBreathe 8s var(--ease-breathe) infinite;
 }
 
 /* ========================================
