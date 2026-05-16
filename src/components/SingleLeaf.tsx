@@ -67,92 +67,92 @@ export default function SingleLeaf() {
     el.style.position = 'absolute'
     el.style.pointerEvents = 'none'
     el.style.willChange = 'transform, opacity'
-    el.style.filter = 'drop-shadow(1px 2px 4px rgba(0,0,0,0.15))'
+    el.style.filter = 'drop-shadow(1px 2px 5px rgba(0,0,0,0.18))'
     el.style.opacity = '0'
     el.style.perspective = '800px'
 
-    // ═══ Daun Maple Kering 🍁 — ngelipet, pucat, natural ═══
-    // Bentuk kaya emoji 🍁 — 5 lobus tajam yang recognizable
+    // ═══ Daun Maple Kering 🍁 — bentuk bintang 5 yang beneran ═══
+    // Referensi: Canadian maple leaf — 5 lobus tajam dengan sinus di antaranya
     // Tapi warna coklat-kering, agak ngelipet, bukan merah cerah
-    const size = 44
+    const size = 48
     el.innerHTML = `
-      <svg width="${size}" height="${size * 1.2}" viewBox="0 0 50 60" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform-style:preserve-3d;">
-        <!-- Tangkai — tipis, agak melengkung -->
-        <path d="M25 57 Q24.5 54 24.8 51 Q25.2 48 25 45" stroke="#7A5C2E" stroke-width="1" fill="none" opacity="0.5"/>
+      <svg width="${size}" height="${size * 1.15}" viewBox="0 0 80 92" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform-style:preserve-3d;">
+        <!-- Tangkai -->
+        <path d="M40 88 Q39.5 84 39.8 80 Q40.2 76 40 72" stroke="#7A5C2E" stroke-width="1.2" fill="none" opacity="0.5"/>
 
-        <!-- ═══ Bentuk Maple Leaf 🍁 — 5 lobus tajam, iconic ═══ -->
-        <!-- Lobi utama: tengah (atas), 2 samping, 2 bawah -->
-        <!-- Asimetris sedikit — daun kering ga sempurna -->
+        <!-- ═══ MAPLE LEAF — 5-pointed star, Canadian style ═══ -->
+        <!-- Bentuk bintang 5 yang iconic — lobus tajam, sinus di antara lobus -->
+        <!-- Dimulai dari ujung lobus atas, searah jarum jam -->
         <path d="
-          M25 0
-          L27.5 8 L33 4 L31 12 L38 9 L34 17 L42 17 L36 22 L40 27 L33 25 L35 33 L29 28 L27 37 L25 42 L23 37 L21 28 L15 33 L17 25 L10 27 L14 22 L8 17 L16 17 L12 9 L19 12 L17 4 L22.5 8 Z"
+          M40 2
+          L44 14 L55 6 L50 18 L64 16 L54 26 L70 30 L56 34 L66 46 L52 40 L56 54 L44 44 L40 58
+          L36 44 L24 54 L28 40 L14 46 L24 34 L10 30 L26 26 L16 16 L30 18 L25 6 L36 14 Z"
           fill="#8B6B3A" opacity="0.8"/>
 
-        <!-- Shadow layer — bagian yang ngelipet lebih gelap -->
+        <!-- Shadow layer — sisi kiri lebih gelap (ngelipet) -->
         <path d="
-          M25 0
-          L22.5 8 L17 4 L19 12 L12 9 L16 17 L8 17 L14 22 L10 27 L17 25 L15 33 L21 28 L23 37 L25 42"
-          fill="#6B4F2A" opacity="0.25"/>
+          M40 2
+          L36 14 L25 6 L30 18 L16 16 L26 26 L10 30 L24 34 L14 46 L28 40 L24 54 L36 44 L40 58"
+          fill="#6B4F2A" opacity="0.22"/>
 
         <!-- Highlight — cahaya dari kanan atas -->
         <path d="
-          M25 3
-          L27.5 8 L33 4 L31 12 L38 9 L34 17 L42 17 L36 22 L40 27 L33 25 L35 33 L29 28 L27 37 L25 42"
-          fill="rgba(201,169,110,0.07)" />
+          M40 2
+          L44 14 L55 6 L50 18 L64 16 L54 26 L70 30 L56 34 L66 46 L52 40 L56 54 L44 44 L40 58"
+          fill="rgba(201,169,110,0.06)" />
 
-        <!-- ═══ Urat daun — dari tengah ke ujung tiap lobus ═══ -->
-        <!-- Urat tengah (ke atas) -->
-        <path d="M25 42 L25 5" stroke="#5A4220" stroke-width="0.7" fill="none" opacity="0.3"/>
+        <!-- ═══ Urat daun — dari pusat ke ujung tiap lobus ═══ -->
+        <!-- Urat utama ke lobus atas -->
+        <path d="M40 58 L40 8" stroke="#5A4220" stroke-width="0.8" fill="none" opacity="0.3"/>
         <!-- Urat ke lobus kanan atas -->
-        <path d="M25 24 Q29 19 34 16" stroke="#5A4220" stroke-width="0.5" fill="none" opacity="0.25"/>
-        <!-- Urat ke lobus kiri atas -->
-        <path d="M25 24 Q21 19 16 16" stroke="#5A4220" stroke-width="0.5" fill="none" opacity="0.25"/>
+        <path d="M40 38 Q48 32 58 24" stroke="#5A4220" stroke-width="0.6" fill="none" opacity="0.25"/>
         <!-- Urat ke lobus kanan bawah -->
-        <path d="M25 30 Q28 30 33 26" stroke="#5A4220" stroke-width="0.4" fill="none" opacity="0.2"/>
+        <path d="M40 42 Q48 42 60 38" stroke="#5A4220" stroke-width="0.6" fill="none" opacity="0.22"/>
         <!-- Urat ke lobus kiri bawah -->
-        <path d="M25 30 Q22 30 17 26" stroke="#5A4220" stroke-width="0.4" fill="none" opacity="0.2"/>
+        <path d="M40 42 Q32 42 20 38" stroke="#5A4220" stroke-width="0.6" fill="none" opacity="0.22"/>
+        <!-- Urat ke lobus kiri atas -->
+        <path d="M40 38 Q32 32 22 24" stroke="#5A4220" stroke-width="0.6" fill="none" opacity="0.25"/>
 
-        <!-- Urat halus cabang -->
-        <path d="M25 12 Q27 14 29 15" stroke="#5A4220" stroke-width="0.2" fill="none" opacity="0.15"/>
-        <path d="M25 12 Q23 14 21 15" stroke="#5A4220" stroke-width="0.2" fill="none" opacity="0.15"/>
-        <path d="M25 34 Q27 33 28 31" stroke="#5A4220" stroke-width="0.2" fill="none" opacity="0.12"/>
-        <path d="M25 34 Q23 33 22 31" stroke="#5A4220" stroke-width="0.2" fill="none" opacity="0.12"/>
+        <!-- Urat cabang halus -->
+        <path d="M40 20 Q44 24 48 26" stroke="#5A4220" stroke-width="0.25" fill="none" opacity="0.15"/>
+        <path d="M40 20 Q36 24 32 26" stroke="#5A4220" stroke-width="0.25" fill="none" opacity="0.15"/>
+        <path d="M40 48 Q44 47 48 45" stroke="#5A4220" stroke-width="0.25" fill="none" opacity="0.12"/>
+        <path d="M40 48 Q36 47 32 45" stroke="#5A4220" stroke-width="0.25" fill="none" opacity="0.12"/>
 
-        <!-- ═══ Tepi ngelipet — daun kering selalu keriting ═══ -->
-        <!-- Ujung lobus kanan atas agak menggulung -->
-        <path d="M34 17 Q35 16 35 18" stroke="#6B4F2A" stroke-width="0.8" fill="none" opacity="0.3"/>
-        <!-- Ujung lobus kiri atas agak menggulung -->
-        <path d="M16 17 Q15 16 15 18" stroke="#6B4F2A" stroke-width="0.8" fill="none" opacity="0.3"/>
+        <!-- ═══ Tepi ngelipet — daun kering ═══ -->
+        <!-- Ujung lobus kanan atas menggulung -->
+        <path d="M55 6 Q56.5 4 56 7" stroke="#6B4F2A" stroke-width="0.8" fill="none" opacity="0.28"/>
+        <!-- Ujung lobus kiri atas menggulung -->
+        <path d="M25 6 Q23.5 4 24 7" stroke="#6B4F2A" stroke-width="0.8" fill="none" opacity="0.28"/>
         <!-- Tepi lobus kanan bawah melipat -->
-        <path d="M33 25 Q34 24 34 26" stroke="#6B4F2A" stroke-width="0.6" fill="none" opacity="0.25"/>
+        <path d="M66 46 Q68 44 67 47" stroke="#6B4F2A" stroke-width="0.7" fill="none" opacity="0.22"/>
         <!-- Tepi lobus kiri bawah melipat -->
-        <path d="M17 25 Q16 24 16 26" stroke="#6B4F2A" stroke-width="0.6" fill="none" opacity="0.25"/>
-        <!-- Ujung lobus tengah agak melipat -->
-        <path d="M27.5 8 Q28 6.5 29 8" stroke="#6B4F2A" stroke-width="0.5" fill="none" opacity="0.2"/>
-        <path d="M22.5 8 Q22 6.5 21 8" stroke="#6B4F2A" stroke-width="0.5" fill="none" opacity="0.2"/>
+        <path d="M14 46 Q12 44 13 47" stroke="#6B4F2A" stroke-width="0.7" fill="none" opacity="0.22"/>
+        <!-- Ujung lobus atas sedikit melipat -->
+        <path d="M40 2 Q42 0 41 3" stroke="#6B4F2A" stroke-width="0.6" fill="none" opacity="0.18"/>
 
-        <!-- ═══ Noda & robekan — daun kering ═══ -->
-        <ellipse cx="30" cy="18" rx="1.8" ry="1.2" fill="#5A3E1A" opacity="0.1"/>
-        <ellipse cx="20" cy="26" rx="1.4" ry="1" fill="#5A3E1A" opacity="0.08"/>
-        <circle cx="27" cy="32" r="0.6" fill="#5A3E1A" opacity="0.07"/>
+        <!-- ═══ Noda & robekan ═══ -->
+        <ellipse cx="50" cy="28" rx="2.5" ry="1.5" fill="#5A3E1A" opacity="0.09"/>
+        <ellipse cx="28" cy="40" rx="2" ry="1.2" fill="#5A3E1A" opacity="0.07"/>
+        <circle cx="44" cy="48" r="0.8" fill="#5A3E1A" opacity="0.06"/>
         <!-- Sobekan kecil di lobus kiri bawah -->
-        <path d="M17 25 Q15.5 25.5 16 27" stroke="#5A3E1A" stroke-width="0.5" fill="none" opacity="0.18"/>
+        <path d="M20 38 Q18 39 19 42" stroke="#5A3E1A" stroke-width="0.6" fill="none" opacity="0.15"/>
       </svg>
     `
 
     container.appendChild(el)
 
-    // Position: not too far left, not too far right
-    const startX = window.innerWidth * 0.3 + Math.random() * window.innerWidth * 0.4
+    // Position: bisa di mana aja — gerakan luas
+    const startX = window.innerWidth * 0.2 + Math.random() * window.innerWidth * 0.6
 
     const leaf: LeafState = {
       x: startX,
       y: -50,
       baseX: startX,
       rotation: Math.random() * 30 - 15,
-      rotationX: -8 - Math.random() * 12,   // agak ngelipet ke depan — kaya daun kering beneran
-      rotationY: 5 + Math.random() * 10,     // agak miring ke satu sisi — ngelipet
-      tiltAmount: 0.7 + Math.random() * 0.3, // seberapa ekstrem lipatan
+      rotationX: -8 - Math.random() * 12,
+      rotationY: 5 + Math.random() * 10,
+      tiltAmount: 0.7 + Math.random() * 0.3,
       velocityX: 0,
       velocityY: 0,
       angularVelocity: (Math.random() - 0.5) * 0.3,
@@ -160,12 +160,11 @@ export default function SingleLeaf() {
       driftPhase: Math.random() * Math.PI * 2,
       wobblePhase: Math.random() * Math.PI * 2,
       opacity: 0,
-      scale: 0.9 + Math.random() * 0.15,
+      scale: 0.85 + Math.random() * 0.15,
       element: el,
-      // Wind gust system
       windGustX: 0,
       windGustY: 0,
-      nextGustTime: 5 + Math.random() * 8,
+      nextGustTime: 3 + Math.random() * 5,  // lebih sering
       gustDuration: 0,
       gustStartTime: 0,
       gustActive: false,
@@ -192,33 +191,24 @@ export default function SingleLeaf() {
 
       if (isFallingRef.current && !hasReachedBottomRef.current) {
         // ═══ FALLING — akhir cerita, daun jatuh sampai bawah ═══
-        // Daun kering jatuh pelan — berat, tapi bentuknya bikin dia oleng
-        // Kadang kebawa angin, kadang muter pelan
         const targetY = fallTargetYRef.current
 
-        // Gravitasi pelan — daun kering jatuh ga secepat batu
         leaf.velocityY += 0.008
-        // Tapi bentuk daun bikin dia oleng — ada drag
         leaf.velocityY *= 0.995
-        // Horizontal: masih ada sway, tapi makin lemah
         leaf.velocityX += Math.sin(t * 0.3 + leaf.swayPhase) * 0.015
         leaf.velocityX *= 0.98
 
         leaf.y += leaf.velocityY
         leaf.x += leaf.velocityX
 
-        // Rotasi makin pelan — daun lagi nyaman jatuh
         leaf.angularVelocity *= 0.998
         leaf.rotation += leaf.angularVelocity
 
-        // 3D lipatan makin berkurang — daun mulai rata saat nyampe bawah
         leaf.rotationX += (0 - leaf.rotationX) * 0.002
         leaf.rotationY += (0 - leaf.rotationY) * 0.002
 
-        // Clamp X biar ga keluar layar
         leaf.x = Math.max(20, Math.min(vw - 20, leaf.x))
 
-        // Opacity stabilizes as it approaches final position
         if (leaf.y > targetY * 0.6) {
           leaf.opacity = Math.min(0.8, leaf.opacity + 0.001)
         }
@@ -229,34 +219,25 @@ export default function SingleLeaf() {
           leaf.velocityX = 0
           hasReachedBottomRef.current = true
 
-          // Final settle — daun mendarat pelan
-          // Sedikit goyang terakhir, lalu diam
-          gsap.to(leaf.element, {
+          gsap.to(leaf, {
             rotation: leaf.rotation + (Math.random() > 0.5 ? 2 : -2),
+            rotationX: 0,
+            rotationY: 0,
             duration: 2.5,
             ease: 'power2.out',
           })
-          // Lipatan merata sepenuhnya
-          gsap.to(leaf, {
-            rotationX: 0,
-            rotationY: 0,
-            duration: 3,
-            ease: 'power3.out',
-          })
         }
       } else if (!isFallingRef.current) {
-        // ═══ LIVING — daun melayang alami, ga nyampe bawah ═══
+        // ═══ LIVING — daun melayang LUAS, ga nyampe bawah ═══
 
-        // ─── Wind Gust System ───
-        // Angin yang datang dan pergi — bikin gerakan ga monoton
+        // ─── Wind Gust System — LEBIH SERING, LEBIH KUAT ───
         if (!leaf.gustActive && elapsed > leaf.nextGustTime) {
-          // Angin baru datang!
           leaf.gustActive = true
           leaf.gustStartTime = elapsed
-          leaf.gustDuration = 2 + Math.random() * 4 // 2-6 detik
-          // Arah angin: bisa kiri atau kanan, kadang atas kadang bawah
-          leaf.windGustX = (Math.random() - 0.4) * 0.6  // sedikit lebih sering ke kanan
-          leaf.windGustY = (Math.random() - 0.5) * 0.15  // vertikal lemah
+          leaf.gustDuration = 2 + Math.random() * 5
+          // Angin lebih kuat — daun bergerak jauh
+          leaf.windGustX = (Math.random() - 0.4) * 1.2   // 2x lebih kuat
+          leaf.windGustY = (Math.random() - 0.5) * 0.25   // 2x lebih kuat
         }
 
         if (leaf.gustActive) {
@@ -264,80 +245,73 @@ export default function SingleLeaf() {
           const gustProgress = gustElapsed / leaf.gustDuration
 
           if (gustProgress >= 1) {
-            // Angin berhenti
             leaf.gustActive = false
             leaf.windGustX = 0
             leaf.windGustY = 0
-            // Next gust: 5-12 detik dari sekarang
-            leaf.nextGustTime = elapsed + 5 + Math.random() * 7
+            leaf.nextGustTime = elapsed + 3 + Math.random() * 5  // lebih sering
           } else {
-            // Wind curve: naik pelan, puncak di tengah, turun pelan
-            const gustStrength = Math.sin(gustProgress * Math.PI) // bell curve
-            leaf.velocityX += leaf.windGustX * gustStrength * 0.08
-            leaf.velocityY += leaf.windGustY * gustStrength * 0.03
-
-            // Angin juga mutar daun
-            leaf.angularVelocity += gustStrength * leaf.windGustX * 0.02
-
-            // Lipatan 3D berubah pas kena angin — daun kering oleng
-            leaf.rotationY += gustStrength * leaf.windGustX * 0.3
+            const gustStrength = Math.sin(gustProgress * Math.PI)
+            leaf.velocityX += leaf.windGustX * gustStrength * 0.12
+            leaf.velocityY += leaf.windGustY * gustStrength * 0.05
+            leaf.angularVelocity += gustStrength * leaf.windGustX * 0.03
+            leaf.rotationY += gustStrength * leaf.windGustX * 0.4
           }
         }
 
-        // ─── Vertical: breathing naik-turun ───
-        // Range: 10% - 50% viewport — ga pernah nyampe bawah
-        const breathPhase = Math.sin(elapsed * 0.05 + leaf.swayPhase)
+        // ─── Vertical: breathing — range LUAS ───
+        // 8% - 55% viewport — gerakan vertikal lebih luas
+        const breathPhase = Math.sin(elapsed * 0.04 + leaf.swayPhase)
         const breathNorm = breathPhase * 0.5 + 0.5
-        const targetY = vh * 0.10 + breathNorm * vh * 0.40
+        const targetY = vh * 0.08 + breathNorm * vh * 0.47
 
-        // Lerp — daun mengambang, bukan teleport
         const yDiff = targetY - leaf.y
-        leaf.velocityY += yDiff * 0.00015
-        leaf.velocityY *= 0.97  // damping — biar ga bouncing
+        leaf.velocityY += yDiff * 0.00012
+        leaf.velocityY *= 0.97
         leaf.y += leaf.velocityY
 
-        // ─── Horizontal: sway + drift ───
-        // Multiple frequency — biar ga terlalu sinusoidal/robotik
-        const sway1 = Math.sin(elapsed * 0.08 + leaf.swayPhase) * 20
-        const sway2 = Math.sin(elapsed * 0.03 + leaf.swayPhase * 1.7) * 12
-        const drift = Math.sin(elapsed * 0.015 + leaf.driftPhase) * 25
+        // ─── Horizontal: sway + drift LEBIH LUAS ───
+        // Area gerak: 10% - 90% viewport — bukan cuma tengah
+        const sway1 = Math.sin(elapsed * 0.06 + leaf.swayPhase) * 35
+        const sway2 = Math.sin(elapsed * 0.025 + leaf.swayPhase * 1.7) * 20
+        const drift = Math.sin(elapsed * 0.012 + leaf.driftPhase) * 40
         const targetX = leaf.baseX + sway1 + sway2 + drift
 
         const xDiff = targetX - leaf.x
-        leaf.velocityX += xDiff * 0.0003
-        leaf.velocityX *= 0.96  // damping
+        leaf.velocityX += xDiff * 0.00025
+        leaf.velocityX *= 0.96
 
-        // Tambah velocity dari wind gust
         leaf.x += leaf.velocityX
 
-        // Clamp biar ga keluar layar
-        leaf.x = Math.max(30, Math.min(vw - 30, leaf.x))
+        // Clamp longgar — daun boleh hampir keluar layar
+        leaf.x = Math.max(-20, Math.min(vw + 20, leaf.x))
 
-        // ─── Rotation: natural, oleng kadang ───
-        // Daun kering sering oleng — rotateZ
-        const wobble = Math.sin(elapsed * 0.12 + leaf.wobblePhase) * 0.1
+        // Update baseX pelan — daun "migrasi" ke area lain
+        // Biar ga bolak-balik di area yang sama terus
+        leaf.baseX += Math.sin(elapsed * 0.005 + leaf.driftPhase) * 0.05
+        // Clamp baseX biar ga keluar jauh
+        leaf.baseX = Math.max(vw * 0.15, Math.min(vw * 0.85, leaf.baseX))
+
+        // ─── Rotation ───
+        const wobble = Math.sin(elapsed * 0.1 + leaf.wobblePhase) * 0.12
         leaf.angularVelocity += wobble
-        leaf.angularVelocity *= 0.97  // damping
-        // Clamp angular velocity biar ga muter gila
-        leaf.angularVelocity = Math.max(-0.5, Math.min(0.5, leaf.angularVelocity))
+        leaf.angularVelocity *= 0.97
+        leaf.angularVelocity = Math.max(-0.6, Math.min(0.6, leaf.angularVelocity))
         leaf.rotation += leaf.angularVelocity
 
-        // ─── 3D Lipatan: rotateX + rotateY ───
-        // Daun kering ngelipet — ini yang bikin dia keliatan alami
-        // Lipatan berubah pelan — kadang makin ngelipet, kadang agak terbuka
-        const lipatX = -10 + Math.sin(elapsed * 0.04 + leaf.swayPhase) * 5  // -15 to -5
-        const lipatY = 8 + Math.sin(elapsed * 0.06 + leaf.driftPhase) * 6   // 2 to 14
+        // ─── 3D Lipatan ───
+        const lipatX = -10 + Math.sin(elapsed * 0.04 + leaf.swayPhase) * 5
+        const lipatY = 8 + Math.sin(elapsed * 0.06 + leaf.driftPhase) * 6
         leaf.rotationX += (lipatX * leaf.tiltAmount - leaf.rotationX) * 0.01
         leaf.rotationY += (lipatY * leaf.tiltAmount - leaf.rotationY) * 0.01
 
-        // ─── Opacity: breathe ───
+        // ─── Opacity ───
         if (visibleRef.current) {
           const opacityBreath = 0.55 + Math.sin(elapsed * 0.08 + leaf.swayPhase) * 0.15
           leaf.opacity += (opacityBreath - leaf.opacity) * 0.02
         }
       }
 
-      // ═══ Apply transforms — 3D biar keliatan ngelipet ═══
+      // ═══ Apply transforms ═══
       const transform = `translate3d(${leaf.x}px, ${leaf.y}px, 0) rotateZ(${leaf.rotation}deg) rotateX(${leaf.rotationX}deg) rotateY(${leaf.rotationY}deg) scale(${leaf.scale})`
       leaf.element.style.transform = transform
       leaf.element.style.opacity = String(leaf.opacity)
@@ -347,19 +321,15 @@ export default function SingleLeaf() {
 
     animFrameRef.current = requestAnimationFrame(animate)
 
-    // Fade in the leaf after 3 seconds — not immediately
-    // Bismillah harus dibaca dulu sebelum perjalanan dimulai
+    // Fade in after 3 seconds
     const fadeInTimeout = setTimeout(() => {
       visibleRef.current = true
     }, 3000)
 
-    // ═══ Listen for closing event — daun jatuh ═══
-    // Ini momen paling penting dari seluruh website
-    // Daun yang selama ini hidup... akhirnya jatuh
+    // ═══ Listen for closing event ═══
     const handleClosingStart = () => {
       isFallingRef.current = true
       fallTargetYRef.current = window.innerHeight - 80
-      // Beri sedikit velocity awal ke bawah — daun mulai jatuh
       leaf.velocityY = 0.1
     }
 

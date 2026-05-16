@@ -1308,205 +1308,160 @@ function EventSection() {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   8. GALLERY — Memories Returning
-   Like memories surfacing one by one from a dream.
-   Each photo drifts in from depth — not displayed, but remembered.
-   Organic spacing, cinematic zoom, layered depth, subtle float.
+   8. GALLERY — Lembaran Terbang
+   Kertas coklat robek termakan waktu.
+   Tiap foto ditempel di kertas lusuh.
+   Ganti foto? Lembaran terbang terbawa angin — hilang dari pandangan.
+   Foto baru muncul dari bawah — kertas baru yang ditemukan.
+   
+   Transisi: lembaran diangkat angin, muter, melayang, semakin jauh, hilang.
    ═══════════════════════════════════════════════════════════ */
 function GallerySection() {
   const sectionRef = useRef<HTMLDivElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [touchStart, setTouchStart] = useState<number | null>(null)
-  const [isFlipping, setIsFlipping] = useState(false)
-  const [nextIndex, setNextIndex] = useState(0)
+  const [isFlying, setIsFlying] = useState(false)
   const pageRef = useRef<HTMLDivElement>(null)
-  const curlRef = useRef<HTMLDivElement>(null)        // page curl overlay
-  const shadowRef = useRef<HTMLDivElement>(null)       // shadow under page
   const captionRef = useRef<HTMLDivElement>(null)
   const autoPlayRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const totalImages = WEDDING.galleryImages.length
 
-  // ─── PAGE PEEL — animasi membalik halaman kertas lusuh ───
-  // Konsep: halaman diangkat dari pojok, melipat ke kiri, 
-  // mengungkap halaman baru di bawahnya.
-  // Menggunakan scaleX + skewY + rotation untuk simulasi 3D yang lebih berat
-  // LEBIH LAMBAT, LEBIH BERAT, LEBIH "KERTAS" — bukan smooth tech animation
-  const flipToPage = useCallback((nextIdx: number, direction: 'next' | 'prev') => {
-    if (isFlipping || nextIdx === activeIndex) return
-    setIsFlipping(true)
-    setNextIndex(nextIdx)
+  // ═══ FLY AWAY — lembaran terbang terbawa angin ═══
+  // Kertas diangkat dari pojok, muter, melayang ke atas & ke sisi,
+  // semakin kecil, semakin transparan — seperti terbawa angin
+  // Lalu foto baru muncul dari bawah — kertas yang baru ditemukan
+  const flyToNext = useCallback((nextIdx: number) => {
+    if (isFlying || nextIdx === activeIndex) return
+    setIsFlying(true)
 
     const page = pageRef.current
-    const curl = curlRef.current
-    const shadow = shadowRef.current
     const caption = captionRef.current
-    if (!page) { setIsFlipping(false); return }
+    if (!page) { setIsFlying(false); return }
 
     const tl = gsap.timeline({
       onComplete: () => {
-        setActiveIndex(nextIdx)
-        setIsFlipping(false)
-        gsap.set(page, { scaleX: 1, skewY: 0, x: 0, rotation: 0, opacity: 1, overwrite: true })
-        if (curl) gsap.set(curl, { opacity: 0, overwrite: true })
-        if (shadow) gsap.set(shadow, { opacity: 0, overwrite: true })
+        setIsFlying(false)
+        // Reset halaman ke posisi normal
+        gsap.set(page, {
+          x: 0, y: 0, rotation: 0, scale: 1, opacity: 1,
+          skewX: 0, skewY: 0, rotateX: 0, rotateY: 0,
+          overwrite: true,
+        })
       }
     })
 
-    // Caption hilang pelan
+    // Caption hilang dulu
     if (caption) {
-      tl.to(caption, { opacity: 0, y: -5, duration: 0.25, ease: 'power2.in' })
+      tl.to(caption, { opacity: 0, y: -5, duration: 0.3, ease: 'power2.in' })
     }
 
-    if (direction === 'next') {
-      // ═══ FLIP NEXT: halaman melipat ke kiri — BERAT, PELAN, KERTAS ═══
-      gsap.set(page, { transformOrigin: 'left center' })
+    // ═══ PHASE 1: Angin datang — kertas mulai bergerak ═══
+    // Pojok kanan atas diangkat pelan — angin mengempaskan
+    tl.to(page, {
+      rotation: 3,
+      y: -8,
+      x: 5,
+      skewX: 2,
+      skewY: -1,
+      duration: 0.4,
+      ease: 'power2.out',
+    })
 
-      // Phase 1: ANGKAT — tepi kanan halaman diangkat pelan
-      // Kertas tua berat, ga langsung terangkat — ada momen "mengangkat"
-      tl.to(page, {
-        scaleX: 0.97,
-        skewY: -2,
-        rotation: -0.3,
-        duration: 0.2,
-        ease: 'power2.out',
-      })
+    // ═══ PHASE 2: Lembaran terangkat — mulai terbang ═══
+    // Kertas berputar dan melayang — terbawa angin
+    tl.to(page, {
+      y: -120,
+      x: 80,
+      rotation: 25,
+      scale: 0.85,
+      skewX: 8,
+      skewY: -5,
+      rotateX: 15,
+      rotateY: -20,
+      duration: 0.9,
+      ease: 'power2.in',
+    })
 
-      // Shadow berat muncul — kertas mengangkat = bayangan jatuh
-      if (shadow) {
-        tl.to(shadow, { opacity: 1, duration: 0.3, ease: 'power1.in' }, '<')
-      }
+    // ═══ PHASE 3: Semakin jauh — melayang, mengecil, pudar ═══
+    // Seperti kertas yang terbang semakin jauh
+    tl.to(page, {
+      y: -250,
+      x: 200,
+      rotation: 55,
+      scale: 0.5,
+      opacity: 0,
+      skewX: 15,
+      duration: 0.7,
+      ease: 'power3.in',
+    })
 
-      // Phase 2: LIPAT — halaman menyusut ke kiri
-      // Ini momen paling "berat" — kertas tua melipat pelan
-      // Duration lebih lama = terasa lebih berat dan nyata
-      tl.to(page, {
-        scaleX: 0,
-        skewY: -5,
-        rotation: -0.8,
-        duration: 0.7,
-        ease: 'power4.in',       // power4 = mulai pelan, akhir cepat — kaya kertas yang melipat
-      })
+    // ═══ JEDA — ruang kosong, lembaran sudah hilang ═══
+    tl.to({}, { duration: 0.3 })
 
-      // Curl effect — lipatan kertas di tengah, lebih dramatis
-      if (curl) {
-        gsap.set(curl, { opacity: 0 })
-        tl.to(curl, { opacity: 0.8, duration: 0.25, ease: 'power1.in' }, '-=0.45')
-        tl.to(curl, { opacity: 0, duration: 0.2, ease: 'power1.out' }, '-=0.15')
-      }
+    // ═══ PHASE 4: Foto baru muncul dari bawah ═══
+    // Kertas baru ditemukan — muncul dari bawah, naik pelan
+    tl.add(() => { setActiveIndex(nextIdx) })
 
-      // Shadow menghilang saat halaman tipis
-      if (shadow) {
-        tl.to(shadow, { opacity: 0, duration: 0.4, ease: 'power1.out' }, '-=0.35')
-      }
+    // Mulai dari bawah — kertas yang lagi ditemukan
+    gsap.set(page, {
+      y: 60,
+      x: -10,
+      rotation: -2,
+      scale: 0.95,
+      opacity: 0,
+      skewX: -3,
+      skewY: 1,
+      rotateX: 5,
+      rotateY: 3,
+    })
 
-      // ═══ JEDA SINGKAT — ruang kosong antara halaman ═══
-      // Bayangin buku tua: setelah halaman melipat, ada jeda sebelum halaman baru muncul
-      tl.to({}, { duration: 0.08 })
+    // Naik ke posisi — kertas mendarat pelan
+    tl.to(page, {
+      y: 0,
+      x: 0,
+      rotation: 0,
+      scale: 1,
+      opacity: 1,
+      skewX: 0,
+      skewY: 0,
+      rotateX: 0,
+      rotateY: 0,
+      duration: 1.2,
+      ease: 'power3.out',
+    })
 
-      // Phase 3: BUKA — halaman baru muncul dari kiri
-      // Set foto baru
-      tl.add(() => { setActiveIndex(nextIdx) })
-      gsap.set(page, { transformOrigin: 'right center' })
+    // Sedikit settle — kertas agak bergoyang lalu diam
+    tl.to(page, {
+      rotation: 0.5,
+      y: -2,
+      duration: 0.3,
+      ease: 'power1.out',
+    })
+    tl.to(page, {
+      rotation: 0,
+      y: 0,
+      duration: 0.4,
+      ease: 'elastic.out(1, 0.4)',
+    })
 
-      tl.fromTo(page,
-        { scaleX: 0, skewY: 5, rotation: 0.8, opacity: 1 },
-        {
-          scaleX: 1,
-          skewY: 0,
-          rotation: 0,
-          duration: 0.6,
-          ease: 'power2.out',
-        }
-      )
-
-      // Kertas lentur kembali — overshoot kecil
-      tl.to(page, {
-        scaleX: 1.015,
-        skewY: -0.3,
-        duration: 0.1,
-        ease: 'power1.out',
-      })
-      // Settle — kertas kembali rata
-      tl.to(page, {
-        scaleX: 1,
-        skewY: 0,
-        duration: 0.35,
-        ease: 'elastic.out(1, 0.3)',
-      })
-
-    } else {
-      // ═══ FLIP PREV: halaman melipat ke kanan ═══
-      gsap.set(page, { transformOrigin: 'right center' })
-
-      tl.to(page, {
-        scaleX: 0.97,
-        skewY: 2,
-        rotation: 0.3,
-        duration: 0.2,
-        ease: 'power2.out',
-      })
-
-      if (shadow) {
-        tl.to(shadow, { opacity: 1, duration: 0.3, ease: 'power1.in' }, '<')
-      }
-
-      tl.to(page, {
-        scaleX: 0,
-        skewY: 5,
-        rotation: 0.8,
-        duration: 0.7,
-        ease: 'power4.in',
-      })
-
-      if (curl) {
-        gsap.set(curl, { opacity: 0 })
-        tl.to(curl, { opacity: 0.8, duration: 0.25, ease: 'power1.in' }, '-=0.45')
-        tl.to(curl, { opacity: 0, duration: 0.2, ease: 'power1.out' }, '-=0.15')
-      }
-
-      if (shadow) {
-        tl.to(shadow, { opacity: 0, duration: 0.4, ease: 'power1.out' }, '-=0.35')
-      }
-
-      tl.to({}, { duration: 0.08 })
-
-      // Halaman baru muncul dari kanan
-      tl.add(() => { setActiveIndex(nextIdx) })
-      gsap.set(page, { transformOrigin: 'left center' })
-
-      tl.fromTo(page,
-        { scaleX: 0, skewY: -5, rotation: -0.8, opacity: 1 },
-        {
-          scaleX: 1,
-          skewY: 0,
-          rotation: 0,
-          duration: 0.6,
-          ease: 'power2.out',
-        }
-      )
-
-      tl.to(page, { scaleX: 1.015, skewY: 0.3, duration: 0.1, ease: 'power1.out' })
-      tl.to(page, { scaleX: 1, skewY: 0, duration: 0.35, ease: 'elastic.out(1, 0.3)' })
-    }
-
-    // Caption muncul pelan
+    // Caption muncul
     if (caption) {
       tl.fromTo(caption,
         { opacity: 0, y: 8 },
-        { opacity: 1, y: 0, duration: 0.45, ease: 'power2.out' },
-        '-=0.3'
+        { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' },
+        '-=0.5'
       )
     }
-  }, [activeIndex, isFlipping])
+  }, [activeIndex, isFlying])
 
   const nextSlide = useCallback(() => {
-    flipToPage((activeIndex + 1) % totalImages, 'next')
-  }, [activeIndex, totalImages, flipToPage])
+    flyToNext((activeIndex + 1) % totalImages)
+  }, [activeIndex, totalImages, flyToNext])
 
   const prevSlide = useCallback(() => {
-    flipToPage((activeIndex - 1 + totalImages) % totalImages, 'prev')
-  }, [activeIndex, totalImages, flipToPage])
+    flyToNext((activeIndex - 1 + totalImages) % totalImages)
+  }, [activeIndex, totalImages, flyToNext])
 
   // ─── Auto-play ═══
   const startAutoPlay = useCallback(() => {
@@ -1527,8 +1482,8 @@ function GallerySection() {
   }, [startAutoPlay, stopAutoPlay])
 
   useEffect(() => {
-    if (!isFlipping) { stopAutoPlay(); startAutoPlay() }
-  }, [activeIndex, isFlipping, startAutoPlay, stopAutoPlay])
+    if (!isFlying) { stopAutoPlay(); startAutoPlay() }
+  }, [activeIndex, isFlying, startAutoPlay, stopAutoPlay])
 
   // ─── Section entrance animation ───
   useEffect(() => {
@@ -1555,12 +1510,12 @@ function GallerySection() {
         )
       }
 
-      const book = section.querySelector('.worn-book-wrapper')
-      if (book) {
-        gsap.fromTo(book,
-          { opacity: 0, y: 30, filter: 'blur(4px)' },
+      const page = section.querySelector('.torn-page-card')
+      if (page) {
+        gsap.fromTo(page,
+          { opacity: 0, y: 40, rotation: -2, scale: 0.95 },
           {
-            opacity: 1, y: 0, filter: 'blur(0px)',
+            opacity: 1, y: 0, rotation: 0, scale: 1,
             duration: 1.2, ease: 'power3.out',
             scrollTrigger: { trigger: section, start: 'top 75%', toggleActions: 'play none none none' },
             delay: 0.4,
@@ -1568,7 +1523,7 @@ function GallerySection() {
         )
       }
 
-      const controls = section.querySelector('.book-controls')
+      const controls = section.querySelector('.gallery-controls')
       if (controls) {
         gsap.fromTo(controls,
           { opacity: 0, y: 10 },
@@ -1643,132 +1598,118 @@ function GallerySection() {
           <span className="text-[var(--gold)] text-lg">&#10047;</span>
         </div>
 
-        {/* ═══ BUKU LUSUH — lembaran coklat tua, sobek, diikat tali ═══ */}
-        <div className="worn-book-wrapper" style={{ maxWidth: '400px', margin: '0 auto' }}>
-
-          {/* ─── Tali pengikat — tali kulit lusuh yang mengikat buku ─── */}
-          <div className="absolute -left-5 sm:-left-6 top-0 bottom-0 w-1 z-30 pointer-events-none"
+        {/* ═══ LEMBARAN ROBEK — kertas coklat termakan waktu ═══ */}
+        <div style={{ maxWidth: '380px', margin: '0 auto', perspective: '1000px' }}>
+          <div
+            ref={pageRef}
+            className="torn-page-card"
             style={{
-              background: 'linear-gradient(to right, #2a1f14, #3d2b1a, #4a3728, #3d2b1a, #2a1f14)',
-              boxShadow: '-2px 0 4px rgba(0,0,0,0.3)',
-            }}>
-            {/* Simpul tali */}
-            <div className="absolute -top-1 -left-1 right-1 h-3 rounded-sm"
-              style={{ background: 'linear-gradient(135deg, #3d2b1a, #5c4435, #3d2b1a)', boxShadow: '0 -1px 3px rgba(0,0,0,0.3)' }} />
-            <div className="absolute -bottom-1 -left-1 right-1 h-3 rounded-sm"
-              style={{ background: 'linear-gradient(135deg, #3d2b1a, #5c4435, #3d2b1a)', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }} />
-            {/* Jahitan tali */}
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="absolute w-2 h-[1px]"
-                style={{ left: '-2px', top: `${10 + i * 11}%`, background: 'var(--gold)', opacity: 0.2, transform: 'rotate(25deg)' }} />
-            ))}
-          </div>
+              position: 'relative',
+              willChange: 'transform, opacity',
+              // Kertas coklat robek — background
+              background: `linear-gradient(
+                155deg,
+                #a08860 0%,
+                #937a4e 15%,
+                #8d7045 30%,
+                #937a4e 45%,
+                #a08860 55%,
+                #8d7045 70%,
+                #937a4e 85%,
+                #a08860 100%
+              )`,
+              // Tepi robek — tidak rata
+              clipPath: `polygon(
+                0% 1%, 3% 0.3%, 7% 1.2%, 12% 0%, 20% 0.5%, 30% 0%, 45% 0.8%, 60% 0%, 75% 0.4%, 88% 0%, 95% 0.6%, 100% 0.2%,
+                99.8% 4%, 100% 12%, 99.5% 22%, 100% 35%, 99.7% 48%, 100% 60%, 99.5% 72%, 100% 82%, 99.8% 92%, 100% 98%,
+                97% 99.5%, 92% 99.8%, 85% 99.2%, 75% 99.9%, 60% 99.5%, 45% 99.8%, 30% 99.3%, 15% 99.8%, 5% 99.5%, 0% 99.8%,
+                0.3% 93%, 0.1% 82%, 0.3% 68%, 0.1% 52%, 0.2% 38%, 0.1% 22%, 0.3% 10%
+              )`,
+              boxShadow: `
+                4px 6px 20px rgba(0,0,0,0.3),
+                1px 2px 6px rgba(0,0,0,0.15),
+                inset 0 0 50px rgba(0,0,0,0.08),
+                inset 0 0 3px rgba(139,109,63,0.15)
+              `,
+              padding: '18px 16px 12px 16px',
+              transform: 'rotate(-0.3deg)',
+            }}
+          >
+            {/* Grain texture */}
+            <div className="absolute inset-0 pointer-events-none" style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+              backgroundSize: '120px 120px',
+              opacity: 0.06,
+              mixBlendMode: 'multiply',
+            }} />
 
-          {/* ─── Tumpukan halaman lusuh — sisi kanan ─── */}
-          <div className="absolute -right-2 top-1 bottom-1 pointer-events-none"
-            style={{ width: '5px', zIndex: 1 }}>
-            {[0, 1, 2, 3, 4].map((i) => (
-              <div key={i} className="absolute top-0 bottom-0"
+            {/* Stains — noda kopi, minyak, jamur */}
+            <div className="absolute inset-0 pointer-events-none" style={{
+              backgroundImage: `
+                radial-gradient(ellipse at 85% 12%, rgba(90,60,20,0.15) 0%, transparent 35%),
+                radial-gradient(ellipse at 15% 85%, rgba(80,55,25,0.1) 0%, transparent 25%),
+                radial-gradient(circle at 70% 65%, rgba(60,80,30,0.05) 0%, transparent 12%),
+                radial-gradient(ellipse at 90% 75%, rgba(120,100,60,0.08) 0%, transparent 20%),
+                linear-gradient(to bottom, rgba(139,109,63,0.08) 0%, transparent 10%),
+                linear-gradient(to top, rgba(100,70,30,0.1) 0%, transparent 6%)
+              `,
+            }} />
+
+            {/* Lipatan — kertas yang pernah dilipat */}
+            <div className="absolute inset-0 pointer-events-none" style={{
+              backgroundImage: `
+                linear-gradient(to bottom, transparent 47%, rgba(0,0,0,0.03) 49%, rgba(0,0,0,0.06) 50%, rgba(0,0,0,0.03) 51%, transparent 53%)
+              `,
+            }} />
+
+            {/* Area foto */}
+            <div className="relative" style={{ margin: '14px 12px 8px 12px' }}>
+              {/* Sobekan kecil di tepi kertas — detail realism */}
+              <div className="absolute -top-1 -left-1 w-4 h-4 pointer-events-none" style={{
+                background: 'linear-gradient(135deg, rgba(139,109,63,0.25), rgba(139,109,63,0.1))',
+                clipPath: 'polygon(0 0, 100% 30%, 70% 100%, 0 100%)',
+                transform: 'rotate(-5deg)',
+              }} />
+              <div className="absolute -top-1 -right-1 w-4 h-4 pointer-events-none" style={{
+                background: 'linear-gradient(-135deg, rgba(139,109,63,0.2), rgba(139,109,63,0.08))',
+                clipPath: 'polygon(100% 0, 100% 100%, 30% 100%, 0 30%)',
+                transform: 'rotate(5deg)',
+              }} />
+
+              <div
+                className="aspect-[4/5] overflow-hidden cursor-pointer"
                 style={{
-                  right: `${i * 1}px`,
-                  width: '1px',
-                  background: `hsl(30, ${25 + i * 3}%, ${55 - i * 4}%)`,
-                  boxShadow: i === 0 ? '1px 0 2px rgba(0,0,0,0.1)' : 'none',
-                }} />
-            ))}
-          </div>
-
-          {/* ─── Tumpukan halaman lusuh — bawah ─── */}
-          <div className="absolute left-0 right-0 pointer-events-none"
-            style={{ bottom: '-3px', height: '4px', zIndex: 1 }}>
-            {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="absolute left-0 right-0"
-                style={{
-                  bottom: `${i * 1}px`,
-                  height: '1px',
-                  background: `hsl(30, ${25 + i * 3}%, ${55 - i * 4}%)`,
-                }} />
-            ))}
-          </div>
-
-          {/* ═══ HALAMAN UTAMA — kertas coklat tua, lusuh, sobek ═══ */}
-          <div ref={pageRef} className="worn-page" style={{ position: 'relative', zIndex: 5 }}>
-
-            {/* ─── Background kertas coklat tua ─── */}
-            <div className="worn-page-surface">
-
-              {/* Tekstur kertas lusuh */}
-              <div className="absolute inset-0 pointer-events-none worn-paper-grain" />
-
-              {/* Noda usia — bercak kopi, minyak, jamur */}
-              <div className="absolute inset-0 pointer-events-none worn-stains" />
-
-              {/* Garis lipatan — kertas yang pernah dilipat */}
-              <div className="absolute inset-0 pointer-events-none worn-creases" />
-
-              {/* Tepi sobek — sisi kanan dan atas yang tidak rapih */}
-              <div className="absolute inset-0 pointer-events-none worn-torn-edges" />
-
-              {/* Area foto — ditempel dengan perekat yang udah menguning */}
-              <div className="relative" style={{ margin: '16px 14px 10px 14px' }}>
-                {/* Perekat menguning di sudut */}
-                <div className="absolute -top-1 -left-1 w-6 h-6 z-10 pointer-events-none worn-tape-corner" />
-                <div className="absolute -top-1 -right-1 w-6 h-6 z-10 pointer-events-none worn-tape-corner" style={{ transform: 'rotate(90deg)' }} />
-                <div className="absolute -bottom-1 -left-1 w-6 h-6 z-10 pointer-events-none worn-tape-corner" style={{ transform: 'rotate(-90deg)' }} />
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 z-10 pointer-events-none worn-tape-corner" style={{ transform: 'rotate(180deg)' }} />
-
-                <div
-                  className="aspect-[4/5] overflow-hidden cursor-pointer"
-                  style={{ background: '#3a2e1f' }}
-                  onClick={() => !isFlipping && setLightboxIndex(activeIndex)}
-                  onTouchStart={handleTouchStart}
-                  onTouchEnd={handleTouchEnd}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`Lihat foto ${WEDDING.galleryCaptions[activeIndex]}`}
-                  onKeyDown={(e) => { if (e.key === 'Enter') setLightboxIndex(activeIndex) }}
-                >
-                  <img
-                    key={activeIndex}
-                    src={WEDDING.galleryImages[activeIndex]}
-                    alt={WEDDING.galleryCaptions[activeIndex]}
-                    className="w-full h-full object-cover"
-                    style={{ display: 'block', filter: 'sepia(0.15) contrast(1.03) brightness(0.95)' }}
-                  />
-                </div>
-              </div>
-
-              {/* Nomor halaman — tulisan tangan yang pudar */}
-              <div className="mt-1 text-center" style={{ fontFamily: 'var(--font-script)', fontSize: '11px', color: '#8b6914', opacity: 0.35 }}>
-                {activeIndex + 1}
+                  background: '#3a2e1f',
+                  // Foto agak miring — ditempel ga pernah rata
+                  transform: 'rotate(0.5deg)',
+                  boxShadow: 'inset 0 0 8px rgba(0,0,0,0.3)',
+                }}
+                onClick={() => !isFlying && setLightboxIndex(activeIndex)}
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+                role="button"
+                tabIndex={0}
+                aria-label={`Lihat foto ${WEDDING.galleryCaptions[activeIndex]}`}
+                onKeyDown={(e) => { if (e.key === 'Enter') setLightboxIndex(activeIndex) }}
+              >
+                <img
+                  key={activeIndex}
+                  src={WEDDING.galleryImages[activeIndex]}
+                  alt={WEDDING.galleryCaptions[activeIndex]}
+                  className="w-full h-full object-cover"
+                  style={{ display: 'block', filter: 'sepia(0.12) contrast(1.02) brightness(0.93)' }}
+                />
               </div>
             </div>
 
-            {/* ─── Page curl overlay — efek lipatan kertas saat membalik ─── */}
-            <div
-              ref={curlRef}
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                zIndex: 10,
-                opacity: 0,
-                background: 'linear-gradient(to right, transparent 40%, rgba(0,0,0,0.15) 70%, rgba(0,0,0,0.3) 90%, rgba(0,0,0,0.15) 100%)',
-              }}
-            />
+            {/* Nomor halaman — tulisan tangan pudar */}
+            <div className="mt-1 text-center" style={{ fontFamily: 'var(--font-script)', fontSize: '12px', color: '#8b6914', opacity: 0.3 }}>
+              {activeIndex + 1}
+            </div>
           </div>
-
-          {/* ═══ Shadow — bayangan halaman terangkat ═══ */}
-          <div
-            ref={shadowRef}
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              zIndex: 3,
-              opacity: 0,
-              background: 'linear-gradient(to right, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.15) 30%, transparent 50%)',
-            }}
-          />
         </div>
 
-        {/* Caption — tulisan tangan di bawah buku */}
+        {/* Caption — tulisan tangan */}
         <div
           ref={captionRef}
           className="py-3 text-center"
@@ -1777,15 +1718,15 @@ function GallerySection() {
           <p className="text-sm sm:text-base italic">{WEDDING.galleryCaptions[activeIndex]}</p>
         </div>
 
-        {/* ═══ Book Controls ═══ */}
-        <div className="book-controls flex items-center justify-center gap-6 mt-2">
+        {/* ═══ Controls ═══ */}
+        <div className="gallery-controls flex items-center justify-center gap-6 mt-2">
           <button
             onClick={() => { stopAutoPlay(); prevSlide() }}
             className="w-9 h-9 flex items-center justify-center rounded-full transition-all duration-300 cursor-pointer"
             style={{ border: '1px solid var(--gold)', color: 'var(--gold)', background: 'transparent' }}
             onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--gold)'; e.currentTarget.style.color = 'white' }}
             onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--gold)' }}
-            aria-label="Halaman sebelumnya"
+            aria-label="Foto sebelumnya"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -1793,8 +1734,7 @@ function GallerySection() {
           </button>
 
           <div className="flex items-center gap-1.5" style={{ fontFamily: 'var(--font-body)', fontSize: '11px', letterSpacing: '0.1em', color: 'var(--gold)' }}>
-            <span style={{ opacity: 0.45 }}>hal.</span>
-            <span className="font-medium">{activeIndex + 1}</span>
+            <span style={{ opacity: 0.45 }}>{activeIndex + 1}</span>
             <span style={{ opacity: 0.25 }}>/</span>
             <span className="font-medium">{totalImages}</span>
           </div>
@@ -1805,7 +1745,7 @@ function GallerySection() {
             style={{ border: '1px solid var(--gold)', color: 'var(--gold)', background: 'transparent' }}
             onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--gold)'; e.currentTarget.style.color = 'white' }}
             onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--gold)' }}
-            aria-label="Halaman selanjutnya"
+            aria-label="Foto selanjutnya"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
