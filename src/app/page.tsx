@@ -1318,164 +1318,145 @@ function GallerySection() {
   const [activeIndex, setActiveIndex] = useState(0)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [touchStart, setTouchStart] = useState<number | null>(null)
-  const [isTransitioning, setIsTransitioning] = useState(false)
+  const [isFlipping, setIsFlipping] = useState(false)
+  const [targetIndex, setTargetIndex] = useState(0)
+  const pageRef = useRef<HTMLDivElement>(null)
+  const shadowRef = useRef<HTMLDivElement>(null)
   const captionRef = useRef<HTMLDivElement>(null)
-  const slideRef = useRef<HTMLDivElement>(null)
-  const imgRef = useRef<HTMLImageElement>(null)
-  const shutterRef = useRef<HTMLDivElement>(null)
-  const lightLeakRef = useRef<HTMLDivElement>(null)
   const autoPlayRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const kenBurnsRef = useRef<gsap.core.Tween | null>(null)
   const totalImages = WEDDING.galleryImages.length
 
-  // Detect mobile once
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
 
-  // ─── Ken Burns effect — slow zoom/pan on the photo while displayed ───
-  // Like a documentary slowly exploring a photograph
-  const startKenBurns = useCallback(() => {
-    if (kenBurnsRef.current) { kenBurnsRef.current.kill(); kenBurnsRef.current = null }
-    const img = imgRef.current
-    if (!img) return
+  // ─── Page flip transition ───
+  // Membalik halaman buku kuno — the paper lifts, turns, and the next page appears
+  const flipToPage = useCallback((nextIdx: number, direction: 'next' | 'prev') => {
+    if (isFlipping || nextIdx === activeIndex) return
+    setIsFlipping(true)
+    setTargetIndex(nextIdx)
 
-    // Random direction — sometimes zoom in, sometimes pan, sometimes both
-    const directions = [
-      { x: 0, y: 0, scale: 1.12 },   // slow zoom in center
-      { x: -15, y: -8, scale: 1.08 }, // drift up-left + zoom
-      { x: 10, y: -5, scale: 1.1 },   // drift up-right + zoom
-      { x: -8, y: 10, scale: 1.06 },  // drift down-left
-      { x: 5, y: 5, scale: 1.1 },     // drift down-right + zoom
-    ]
-    const dir = directions[Math.floor(Math.random() * directions.length)]
-
-    gsap.set(img, { x: 0, y: 0, scale: 1 })
-    kenBurnsRef.current = gsap.to(img, {
-      x: dir.x,
-      y: dir.y,
-      scale: dir.scale,
-      duration: isMobile ? 5 : 7,
-      ease: 'none',
-    })
-  }, [isMobile])
-
-  const stopKenBurns = useCallback(() => {
-    if (kenBurnsRef.current) { kenBurnsRef.current.kill(); kenBurnsRef.current = null }
-  }, [])
-
-  // Start Ken Burns on mount and on slide change
-  useEffect(() => {
-    if (!isTransitioning) {
-      const timer = setTimeout(() => startKenBurns(), 300)
-      return () => clearTimeout(timer)
-    }
-  }, [activeIndex, isTransitioning, startKenBurns])
-
-  // ─── Projector shutter transition ───
-  // Real film projectors have a physical shutter — brief darkness, then light
-  const goToSlide = useCallback((nextIndex: number) => {
-    if (isTransitioning || nextIndex === activeIndex) return
-    setIsTransitioning(true)
-    stopKenBurns()
-
-    const slide = slideRef.current
+    const page = pageRef.current
+    const shadow = shadowRef.current
     const caption = captionRef.current
-    const shutter = shutterRef.current
-    const lightLeak = lightLeakRef.current
-    if (!slide) { setIsTransitioning(false); return }
+    if (!page) { setIsFlipping(false); return }
 
     const tl = gsap.timeline({
       onComplete: () => {
-        setActiveIndex(nextIndex)
-        setIsTransitioning(false)
+        setActiveIndex(nextIdx)
+        setIsFlipping(false)
+        // Reset page position for next flip
+        gsap.set(page, { rotateY: 0, scale: 1, zIndex: 5 })
+        if (shadow) gsap.set(shadow, { opacity: 0 })
       }
     })
 
-    // ═══ PHASE 1: Current photo dims — projector bulb fading ═══
-    tl.to(slide, {
-      opacity: 0,
-      scale: 0.97,
-      filter: 'blur(3px) brightness(0.5)',
-      duration: isMobile ? 0.3 : 0.45,
-      ease: 'power2.in',
-    })
-
-    // Caption lifts off
+    // Caption fades like ink dissolving
     if (caption) {
-      tl.to(caption, { opacity: 0, y: -6, duration: 0.2, ease: 'power2.in' }, '<')
+      tl.to(caption, { opacity: 0, y: -4, duration: 0.2, ease: 'power2.in' })
     }
 
-    // ═══ PHASE 2: Shutter closes — brief total darkness like gate closing ═══
-    if (shutter) {
-      tl.fromTo(shutter,
-        { opacity: 0 },
-        { opacity: 1, duration: isMobile ? 0.1 : 0.12, ease: 'power2.in' },
-        '-=0.15'
-      )
-    }
+    if (direction === 'next') {
+      // ═══ FLIP FORWARD: halaman kanan diangkat, berputar ke kiri ═══
+      gsap.set(page, { transformOrigin: 'left center' })
 
-    // ═══ PHASE 3: Light leak — golden light bleeds through the gate crack ═══
-    if (lightLeak) {
-      tl.fromTo(lightLeak,
-        { opacity: 0 },
-        { opacity: 0.6, duration: 0.15, ease: 'power2.out' },
-        '-=0.05'
-      )
-    }
-
-    // Shutter opens — new frame slides into gate
-    if (shutter) {
-      tl.to(shutter, { opacity: 0, duration: isMobile ? 0.1 : 0.15, ease: 'power2.out' })
-    }
-
-    // ═══ PHASE 4: New photo revealed — projector beam hits the new frame ═══
-    // Golden overexposure first (like bulb warming), then settles
-    tl.fromTo(slide,
-      { opacity: 0, scale: 1.03, filter: 'blur(3px) brightness(1.5)' },
-      {
-        opacity: 1,
-        scale: 1,
-        filter: 'blur(0px) brightness(1.05)',
-        duration: isMobile ? 0.4 : 0.6,
+      // Phase 1: Halaman diangkat sedikit — jari memegang tepi
+      tl.to(page, {
+        rotateY: -12,
+        scale: 0.99,
+        duration: 0.12,
         ease: 'power2.out',
-      }
-    )
+      })
 
-    // Light leak fades away
-    if (lightLeak) {
-      tl.to(lightLeak, { opacity: 0, duration: 0.4, ease: 'power2.out' }, '-=0.4')
+      // Shadow tumbuh di bawah halaman yang terangkat
+      if (shadow) {
+        tl.to(shadow, { opacity: 1, duration: 0.25, ease: 'power2.in' }, '<')
+      }
+
+      // Phase 2: Halaman dibalik — rotate dari 0 ke -90 (sampai tegak)
+      tl.to(page, {
+        rotateY: -90,
+        duration: isMobile ? 0.35 : 0.4,
+        ease: 'power3.in',
+      })
+
+      // ═══ CRITICAL: Swap z-index di midpoint! ═══
+      // Saat halaman sudah tegak (90°), pindah ke belakang base page
+      // Biar foto berikutnya yang di base page keliatan
+      tl.add(() => {
+        gsap.set(page, { zIndex: 0 })
+      })
+
+      // Phase 3: Halaman lanjut berputar dari -90 ke -180 (menutup ke belakang)
+      tl.to(page, {
+        rotateY: -180,
+        scale: 0.97,
+        duration: isMobile ? 0.3 : 0.35,
+        ease: 'power3.out',
+      })
+
+      // Shadow menghilang
+      if (shadow) {
+        tl.to(shadow, { opacity: 0, duration: 0.25, ease: 'power2.out' }, '-=0.2')
+      }
+    } else {
+      // ═══ FLIP BACKWARD: halaman kiri diangkat, berputar ke kanan ═══
+      gsap.set(page, { transformOrigin: 'right center' })
+
+      tl.to(page, {
+        rotateY: 12,
+        scale: 0.99,
+        duration: 0.12,
+        ease: 'power2.out',
+      })
+
+      if (shadow) {
+        tl.to(shadow, { opacity: 1, duration: 0.25, ease: 'power2.in' }, '<')
+      }
+
+      tl.to(page, {
+        rotateY: 90,
+        duration: isMobile ? 0.35 : 0.4,
+        ease: 'power3.in',
+      })
+
+      tl.add(() => {
+        gsap.set(page, { zIndex: 0 })
+      })
+
+      tl.to(page, {
+        rotateY: 180,
+        scale: 0.97,
+        duration: isMobile ? 0.3 : 0.35,
+        ease: 'power3.out',
+      })
+
+      if (shadow) {
+        tl.to(shadow, { opacity: 0, duration: 0.25, ease: 'power2.out' }, '-=0.2')
+      }
     }
 
-    // Brief warm brightness then settle to normal
-    tl.to(slide, {
-      filter: 'blur(0px) brightness(1)',
-      duration: 0.3,
-      ease: 'power2.out',
-    })
-
-    // New caption writes in
+    // Caption baru muncul kayak tinta segar
     if (caption) {
       tl.fromTo(caption,
-        { opacity: 0, y: 4 },
+        { opacity: 0, y: 6 },
         { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' },
-        '-=0.3'
+        '-=0.1'
       )
     }
-  }, [activeIndex, isTransitioning, isMobile, stopKenBurns])
+  }, [activeIndex, isFlipping, isMobile])
 
   const nextSlide = useCallback(() => {
-    goToSlide((activeIndex + 1) % totalImages)
-  }, [activeIndex, totalImages, goToSlide])
+    flipToPage((activeIndex + 1) % totalImages, 'next')
+  }, [activeIndex, totalImages, flipToPage])
 
   const prevSlide = useCallback(() => {
-    goToSlide((activeIndex - 1 + totalImages) % totalImages)
-  }, [activeIndex, totalImages, goToSlide])
+    flipToPage((activeIndex - 1 + totalImages) % totalImages, 'prev')
+  }, [activeIndex, totalImages, flipToPage])
 
-  // ─── Auto-play — projector runs on its own, like a memory reel ───
+  // ─── Auto-play — halaman berputar sendiri, kayak buku yang dibaca ═══
   const startAutoPlay = useCallback(() => {
     if (autoPlayRef.current) clearInterval(autoPlayRef.current)
-    autoPlayRef.current = setInterval(() => {
-      nextSlide()
-    }, 5000) // 5s — more breathing room for Ken Burns
+    autoPlayRef.current = setInterval(() => { nextSlide() }, 6000)
   }, [nextSlide])
 
   const stopAutoPlay = useCallback(() => {
@@ -1485,21 +1466,14 @@ function GallerySection() {
     }
   }, [])
 
-  // Start auto-play on mount
   useEffect(() => {
-    const timer = setTimeout(() => { startAutoPlay() }, 2500)
+    const timer = setTimeout(() => { startAutoPlay() }, 3000)
     return () => { clearTimeout(timer); stopAutoPlay() }
   }, [startAutoPlay, stopAutoPlay])
 
-  // Reset autoplay on slide change
   useEffect(() => {
-    if (!isTransitioning) { stopAutoPlay(); startAutoPlay() }
-  }, [activeIndex, isTransitioning, startAutoPlay, stopAutoPlay])
-
-  // Cleanup Ken Burns on unmount
-  useEffect(() => {
-    return () => { stopKenBurns() }
-  }, [stopKenBurns])
+    if (!isFlipping) { stopAutoPlay(); startAutoPlay() }
+  }, [activeIndex, isFlipping, startAutoPlay, stopAutoPlay])
 
   // ─── Section entrance animation ───
   useEffect(() => {
@@ -1526,41 +1500,27 @@ function GallerySection() {
         )
       }
 
-      // Projector reveal — first slide appears like turning on a projector
-      const projector = section.querySelector('.projector-stage')
-      if (projector) {
-        gsap.fromTo(projector,
-          { opacity: 0, scale: 0.92, filter: 'blur(8px) brightness(0.2)' },
+      // Buku muncul — kayak nemuin buku diary lama di laci
+      const book = section.querySelector('.diary-book-perspective')
+      if (book) {
+        gsap.fromTo(book,
+          { opacity: 0, scale: 0.88, filter: 'blur(6px) brightness(0.5)' },
           {
             opacity: 1,
             scale: 1,
-            filter: 'blur(0px) brightness(1.1)',
-            duration: 1.8,
+            filter: 'blur(0px) brightness(1.05)',
+            duration: 1.5,
             ease: 'power3.out',
             scrollTrigger: { trigger: section, start: 'top 75%', toggleActions: 'play none none none' },
             delay: 0.5,
             onComplete: () => {
-              // Brief golden flash then settle
-              gsap.to(projector, { filter: 'brightness(1)', duration: 0.5, ease: 'power2.out' })
+              gsap.to(book, { filter: 'brightness(1)', duration: 0.5, ease: 'power2.out' })
             }
           }
         )
       }
 
-      // Film strip decoration slides in
-      const filmStrip = section.querySelector('.film-strip')
-      if (filmStrip) {
-        gsap.fromTo(filmStrip,
-          { opacity: 0, x: -20 },
-          { opacity: 1, x: 0, duration: 1.0, ease: 'power2.out',
-            scrollTrigger: { trigger: section, start: 'top 75%', toggleActions: 'play none none none' },
-            delay: 0.8,
-          }
-        )
-      }
-
-      // Projector controls fade in
-      const controls = section.querySelector('.projector-controls')
+      const controls = section.querySelector('.book-controls')
       if (controls) {
         gsap.fromTo(controls,
           { opacity: 0, y: 10 },
@@ -1574,13 +1534,13 @@ function GallerySection() {
     return () => ctx.revert()
   }, [])
 
-  // ─── Touch/Swipe for carousel ───
-  const handleCarouselTouchStart = (e: React.TouchEvent) => {
+  // ─── Touch/Swipe for page flipping ───
+  const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStart(e.touches[0].clientX)
     stopAutoPlay()
   }
 
-  const handleCarouselTouchEnd = (e: React.TouchEvent) => {
+  const handleTouchEnd = (e: React.TouchEvent) => {
     if (touchStart === null) return
     const diff = e.changedTouches[0].clientX - touchStart
     if (Math.abs(diff) > 50) {
@@ -1625,6 +1585,9 @@ function GallerySection() {
 
   const closeLightbox = () => setLightboxIndex(null)
 
+  // Foto yang ditampilkan di base page saat flip
+  const baseImageIndex = isFlipping ? targetIndex : activeIndex
+
   return (
     <section ref={sectionRef} data-section="gallery" className="diary-paper-bg cinema-depth py-20 px-6" style={{ opacity: 0 }}>
       <div className="max-w-lg mx-auto text-center">
@@ -1635,159 +1598,207 @@ function GallerySection() {
           <span className="text-[var(--gold)] text-lg">&#10047;</span>
         </div>
 
-        {/* ═══ Film Projector Stage ═══ */}
-        <div className="projector-stage relative">
+        {/* ═══ DIARY BOOK — lembaran kuno yang diikat jadi buku ═══ */}
+        <div className="diary-book-perspective" style={{ maxWidth: '400px', margin: '0 auto' }}>
 
-          {/* Projector dust particles — floating dust in the beam */}
-          <div className="projector-dust absolute inset-0 pointer-events-none z-30" />
-
-          {/* Light leak overlay — golden light that bleeds during transitions */}
-          <div
-            ref={lightLeakRef}
-            className="absolute inset-0 pointer-events-none z-20"
+          {/* Book binding — kulit buku dengan jahitan benang emas */}
+          <div className="book-binding absolute -left-3 sm:-left-4 top-1 bottom-1 w-4 sm:w-5 z-20 pointer-events-none"
             style={{
-              opacity: 0,
-              background: 'radial-gradient(ellipse at 30% 20%, rgba(201,169,110,0.4) 0%, rgba(201,169,110,0.1) 40%, transparent 70%)',
-              mixBlendMode: 'screen',
+              background: 'linear-gradient(to right, #3d2b1a 0%, #5c4435 30%, #6b5240 60%, #5c4435 80%, #4a3728 100%)',
+              borderRadius: '3px 0 0 3px',
+              boxShadow: '-3px 0 8px rgba(0,0,0,0.4), inset 2px 0 4px rgba(255,255,255,0.08)',
             }}
-          />
+          >
+            <div className="absolute inset-0 flex flex-col justify-around items-center py-3 px-1"
+              style={{ opacity: 0.35 }}>
+              {Array.from({ length: 10 }).map((_, i) => (
+                <div key={i} className="w-2 h-[1px] rounded-full"
+                  style={{ background: 'var(--gold)' }} />
+              ))}
+            </div>
+          </div>
 
-          {/* Shutter overlay — brief darkness during gate change */}
-          <div
-            ref={shutterRef}
-            className="absolute inset-0 pointer-events-none z-20"
+          {/* Page stack edges — tumpukan halaman di sisi kanan */}
+          <div className="absolute -right-1.5 top-2 bottom-2 w-3 pointer-events-none"
             style={{
-              opacity: 0,
-              background: '#0a0806',
-            }}
-          />
-
-          {/* Film strip decoration — left side, realistic sprocket holes */}
-          <div className="film-strip absolute -left-3 sm:-left-5 top-0 bottom-0 w-5 sm:w-6 flex flex-col justify-between py-1 pointer-events-none"
-            style={{ zIndex: 2, opacity: 0.25 }}>
-            {Array.from({ length: 14 }).map((_, i) => (
-              <div key={i} className="w-full flex justify-center">
-                <div className="w-2.5 sm:w-3 aspect-[3/4] rounded-[1px]"
-                  style={{
-                    border: '1px solid var(--gold)',
-                    background: 'rgba(201,169,110,0.04)',
-                  }} />
-              </div>
+              background: 'linear-gradient(to right, #d4c5a9, #c9b896, #c0ad88, #b8a57e)',
+              borderRadius: '0 2px 2px 0',
+              boxShadow: '2px 0 3px rgba(0,0,0,0.08)',
+              zIndex: 1,
+            }}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="absolute w-full"
+                style={{ top: `${8 + i * 18}%`, height: '1px', background: 'rgba(0,0,0,0.06)' }} />
             ))}
           </div>
 
-          {/* Main projection — one photo at a time */}
-          <div
-            ref={slideRef}
-            className="projector-frame cursor-pointer relative overflow-hidden rounded-sm"
+          {/* Bottom page stack — tumpukan dari bawah */}
+          <div className="absolute left-0 right-1 -bottom-1.5 h-2 pointer-events-none"
             style={{
-              background: 'white',
-              padding: '4px 4px 0 4px',
-              boxShadow: '0 4px 24px rgba(0,0,0,0.15), 0 1px 4px rgba(0,0,0,0.08), 0 0 60px rgba(201,169,110,0.1)',
-            }}
-            onClick={() => setLightboxIndex(activeIndex)}
-            onTouchStart={handleCarouselTouchStart}
-            onTouchEnd={handleCarouselTouchEnd}
-            role="button"
-            tabIndex={0}
-            aria-label={`Lihat foto ${WEDDING.galleryCaptions[activeIndex]}`}
-            onKeyDown={(e) => { if (e.key === 'Enter') setLightboxIndex(activeIndex) }}
-          >
-            {/* Film grain overlay — subtle noise like old film stock */}
-            <div className="absolute inset-0 pointer-events-none z-10"
-              style={{
-                backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")',
-                backgroundSize: '100px 100px',
-                opacity: 0.03,
-                mixBlendMode: 'overlay',
-              }} />
+              background: 'linear-gradient(to bottom, #d4c5a9, #c9b896, #c0ad88)',
+              borderRadius: '0 0 2px 2px',
+              boxShadow: '0 2px 3px rgba(0,0,0,0.08)',
+              zIndex: 0,
+            }} />
 
-            {/* Projector beam vignette — darker edges like projected light */}
-            <div className="absolute inset-0 pointer-events-none z-10"
-              style={{
-                background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.2) 85%, rgba(0,0,0,0.4) 100%)',
-              }} />
+          {/* ═══ BASE PAGE — halaman di bawah (foto berikutnya) ═══ */}
+          <div className="diary-book-page" style={{ position: 'relative', zIndex: 1 }}>
+            <div className="diary-page-inner">
+              {/* Paper texture */}
+              <div className="absolute inset-0 pointer-events-none diary-paper-texture" />
+              {/* Age spots */}
+              <div className="absolute inset-0 pointer-events-none diary-age-spots" />
+              {/* Ruled lines */}
+              <div className="absolute inset-x-4 top-16 bottom-10 pointer-events-none diary-ruled-lines" />
 
-            {/* Subtle film flicker — brightness micro-variations */}
-            <div className="absolute inset-0 pointer-events-none z-10 projector-flicker" />
+              {/* Photo mount area */}
+              <div className="relative" style={{ margin: '0 2px' }}>
+                <div className="absolute -top-0.5 -left-0.5 w-5 h-5 z-10 pointer-events-none diary-photo-corner" />
+                <div className="absolute -top-0.5 -right-0.5 w-5 h-5 z-10 pointer-events-none diary-photo-corner" />
+                <div className="absolute -bottom-0.5 -left-0.5 w-5 h-5 z-10 pointer-events-none diary-photo-corner" />
+                <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 z-10 pointer-events-none diary-photo-corner" />
 
-            <div className="aspect-[4/5] overflow-hidden">
-              <img
-                ref={imgRef}
-                key={activeIndex}
-                src={WEDDING.galleryImages[activeIndex]}
-                alt={WEDDING.galleryCaptions[activeIndex]}
-                className="w-full h-full object-cover will-change-transform"
-                style={{ display: 'block', transformOrigin: 'center center' }}
-              />
-            </div>
+                <div className="aspect-[4/5] overflow-hidden" style={{ background: '#ddd5c5' }}>
+                  <img
+                    src={WEDDING.galleryImages[baseImageIndex]}
+                    alt={WEDDING.galleryCaptions[baseImageIndex]}
+                    className="w-full h-full object-cover diary-photo-filter"
+                    style={{ display: 'block' }}
+                  />
+                </div>
+              </div>
 
-            {/* Slide number — film frame counter */}
-            <div className="absolute top-2 right-2 z-20 px-2 py-0.5 rounded-sm"
-              style={{
-                background: 'rgba(0,0,0,0.5)',
-                fontFamily: 'var(--font-body)',
-                fontSize: '9px',
-                letterSpacing: '0.15em',
-                color: 'rgba(255,255,255,0.4)',
-              }}>
-              {String(activeIndex + 1).padStart(2, '0')} / {String(totalImages).padStart(2, '0')}
+              {/* Page number */}
+              <div className="mt-3 text-center" style={{ fontFamily: 'var(--font-body)', fontSize: '9px', letterSpacing: '0.15em', color: 'var(--brown-light)', opacity: 0.4 }}>
+                — {String(baseImageIndex + 1).padStart(2, '0')} —
+              </div>
             </div>
           </div>
 
-          {/* Caption — diary entry under the photo */}
+          {/* ═══ FLIPPING PAGE — halaman yang dibalik (di atas base page) ═══ */}
+          <div ref={pageRef} className="diary-flip-page">
+
+            {/* ─── FRONT FACE: halaman depan dengan foto saat ini ─── */}
+            <div
+              className="diary-flip-front diary-page-inner cursor-pointer"
+              onClick={() => !isFlipping && setLightboxIndex(activeIndex)}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+              role="button"
+              tabIndex={0}
+              aria-label={`Lihat foto ${WEDDING.galleryCaptions[activeIndex]}`}
+              onKeyDown={(e) => { if (e.key === 'Enter') setLightboxIndex(activeIndex) }}
+            >
+              <div className="absolute inset-0 pointer-events-none diary-paper-texture" />
+              <div className="absolute inset-0 pointer-events-none diary-age-spots" />
+              <div className="absolute inset-x-4 top-16 bottom-10 pointer-events-none diary-ruled-lines" />
+
+              <div className="relative" style={{ margin: '0 2px' }}>
+                <div className="absolute -top-0.5 -left-0.5 w-5 h-5 z-10 pointer-events-none diary-photo-corner" />
+                <div className="absolute -top-0.5 -right-0.5 w-5 h-5 z-10 pointer-events-none diary-photo-corner" />
+                <div className="absolute -bottom-0.5 -left-0.5 w-5 h-5 z-10 pointer-events-none diary-photo-corner" />
+                <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 z-10 pointer-events-none diary-photo-corner" />
+
+                <div className="aspect-[4/5] overflow-hidden" style={{ background: '#ddd5c5' }}>
+                  <img
+                    key={activeIndex}
+                    src={WEDDING.galleryImages[activeIndex]}
+                    alt={WEDDING.galleryCaptions[activeIndex]}
+                    className="w-full h-full object-cover diary-photo-filter"
+                    style={{ display: 'block' }}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-3 text-center" style={{ fontFamily: 'var(--font-body)', fontSize: '9px', letterSpacing: '0.15em', color: 'var(--brown-light)', opacity: 0.4 }}>
+                — {String(activeIndex + 1).padStart(2, '0')} —
+              </div>
+
+              {/* Page curl hint — pojok kanan bawah yang sedikit terlipat */}
+              <div className="absolute bottom-0 right-0 w-8 h-8 pointer-events-none"
+                style={{
+                  background: 'linear-gradient(135deg, transparent 40%, rgba(0,0,0,0.04) 40%, rgba(0,0,0,0.08) 50%, rgba(0,0,0,0.02) 60%, transparent 60%)',
+                  borderRadius: '0 0 3px 0',
+                }} />
+            </div>
+
+            {/* ─── BACK FACE: belakang halaman — kertas tua dengan tulisan pudar ─── */}
+            <div className="diary-flip-back">
+              <div className="absolute inset-0 pointer-events-none diary-paper-texture" />
+
+              {/* Faded diary writing — tulisan yang pudar di belakang halaman */}
+              <div className="absolute inset-0 flex flex-col justify-center items-start p-8 pt-16"
+                style={{ opacity: 0.06, color: 'var(--brown)' }}>
+                <div className="w-full space-y-4" style={{ fontFamily: 'var(--font-script)' }}>
+                  <div className="h-px w-full" style={{ background: 'currentColor' }} />
+                  <div className="h-px w-11/12" style={{ background: 'currentColor' }} />
+                  <div className="h-px w-full" style={{ background: 'currentColor' }} />
+                  <div className="h-px w-2/3" style={{ background: 'currentColor' }} />
+                  <div className="h-8" />
+                  <div className="h-px w-full" style={{ background: 'currentColor' }} />
+                  <div className="h-px w-4/5" style={{ background: 'currentColor' }} />
+                  <div className="h-px w-full" style={{ background: 'currentColor' }} />
+                  <div className="h-px w-3/5" style={{ background: 'currentColor' }} />
+                </div>
+              </div>
+
+              {/* Aging stain */}
+              <div className="absolute bottom-4 right-4 w-16 h-16 pointer-events-none"
+                style={{ background: 'radial-gradient(ellipse, rgba(139,109,63,0.08) 0%, transparent 70%)' }} />
+            </div>
+          </div>
+
+          {/* Shadow — bayangan saat halaman terangkat */}
           <div
-            ref={captionRef}
-            className="py-3 text-center"
-            style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}
-          >
-            <p className="text-sm sm:text-base italic">{WEDDING.galleryCaptions[activeIndex]}</p>
-          </div>
+            ref={shadowRef}
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              zIndex: 3,
+              opacity: 0,
+              background: 'linear-gradient(to right, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.08) 40%, transparent 70%)',
+              borderRadius: '2px',
+            }}
+          />
         </div>
 
-        {/* ═══ Projector Controls ═══ */}
-        <div className="projector-controls flex items-center justify-center gap-4 mt-2">
-          {/* Prev button */}
+        {/* Caption — tulisan tangan di bawah buku */}
+        <div
+          ref={captionRef}
+          className="py-3 text-center"
+          style={{ fontFamily: 'var(--font-serif)', color: 'var(--brown-light)' }}
+        >
+          <p className="text-sm sm:text-base italic">{WEDDING.galleryCaptions[activeIndex]}</p>
+        </div>
+
+        {/* ═══ Book Controls ═══ */}
+        <div className="book-controls flex items-center justify-center gap-6 mt-2">
           <button
             onClick={() => { stopAutoPlay(); prevSlide() }}
             className="w-9 h-9 flex items-center justify-center rounded-full transition-all duration-300 cursor-pointer"
             style={{ border: '1px solid var(--gold)', color: 'var(--gold)', background: 'transparent' }}
             onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--gold)'; e.currentTarget.style.color = 'white' }}
             onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--gold)' }}
-            aria-label="Foto sebelumnya"
+            aria-label="Halaman sebelumnya"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
 
-          {/* Dot indicators — film perforations */}
-          <div className="flex items-center gap-2">
-            {WEDDING.galleryImages.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => { stopAutoPlay(); goToSlide(i) }}
-                className="transition-all duration-500 cursor-pointer"
-                style={{
-                  width: i === activeIndex ? '20px' : '6px',
-                  height: '6px',
-                  borderRadius: '3px',
-                  background: 'var(--gold)',
-                  opacity: i === activeIndex ? 1 : 0.3,
-                }}
-                aria-label={`Foto ${i + 1}`}
-              />
-            ))}
+          <div className="flex items-center gap-1.5" style={{ fontFamily: 'var(--font-body)', fontSize: '11px', letterSpacing: '0.1em', color: 'var(--gold)' }}>
+            <span style={{ opacity: 0.45 }}>hal.</span>
+            <span className="font-medium">{activeIndex + 1}</span>
+            <span style={{ opacity: 0.25 }}>/</span>
+            <span className="font-medium">{totalImages}</span>
           </div>
 
-          {/* Next button */}
           <button
             onClick={() => { stopAutoPlay(); nextSlide() }}
             className="w-9 h-9 flex items-center justify-center rounded-full transition-all duration-300 cursor-pointer"
             style={{ border: '1px solid var(--gold)', color: 'var(--gold)', background: 'transparent' }}
             onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--gold)'; e.currentTarget.style.color = 'white' }}
             onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--gold)' }}
-            aria-label="Foto selanjutnya"
+            aria-label="Halaman selanjutnya"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
